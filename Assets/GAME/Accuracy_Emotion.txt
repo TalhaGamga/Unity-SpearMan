@@ -1,0 +1,18 @@
+
+To establish a mathematical relationship between Emotion and Accuracy, we need a function where:
+
+When Emotion = 0, Accuracy = 100% (perfect accuracy).
+As Emotion increases, Accuracy decreases.
+The drop in Accuracy should be non-linear (so higher emotions affect accuracy more severely).
+
+1. Choosing the Equation Type
+A good approach is to use an exponential decay or inverse function to create a smooth drop in accuracy.
+
+Equation Model:
+Accuracy=100−(M×Emotion)
+
+Where:
+
+k is a scaling factor that determines how fast accuracy drops.
+Emotion is between 0 and 1 (normalized).
+Accuracy smoothly decreases as Emotion rises.

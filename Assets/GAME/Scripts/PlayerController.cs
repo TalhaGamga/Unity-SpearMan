@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
         inputControls = new InputControls();
         inputControls?.Enable();
 
-        promptReceiver = GameObject.FindWithTag("Player").GetComponent<CharacterPromptReceiver>();
+        promptReceiver = GameObject.FindWithTag("Player").GetComponent<ICharacterPromptReceiver>();
     }
 
     private void OnEnable()

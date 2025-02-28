@@ -1,24 +1,26 @@
 using UnityEngine;
 
-public class SpearCombat : ICombat
+public class SpearCombat : ICombat<ISpear>
 {
-    private CombatManager combatManager;
-    private ISpear _spear;
+    private CombatManager _combatManager;
+
+    public ISpear Weapon { get; set; }
 
     public SpearCombat(ISpear spear)
     {
-        _spear = spear;
+        Weapon = spear;
     }
 
-    public void Init(ICombatManager combatManager)
+    public void Init(CombatManager combatManager)
     {
+        _combatManager = combatManager;
         Debug.Log("Spear combat has been initialized");
     }
 
     public void Tick()
     {
         Debug.Log("Spear Combat");
-        _spear?.Tick();
+        Weapon?.Tick();
     }
 
     public void FixedTick()

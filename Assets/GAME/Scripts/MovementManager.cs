@@ -10,8 +10,18 @@ public class MovementManager : MonoBehaviour, IMovementManager
     public float TimeToApex;
     public float GravityEffector;
 
+    [Header("States")]
+    public bool IsMoving;
+    public bool IsJumping;
+    public bool IsFalling;
+    public bool IsIdling;
+
+    [Header("Inputs")]
+    public bool JumpInput;
+
     [Header("Move")]
     public float AccelerationRate = 1.0f;
+
     [HideInInspector] public Vector2 MovementInputDirection;
     [SerializeField] private float _baseMoveSpeed;
     [SerializeField] private float _speedModifier;
@@ -28,16 +38,7 @@ public class MovementManager : MonoBehaviour, IMovementManager
 
     [Header("Private Variables")]
     private IMover currentMover;
-    private ICharacterPromptReceiver promptReceiver;
-
-    [Header("States")]
-    public bool IsMoving;
-    public bool IsJumping;
-    public bool IsFalling;
-    public bool IsIdling;
-
-    [Header("Inputs")]
-    public bool JumpInput;
+    private IHumanoidMovementPromptReceiver promptReceiver;
 
     private void OnDrawGizmos()
     {
@@ -48,7 +49,7 @@ public class MovementManager : MonoBehaviour, IMovementManager
     }
     private void Awake()
     {
-        promptReceiver = GetComponent<ICharacterPromptReceiver>();
+        promptReceiver = GetComponent<IHumanoidMovementPromptReceiver>();
     }
 
     private void Start()

@@ -2,7 +2,15 @@ using UnityEngine;
 
 public class CombatManager : MonoBehaviour, ICombatManager
 {
-    private ICombat currentCombat;
+    private ICombatBase currentCombat;
+
+    private IHumanoidCombatPromptReceiver promptReceiver;
+
+    public float CombatSpeedModifier { get; set; }
+    public float DamageModifier { get; set; }
+    public float RangedAttackModifier { get; set; }
+    public float AccuracyModifier { get; set; }
+    public float CritModifier { get; set; }
 
     private void OnEnable()
     {
@@ -14,14 +22,19 @@ public class CombatManager : MonoBehaviour, ICombatManager
         EventBus.OnItemUsed -= onItemUsed;
     }
 
-    public void SetCombat(ICombat newCombat)
+    private void Update()
+    {
+        currentCombat?.Tick();
+    }
+
+    public void SetCombat(ICombatBase newCombat)
     {
         currentCombat?.End();
         newCombat?.Init(this);
         currentCombat = newCombat;
     }
 
-    public void UnsettleCombat(ICombat combat)
+    public void UnsettleCombat(ICombatBase combat)
     {
         if (currentCombat != null && currentCombat.Equals(combat))
         {
@@ -30,10 +43,6 @@ public class CombatManager : MonoBehaviour, ICombatManager
         }
     }
 
-    private void Update()
-    {
-        currentCombat?.Tick();
-    }
     private void onItemUsed(ItemUsedEvent itemEvent)
     {
         if (itemEvent.Item is ICombatInventoryItem inventoryItem)

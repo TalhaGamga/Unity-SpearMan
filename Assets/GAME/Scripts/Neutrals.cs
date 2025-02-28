@@ -12,21 +12,48 @@ public interface IMovementManager
 
 public interface ICombatManager
 {
-    void SetCombat(ICombat newCombat);
-    void UnsettleCombat(ICombat combat);
+    void SetCombat(ICombatBase newCombat);
+    void UnsettleCombat(ICombatBase combat);
+    public float CombatSpeedModifier { get; set; }
+    public float DamageModifier { get; set; }
+    public float RangedAttackModifier { get; set; }
+    public float AccuracyModifier { get; set; }
+    public float CritModifier { get; set; }
 }
 
-public interface ICombat : ITickable, IFixedTickable
+public interface ICombatBase : ITickable, IFixedTickable
 {
-    void Init(ICombatManager combatManager);
+    void Init(CombatManager combatManager);
     void End();
 }
+public interface ICombat<T> : ICombatBase where T : IWeapon
+{
+    public T Weapon { get; set; }
+}
 
-public interface IWeapon : IEquipable
+public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm { }
+
+public interface IRifleCombat : IFirearmCombat<IRifle> { }
+
+public interface IWeapon : IEquipable, ITickable, IFixedTickable
 {
     void SetCombat(ICombatManager CombatManager);
 }
-public interface ISpear :IWeapon, ITickable, IFixedTickable
+
+public interface IFirearm : IWeapon
+{
+    public IFireSystem FireSystem { get; }
+    public IRecoilSystem RecoilSystem { get; }
+    public IAimSystem AimSystem { get; }
+    public IAmmoSystem AmmoSystem { get; }
+}
+
+public interface IRifle : IFirearm
+{
+
+}
+
+public interface ISpear : IWeapon
 {
 }
 
@@ -47,12 +74,16 @@ public enum StateType
     Fall
 }
 
-public interface ICharacterPromptReceiver
+public interface IHumanoidMovementPromptReceiver
 {
     Action<Vector2> OnMoveInput { get; set; }
     Action OnJumpInput { get; set; }
     Action OnJumpCancel { get; set; }
 }
+
+public interface IHumanoidCombatPromptReceiver { }
+
+public interface ICharacterPromptReceiver : IHumanoidMovementPromptReceiver, IHumanoidCombatPromptReceiver { }
 
 public interface IEquipmentManager
 {
@@ -147,4 +178,51 @@ public interface IInventoryManager
 {
     public IInventory Inventory { get; }
     public Action OnInventoryLoaded { get; set; }
+}
+
+public interface IFireSystem
+{
+    public IProjectileSystem ProjectileSystem { get; }
+    public Action OnFired { get; set; }
+}
+
+public interface IProjectileSystem
+{
+    IProjectile CreateProjectile();
+    public Action OnProjectileCreated { get; set; }
+}
+
+public interface IAmmoSystem
+{
+    public int MagazinwAmmo { get; set; }
+    public int MagazineCount { get; set; }
+    void ResetMagazine();
+
+    public Action OnMagazineConsumed { get; set; }
+}
+
+public interface IRecoilSystem
+{
+    public int KickbackAmount { get; set; }
+    public Action<float> OnKickback { get; set; }
+}
+
+public interface IAimSystem
+{
+    public void SetAccuracyModifier();
+}
+
+public interface IProjectile
+{
+    void Fire(Vector2 origin, Vector2 direction, float speed, float damage);
+}
+
+public interface IPhysicalProjectile : IProjectile
+{
+
+}
+
+public interface IHitscanProjectile : IProjectile
+{
+
 }

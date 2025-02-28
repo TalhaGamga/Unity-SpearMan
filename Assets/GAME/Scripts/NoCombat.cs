@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class NoCombat : ICombat
+public class NoCombat 
 {
-    public void Init(ICombatManager combatManager)
+    public void Init(CombatManager combatManager)
     {
     }
     public void End()

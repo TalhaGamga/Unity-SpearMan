@@ -2,12 +2,12 @@ using UnityEngine;
 
 public class Spear : MonoBehaviour, ISpear
 {
-    private ICombat combat;
+    private ICombat<ISpear> combat;
     [SerializeField] private Vector3 snapPosition;
     [SerializeField] private Quaternion snapRotation;
     [SerializeField] private Vector3 snapScale;
 
-    public void Equip(IEquipmentManager equipmentManager) // Separate Equipability and Weapon wearing.
+    public void Equip(IEquipmentManager equipmentManager)
     {
         Debug.Log("Spear Equip");
         Transform hand = equipmentManager.Hand;
