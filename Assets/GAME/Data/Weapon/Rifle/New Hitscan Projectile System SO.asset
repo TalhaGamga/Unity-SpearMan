@@ -9,6 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5710a3bb9c9f5e544843433e0098c91f, type: 3}
-  m_Name: ProjectileSystem
+  m_Script: {fileID: 11500000, guid: 9078cda2a6152ef448d0247f8f678ffa, type: 3}
+  m_Name: New Hitscan Projectile System SO
   m_EditorClassIdentifier: 
+  _hitscanProjectile: {fileID: 11400000, guid: 670169e8f6a8d864c9150ed580e4fa7f, type: 2}

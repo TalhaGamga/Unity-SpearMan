@@ -1,9 +1,8 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/PhysicalProjectile")]
-public class PhysicalProjectileSO : ScriptableObject, IProjectile
+public class PhysicalProjectile : MonoBehaviour, IProjectile
 {
-    public void Fire(Vector2 origin, Vector2 direction, float speed, float damage)
+    public void Fire(Vector3 origin, Vector3 direction, float speed, float damage)
     {
         Debug.Log("Physical Projectile has been thrown");
     }

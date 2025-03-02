@@ -23,15 +23,20 @@ public interface ICombatManager
 
 public interface ICombatBase : ITickable, IFixedTickable
 {
-    void Init(CombatManager combatManager);
+    void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver);
     void End();
 }
 public interface ICombat<T> : ICombatBase where T : IWeapon
 {
-    public T Weapon { get; set; }
+    public T Weapon { get; }
 }
 
-public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm { }
+public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm
+{
+    void Fire();
+    void StopFiring();
+    void Reload();
+}
 
 public interface IRifleCombat : IFirearmCombat<IRifle> { }
 
@@ -42,6 +47,7 @@ public interface IWeapon : IEquipable, ITickable, IFixedTickable
 
 public interface IFirearm : IWeapon
 {
+    public Transform FirePoint { get; }
     public IFireSystem FireSystem { get; }
     public IRecoilSystem RecoilSystem { get; }
     public IAimSystem AimSystem { get; }
@@ -50,7 +56,6 @@ public interface IFirearm : IWeapon
 
 public interface IRifle : IFirearm
 {
-
 }
 
 public interface ISpear : IWeapon
@@ -76,12 +81,27 @@ public enum StateType
 
 public interface IHumanoidMovementPromptReceiver
 {
-    Action<Vector2> OnMoveInput { get; set; }
-    Action OnJumpInput { get; set; }
-    Action OnJumpCancel { get; set; }
+    event Action<Vector2> OnMoveInput;
+    event Action OnJumpInput;
+    event Action OnJumpCancel;
+    public void InvokeMoveInput(Vector2 input);
+    public void InvokeJumpInput();
+    public void InvokeJumpCancel();
 }
 
-public interface IHumanoidCombatPromptReceiver { }
+public interface IHumanoidCombatPromptReceiver
+{
+    event Action OnPrimaryCombatInput;
+    event Action OnSecondaryCombatInput;
+    event Action OnPrimaryCombatCancel;
+    event Action OnSecondaryCombatCancel;
+    event Action OnReloadInput;
+    public void InvokePrimaryCombatInput();
+    public void InvokeSecondaryCombatInput();
+    public void InvokePrimaryCombatCancel();
+    public void InvokeSecondaryCombatCancel();
+    public void InvokeOnReloadInput();
+}
 
 public interface ICharacterPromptReceiver : IHumanoidMovementPromptReceiver, IHumanoidCombatPromptReceiver { }
 
@@ -183,22 +203,27 @@ public interface IInventoryManager
 public interface IFireSystem
 {
     public IProjectileSystem ProjectileSystem { get; }
-    public Action OnFired { get; set; }
+    public event Action OnFired;
+
+    public void Init();
+    public bool CanFire { get; }
+    public float FireRate { get; }
+
+    void Fire(Vector3 origin, Vector3 direction);
+    //public Action OnMissed { get; set; }
 }
 
-public interface IProjectileSystem
-{
-    IProjectile CreateProjectile();
-    public Action OnProjectileCreated { get; set; }
-}
 
 public interface IAmmoSystem
 {
-    public int MagazinwAmmo { get; set; }
-    public int MagazineCount { get; set; }
-    void ResetMagazine();
-
-    public Action OnMagazineConsumed { get; set; }
+    event Action<bool> OnReloadStateChanged;
+    event Action<float> OnReloadStarted;
+    event Action OnAmmoConsumed;
+    public bool IsReloading { get; }
+    public bool HasAmmo { get; }
+    void ConsumeAmmo();
+    void Reload();
+    void FinishReload();
 }
 
 public interface IRecoilSystem
@@ -212,17 +237,28 @@ public interface IAimSystem
     public void SetAccuracyModifier();
 }
 
+public interface IProjectileSystem
+{
+    IProjectile CreateProjectile();
+}
+
 public interface IProjectile
 {
-    void Fire(Vector2 origin, Vector2 direction, float speed, float damage);
+    void Fire(Vector3 origin, Vector3 direction, float speed, float damage);
 }
 
 public interface IPhysicalProjectile : IProjectile
 {
-
+    void ApplyPhysics();
 }
 
 public interface IHitscanProjectile : IProjectile
 {
+    void PerformRaycast();
+}
 
+public interface IInputHandler
+{
+    void BindInputs();
+    void UnbindInputs();
 }

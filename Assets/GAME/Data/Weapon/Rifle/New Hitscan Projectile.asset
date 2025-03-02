@@ -9,9 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af731d96859682a49be0602c75e163c4, type: 3}
-  m_Name: AmmoSystem
+  m_Script: {fileID: 11500000, guid: ba5a59262979e304aa8f66c7f9d2fd31, type: 3}
+  m_Name: New Hitscan Projectile
   m_EditorClassIdentifier: 
-  _currentAmmo: 48
-  maxAmmo: 30
-  reloadTime: 1
+  range: 100

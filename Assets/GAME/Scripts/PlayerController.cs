@@ -1,47 +1,72 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
     private InputControls inputControls;
-    private ICharacterPromptReceiver promptReceiver;
+    private CharacterPromptReceiver promptReceiver;
 
     private void Awake()
     {
         inputControls = new InputControls();
-        inputControls?.Enable();
+        inputControls.Enable();
 
-        promptReceiver = GameObject.FindWithTag("Player").GetComponent<ICharacterPromptReceiver>();
+        promptReceiver = GameObject.FindWithTag("Player").GetComponent<CharacterPromptReceiver>();
     }
 
     private void OnEnable()
     {
-        inputControls.Character.Movement.started += onMoveInput;
-        inputControls.Character.Movement.canceled += onMoveInput;
-        inputControls.Character.Jump.started += onJumpInput;
-        inputControls.Character.Jump.canceled += onJumpCancel;
+        inputControls.Movement.Move.started += onMoveInput;
+        inputControls.Movement.Move.canceled += onMoveInput;
+        inputControls.Movement.Jump.started += onJumpInput;
+        inputControls.Movement.Jump.canceled += onJumpCancel;
+
+        inputControls.Rifle.Fire.started += onPrimaryCombatInput;
+        inputControls.Rifle.Fire.canceled += onPrimaryCombatCancel;
+        inputControls.Rifle.Reload.started += onReloadInput;
     }
+
 
     private void OnDisable()
     {
-        inputControls.Character.Movement.started -= onMoveInput;
-        inputControls.Character.Movement.canceled -= onMoveInput;
-        inputControls.Character.Jump.started -= onJumpInput;
-        inputControls.Character.Jump.canceled -= onJumpCancel;
+        inputControls.Movement.Move.started -= onMoveInput;
+        inputControls.Movement.Move.canceled -= onMoveInput;
+        inputControls.Movement.Jump.started -= onJumpInput;
+        inputControls.Movement.Jump.canceled -= onJumpCancel;
+
+        inputControls.Rifle.Fire.started -= onPrimaryCombatInput;
+        inputControls.Rifle.Fire.canceled -= onPrimaryCombatCancel;
+        inputControls.Rifle.Reload.started -= onReloadInput;
     }
 
     private void onMoveInput(InputAction.CallbackContext context)
     {
-        promptReceiver.OnMoveInput(context.ReadValue<Vector2>());
+        promptReceiver.InvokeMoveInput(context.ReadValue<Vector2>());
     }
 
     private void onJumpInput(InputAction.CallbackContext context)
     {
-        promptReceiver.OnJumpInput?.Invoke();
+        promptReceiver?.InvokeJumpInput();
     }
 
     private void onJumpCancel(InputAction.CallbackContext context)
     {
-        promptReceiver?.OnJumpCancel?.Invoke();
+        promptReceiver?.InvokeJumpCancel();
+    }
+
+    private void onPrimaryCombatInput(InputAction.CallbackContext context)
+    {
+        promptReceiver?.InvokePrimaryCombatInput();
+    }
+
+    private void onPrimaryCombatCancel(InputAction.CallbackContext context)
+    {
+        promptReceiver?.InvokePrimaryCombatCancel();
+    }
+
+    private void onReloadInput(InputAction.CallbackContext context)
+    {
+        promptReceiver?.InvokeOnReloadInput();
     }
 }

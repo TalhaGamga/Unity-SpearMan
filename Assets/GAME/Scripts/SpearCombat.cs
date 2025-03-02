@@ -11,7 +11,7 @@ public class SpearCombat : ICombat<ISpear>
         Weapon = spear;
     }
 
-    public void Init(CombatManager combatManager)
+    public void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver)
     {
         _combatManager = combatManager;
         Debug.Log("Spear combat has been initialized");

@@ -1,10 +1,15 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/HitscanProjectile")]
-public class HitscanProjectile : ScriptableObject, IHitscanProjectile
+public class HitscanProjectile : ProjectileBaseSO
 {
-    public void Fire(Vector2 origin, Vector2 direction, float speed, float damage)
+    [SerializeField] private float range = 100f;
+    public override void Fire(Vector3 origin, Vector3 direction, float speed, float damage)
     {
-        Debug.Log("Hitscan Projectile has been thrown");
+        RaycastHit2D hit = Physics2D.Raycast(origin, direction, range);
+        if (hit.collider != null)
+        {
+            Debug.Log($"Hitscan Hit: {hit.collider.gameObject.name}");
+        }
     }
 }

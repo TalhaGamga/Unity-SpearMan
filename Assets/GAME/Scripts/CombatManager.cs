@@ -3,8 +3,10 @@ using UnityEngine;
 public class CombatManager : MonoBehaviour, ICombatManager
 {
     private ICombatBase currentCombat;
+    private IHumanoidCombatPromptReceiver _promptReceiver => promptReceiver;
 
-    private IHumanoidCombatPromptReceiver promptReceiver;
+
+    [SerializeField] private CharacterPromptReceiver promptReceiver;
 
     public float CombatSpeedModifier { get; set; }
     public float DamageModifier { get; set; }
@@ -27,10 +29,15 @@ public class CombatManager : MonoBehaviour, ICombatManager
         currentCombat?.Tick();
     }
 
+    private void FixedUpdate()
+    {
+        currentCombat?.FixedTick();
+    }
+
     public void SetCombat(ICombatBase newCombat)
     {
         currentCombat?.End();
-        newCombat?.Init(this);
+        newCombat?.Init(this, _promptReceiver);
         currentCombat = newCombat;
     }
 

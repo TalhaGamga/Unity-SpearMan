@@ -12,4 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffd25a08bba06c147999cf071238263f, type: 3}
   m_Name: RifleFireSystem
   m_EditorClassIdentifier: 
-  projectileSystemSO: {fileID: 11400000, guid: 974c1332c981c19468ac17a61144360e, type: 2}
+  projectileSystemSO: {fileID: 11400000, guid: 17c2ebdd9d1d7844e9c21beba728506d, type: 2}
+  _fireRate: 0.3
+  projectileSpeed: 50
+  damage: 10

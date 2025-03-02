@@ -7,6 +7,8 @@ public class Rifle : MonoBehaviour, IRifle
     public IAimSystem AimSystem => aimSystem;
     public IAmmoSystem AmmoSystem => ammoSystem;
 
+    public Transform FirePoint => _firePoint;
+
     [Header("Systems")]
     [SerializeField] private FireSystemSO fireSystem;
     [SerializeField] private RecoilSystemSO recoilSystem;
@@ -17,13 +19,14 @@ public class Rifle : MonoBehaviour, IRifle
     [SerializeField] private Vector3 snapPosition;
     [SerializeField] private Quaternion snapRotation;
     [SerializeField] private Vector3 snapScale;
+    [SerializeField] private Transform _firePoint;
+
+    private ICombat<IRifle> combat;
 
     private void Start()
     {
         SetCombat(GetComponentInParent<ICombatManager>());
     }
-
-    private ICombat<IRifle> combat;
 
     public void Tick()
     {
@@ -45,7 +48,7 @@ public class Rifle : MonoBehaviour, IRifle
     public void Unequip(IEquipmentManager equipmentManager)
     {
     }
-    
+
     public void SetCombat(ICombatManager CombatManager)
     {
         combat = new RifleCombat(this);
