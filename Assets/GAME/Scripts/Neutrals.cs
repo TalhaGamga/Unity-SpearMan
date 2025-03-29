@@ -237,10 +237,11 @@ public interface IAmmoSystem
     void FinishReload();
 }
 
-public interface IRecoilSystem : ITickable
+public interface IRecoilSystem
 {
     void Init(Transform firearmTransform, List<IKickbackReceiver> kickbackReceivers);
     void KickBack();
+    void RecoveryCurrentRecoil();
     public Action<float, float> OnKickback { get; set; }
 }
 
@@ -249,10 +250,11 @@ public interface IKickbackReceiver
     void ApplyKickback(float strength, float recoveryDelay);
 }
 
-public interface IAimSystem : IKickbackReceiver, ITickable
+public interface IAimSystem : IKickbackReceiver
 {
     void Init(Transform weaponTransform, Camera camera);
     void UpdateAim(Vector2 aimTarget);
+    void RecoveryKickback();
     Quaternion GetAimRotation();
 }
 

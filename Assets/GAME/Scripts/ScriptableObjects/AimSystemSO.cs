@@ -8,14 +8,14 @@ public class AimSystemSO : ScriptableObject, IAimSystem
     private Camera _mainCamera;
     private Vector3 _worldMousePos;
     private float _kickBack;
-    private float _recoveryDelay;
+    private float _kickbackDelay;
 
     public void Init(Transform weaponTransform, Camera camera)
     {
         _weaponTransform = weaponTransform;
         _mainCamera = camera;
         _kickBack = 0;
-        _recoveryDelay = 0;
+        _kickbackDelay = 0;
     }
 
     public void UpdateAim(Vector2 aimTarget)
@@ -38,14 +38,14 @@ public class AimSystemSO : ScriptableObject, IAimSystem
         return Quaternion.Euler(0, 0, angle);
     }
 
-    public void ApplyKickback(float strength, float recoveryDelay)
+    public void ApplyKickback(float strength, float kickbackDelay)
     {
         _kickBack = strength;
-        _recoveryDelay = recoveryDelay;
+        _kickbackDelay = kickbackDelay;
     }
 
-    public void Tick()
+    public void RecoveryKickback()
     {
-        _kickBack = Mathf.Lerp(_kickBack, 0, _recoveryDelay * 0.05f);
+        _kickBack = Mathf.Lerp(_kickBack, 0, _kickbackDelay * 0.05f);
     }
 }

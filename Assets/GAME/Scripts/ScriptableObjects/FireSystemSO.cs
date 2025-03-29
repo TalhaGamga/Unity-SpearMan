@@ -24,7 +24,9 @@ public class FireSystemSO : ScriptableObject, IFireSystem
         _lastFireTime = Time.time;
 
         Projectile.Fire(Origin, Direction, projectileSpeed);
+
         OnFired?.Invoke();
+
         SoundManager.Instance.CreateSoundBuilder()
         .WithRandomPitch(-0.25f, 0.25f)
         .Play(soundData);

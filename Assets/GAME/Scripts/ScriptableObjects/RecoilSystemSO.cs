@@ -73,7 +73,7 @@ public class RecoilSystemSO : ScriptableObject, IRecoilSystem
         OnKickback?.Invoke(recoilStrength, _recoveryDelay);
     }
 
-    public void Tick()
+    public void RecoveryCurrentRecoil()
     {
         _currentRecoil = Mathf.Lerp(_currentRecoil, 0, _recoveryDelay * 0.05f);
     }

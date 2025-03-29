@@ -64,8 +64,8 @@ public class RifleCombat : IRifleCombat
 
         else
         {
-            _aimSystem.Tick();
-            _recoilSystem.Tick();
+            _aimSystem.RecoveryKickback();
+            _recoilSystem.RecoveryCurrentRecoil();
         }
 
         handleRotation();
@@ -136,6 +136,5 @@ public class RifleCombat : IRifleCombat
         _rifleTransform.localScale = new Vector3(1f, (dot < 0) ? -1f : 1f, 1f);
 
         _rifleTransform.rotation = aimRotation;
-        //_rifle.FirePoint.LookAt(_aimSystem.GetAimPoint());
     }
 }

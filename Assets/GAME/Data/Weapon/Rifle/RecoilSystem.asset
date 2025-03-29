@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _incrementRate: 1
   _maxRecoil: 30
-  _shakeDuration: 0.02
+  _shakeDuration: 0.05
   _initialPunch: 2
