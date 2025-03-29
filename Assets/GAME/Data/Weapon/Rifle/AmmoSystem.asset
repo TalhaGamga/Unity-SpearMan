@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af731d96859682a49be0602c75e163c4, type: 3}
   m_Name: AmmoSystem
   m_EditorClassIdentifier: 
-  _currentAmmo: 48
-  maxAmmo: 30
-  reloadTime: 1
+  _currentAmmo: 150
+  maxAmmo: 150
+  reloadTime: 3

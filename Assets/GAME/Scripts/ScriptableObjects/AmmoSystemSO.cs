@@ -19,7 +19,6 @@ public class AmmoSystemSO : ScriptableObject, IAmmoSystem
 
     public void Reload()
     {
-        Debug.Log("Reloading Has Started");
         if (_isReloading || _currentAmmo == maxAmmo)
             return;
 
@@ -30,7 +29,6 @@ public class AmmoSystemSO : ScriptableObject, IAmmoSystem
 
     public void FinishReload()
     {
-        Debug.Log("Reloading Has Finished");
         _currentAmmo = maxAmmo;
         _isReloading = false;
         OnReloadStateChanged?.Invoke(false);

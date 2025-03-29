@@ -12,3 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4b011b3cf86b154db80d86ead4eb5be, type: 3}
   m_Name: RecoilSystem
   m_EditorClassIdentifier: 
+  _incrementRate: 1
+  _maxRecoil: 30
+  _shakeDuration: 0.02
+  _initialPunch: 2

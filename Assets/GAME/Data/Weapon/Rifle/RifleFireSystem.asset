@@ -12,7 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffd25a08bba06c147999cf071238263f, type: 3}
   m_Name: RifleFireSystem
   m_EditorClassIdentifier: 
-  projectileSystemSO: {fileID: 11400000, guid: 17c2ebdd9d1d7844e9c21beba728506d, type: 2}
-  _fireRate: 0.3
+  _fireRate: 0.1
   projectileSpeed: 50
-  damage: 10
+  soundData:
+    clip: {fileID: 8300000, guid: 5b563e9c8b6d3e34492da42ae8172d44, type: 3}
+    mixerGroup: {fileID: 0}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 0.1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 0
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0

@@ -7,6 +7,8 @@ public class Spear : MonoBehaviour, ISpear
     [SerializeField] private Quaternion snapRotation;
     [SerializeField] private Vector3 snapScale;
 
+    public Transform WeaponTransform => throw new System.NotImplementedException();
+
     public void Equip(IEquipmentManager equipmentManager)
     {
         Debug.Log("Spear Equip");

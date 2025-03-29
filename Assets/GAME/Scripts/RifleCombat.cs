@@ -1,9 +1,6 @@
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-/// <summary>
-/// We will control the weapon systems here and the systems will control the weapons.
-/// </summary>
-/// <param name="rifle"></param>
+
 public class RifleCombat : IRifleCombat
 {
     #region PUBLIC
@@ -11,14 +8,20 @@ public class RifleCombat : IRifleCombat
     #endregion
 
     #region PRIVATE
-    private CombatManager _combatManager;
+    private IRifle _rifle;
     private IHumanoidCombatPromptReceiver _promptReceiver;
 
     private IFireSystem _fireSystem;
     private IAmmoSystem _ammoSystem;
-    private RifleInputHandler _inputHandler;
+    private IAimSystem _aimSystem;
+    private IProjectileSystem _projectileSystem;
+    private IBulletDamageDealerSystem _damageDealerSystem;
+    private IRecoilSystem _recoilSystem;
 
-    private IRifle _rifle;
+    private RifleInputHandler _inputHandler;
+    private CombatManager _combatManager;
+    private Transform _rifleTransform;
+    private Transform _characterModelTransform;
 
     private bool _isHoldingFire;
     private float _fireCooldown;
@@ -28,16 +31,26 @@ public class RifleCombat : IRifleCombat
     {
         _fireSystem = rifle.FireSystem;
         _ammoSystem = rifle.AmmoSystem;
+        _aimSystem = rifle.AimSystem;
+        _projectileSystem = rifle.ProjectileSystem;
+        _damageDealerSystem = rifle.DamageDealerSystem;
+        _rifleTransform = rifle.WeaponTransform;
+        _recoilSystem = rifle.RecoilSystem;
+
         _rifle = rifle;
     }
 
     public void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver)
     {
         _combatManager = combatManager;
+        _characterModelTransform = combatManager.characterModelTransform;
+
         _promptReceiver = promptReceiver;
         _inputHandler = new RifleInputHandler(this, promptReceiver);
-        _ammoSystem.OnReloadStarted += handleReloadTimer;
+        _aimSystem.Init(_rifleTransform, Camera.main);
         _fireSystem.Init();
+        _projectileSystem.Init();
+        _recoilSystem.Init(_rifle.WeaponTransform, new List<IKickbackReceiver>() { _aimSystem });
 
         _inputHandler.BindInputs();
     }
@@ -48,6 +61,14 @@ public class RifleCombat : IRifleCombat
         {
             handleAutomaticFire();
         }
+
+        else
+        {
+            _aimSystem.Tick();
+            _recoilSystem.Tick();
+        }
+
+        handleRotation();
     }
 
     public void FixedTick()
@@ -56,22 +77,29 @@ public class RifleCombat : IRifleCombat
 
     public void Fire()
     {
-        Debug.Log("Init Fire");
         _isHoldingFire = true;
     }
 
     public void StopFiring()
     {
-        Debug.Log("Stop Fire");
-
         _isHoldingFire = false;
     }
 
     public void Reload()
     {
         _ammoSystem.Reload();
-        Debug.Log("Reload");
     }
+
+    public void Aim(Vector2 aimInput)
+    {
+        _aimSystem.UpdateAim(aimInput);
+    }
+
+    public void End()
+    {
+        _inputHandler.UnbindInputs();
+    }
+
     private void handleAutomaticFire()
     {
         if (_fireCooldown > 0)
@@ -87,25 +115,27 @@ public class RifleCombat : IRifleCombat
     {
         if (!_ammoSystem.IsReloading && _ammoSystem.HasAmmo && _fireSystem.CanFire)
         {
-            _fireSystem.Fire(_rifle.FirePoint.position, _rifle.FirePoint.forward);
-            _ammoSystem.ConsumeAmmo();
+            IProjectile projectile = _projectileSystem.CreateProjectile();
+            _fireSystem.Fire(projectile, _rifle.FirePoint.position, _rifle.FirePoint.forward);
             _fireCooldown = _fireSystem.FireRate;
         }
     }
 
-    public void End()
+    private void handleRotation()
     {
-        _inputHandler.UnbindInputs();
-    }
+        Quaternion aimRotation = _aimSystem.GetAimRotation();
+        bool isFlipped = _characterModelTransform.localScale.x < 0;
 
-    private void handleReloadTimer(float reloadTime)
-    {
-        _combatManager.StartCoroutine(reloadCoroutine(reloadTime));
-    }
+        if (isFlipped)
+        {
+            aimRotation = Quaternion.Euler(aimRotation.eulerAngles.x, aimRotation.eulerAngles.y, aimRotation.eulerAngles.z + 180f);
+        }
 
-    private IEnumerator reloadCoroutine(float reloadTime)
-    {
-        yield return new WaitForSeconds(reloadTime);
-        _ammoSystem.FinishReload();
+        float dot = Vector3.Dot(_rifle.WeaponTransform.right, _characterModelTransform.right);
+
+        _rifleTransform.localScale = new Vector3(1f, (dot < 0) ? -1f : 1f, 1f);
+
+        _rifleTransform.rotation = aimRotation;
+        //_rifle.FirePoint.LookAt(_aimSystem.GetAimPoint());
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,6 +24,7 @@ public class PlayerController : MonoBehaviour
         inputControls.Rifle.Fire.started += onPrimaryCombatInput;
         inputControls.Rifle.Fire.canceled += onPrimaryCombatCancel;
         inputControls.Rifle.Reload.started += onReloadInput;
+        inputControls.Rifle.Aim.performed += onAimInput;
     }
 
 
@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour
         inputControls.Rifle.Fire.started -= onPrimaryCombatInput;
         inputControls.Rifle.Fire.canceled -= onPrimaryCombatCancel;
         inputControls.Rifle.Reload.started -= onReloadInput;
+        inputControls.Rifle.Aim.performed -= onAimInput;
     }
 
     private void onMoveInput(InputAction.CallbackContext context)
@@ -68,5 +69,10 @@ public class PlayerController : MonoBehaviour
     private void onReloadInput(InputAction.CallbackContext context)
     {
         promptReceiver?.InvokeOnReloadInput();
+    }
+
+    private void onAimInput(InputAction.CallbackContext context)
+    {
+        promptReceiver?.InvokeOnAimInput(context.ReadValue<Vector2>());
     }
 }

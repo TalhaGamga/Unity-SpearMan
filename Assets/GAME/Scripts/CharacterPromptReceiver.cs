@@ -11,6 +11,7 @@ public class CharacterPromptReceiver : MonoBehaviour, ICharacterPromptReceiver
     public event Action OnPrimaryCombatCancel;
     public event Action OnSecondaryCombatCancel;
     public event Action OnReloadInput;
+    public event Action<Vector2> OnAimInput;
 
     public void InvokeMoveInput(Vector2 input) => OnMoveInput?.Invoke(input);
     public void InvokeJumpInput() => OnJumpInput?.Invoke();
@@ -20,4 +21,5 @@ public class CharacterPromptReceiver : MonoBehaviour, ICharacterPromptReceiver
     public void InvokePrimaryCombatCancel() => OnPrimaryCombatCancel?.Invoke();
     public void InvokeSecondaryCombatCancel() => OnSecondaryCombatCancel?.Invoke();
     public void InvokeOnReloadInput() => OnReloadInput?.Invoke();
+    public void InvokeOnAimInput(Vector2 aim) => OnAimInput?.Invoke(aim);
 }

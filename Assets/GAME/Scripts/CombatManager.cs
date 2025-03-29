@@ -2,17 +2,18 @@ using UnityEngine;
 
 public class CombatManager : MonoBehaviour, ICombatManager
 {
-    private ICombatBase currentCombat;
-    private IHumanoidCombatPromptReceiver _promptReceiver => promptReceiver;
-
-
-    [SerializeField] private CharacterPromptReceiver promptReceiver;
+    public Transform characterModelTransform;
 
     public float CombatSpeedModifier { get; set; }
     public float DamageModifier { get; set; }
     public float RangedAttackModifier { get; set; }
     public float AccuracyModifier { get; set; }
     public float CritModifier { get; set; }
+
+    [SerializeField] private CharacterPromptReceiver promptReceiver;
+
+    private ICombatBase currentCombat;
+    private IHumanoidCombatPromptReceiver _promptReceiver => promptReceiver;
 
     private void OnEnable()
     {

@@ -26,6 +26,7 @@ public interface ICombatBase : ITickable, IFixedTickable
     void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver);
     void End();
 }
+
 public interface ICombat<T> : ICombatBase where T : IWeapon
 {
     public T Weapon { get; }
@@ -36,13 +37,15 @@ public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm
     void Fire();
     void StopFiring();
     void Reload();
+    void Aim(Vector2 aimInput);
 }
 
 public interface IRifleCombat : IFirearmCombat<IRifle> { }
 
 public interface IWeapon : IEquipable, ITickable, IFixedTickable
 {
-    void SetCombat(ICombatManager CombatManager);
+    public Transform WeaponTransform { get; }
+    void SetCombat(ICombatManager combatManager);
 }
 
 public interface IFirearm : IWeapon
@@ -52,6 +55,9 @@ public interface IFirearm : IWeapon
     public IRecoilSystem RecoilSystem { get; }
     public IAimSystem AimSystem { get; }
     public IAmmoSystem AmmoSystem { get; }
+    public IProjectileSystem ProjectileSystem { get; }
+    public IBulletDamageDealerSystem DamageDealerSystem { get; }
+    public IBulletTrail BulletTrail { get; }
 }
 
 public interface IRifle : IFirearm
@@ -96,11 +102,14 @@ public interface IHumanoidCombatPromptReceiver
     event Action OnPrimaryCombatCancel;
     event Action OnSecondaryCombatCancel;
     event Action OnReloadInput;
+    event Action<Vector2> OnAimInput;
+
     public void InvokePrimaryCombatInput();
     public void InvokeSecondaryCombatInput();
     public void InvokePrimaryCombatCancel();
     public void InvokeSecondaryCombatCancel();
     public void InvokeOnReloadInput();
+    public void InvokeOnAimInput(Vector2 aim);
 }
 
 public interface ICharacterPromptReceiver : IHumanoidMovementPromptReceiver, IHumanoidCombatPromptReceiver { }
@@ -144,7 +153,7 @@ public interface IStackableItem : IInventoryItem
 public interface IEquipableInventoryItem : IInventoryItem
 {
     GameObject WeaponPrefab { get; }
-    void Use(IEquipmentManager EquipmentManager);
+    void Use(IEquipmentManager equipmentManager);
 }
 
 public interface ICombatInventoryItem : IEquipableInventoryItem
@@ -188,7 +197,7 @@ public interface IInventoryUI
 
 public interface IInventorySlotUI
 {
-    void SetSlot(IInventorySlot InventorySlot);
+    void SetSlot(IInventorySlot inventorySlot);
     void UpdateUI();
     public void OnSlotClicked();
     void ClearSlot();
@@ -202,17 +211,19 @@ public interface IInventoryManager
 
 public interface IFireSystem
 {
-    public IProjectileSystem ProjectileSystem { get; }
     public event Action OnFired;
-
     public void Init();
     public bool CanFire { get; }
     public float FireRate { get; }
 
-    void Fire(Vector3 origin, Vector3 direction);
+    void Fire(IProjectile projectile, Vector3 origin, Vector3 direction);
     //public Action OnMissed { get; set; }
 }
 
+public interface IDamagable
+{
+    void TakeDamage(float damage);
+}
 
 public interface IAmmoSystem
 {
@@ -226,25 +237,40 @@ public interface IAmmoSystem
     void FinishReload();
 }
 
-public interface IRecoilSystem
+public interface IRecoilSystem : ITickable
 {
-    public int KickbackAmount { get; set; }
-    public Action<float> OnKickback { get; set; }
+    void Init(Transform firearmTransform, List<IKickbackReceiver> kickbackReceivers);
+    void KickBack();
+    public Action<float, float> OnKickback { get; set; }
 }
 
-public interface IAimSystem
+public interface IKickbackReceiver
 {
-    public void SetAccuracyModifier();
+    void ApplyKickback(float strength, float recoveryDelay);
+}
+
+public interface IAimSystem : IKickbackReceiver, ITickable
+{
+    void Init(Transform weaponTransform, Camera camera);
+    void UpdateAim(Vector2 aimTarget);
+    Quaternion GetAimRotation();
 }
 
 public interface IProjectileSystem
 {
+    public event Action<ProjectileGatheredInfo> OnProjectileGatheredInfo;
+    public void Init();
     IProjectile CreateProjectile();
+}
+public interface IHitscanProjectileSystem : IProjectileSystem
+{
 }
 
 public interface IProjectile
 {
-    void Fire(Vector3 origin, Vector3 direction, float speed, float damage);
+    //event Action OnHit;
+    event Action<ProjectileGatheredInfo> OnProjectileFiredAndHit;
+    void Fire(Vector3 origin, Vector3 direction, float speed);
 }
 
 public interface IPhysicalProjectile : IProjectile
@@ -254,11 +280,45 @@ public interface IPhysicalProjectile : IProjectile
 
 public interface IHitscanProjectile : IProjectile
 {
-    void PerformRaycast();
+    public event Action<Vector3, Vector3> OnHitscanFired;
 }
 
 public interface IInputHandler
 {
     void BindInputs();
     void UnbindInputs();
+}
+
+public interface IAnimatorSystem
+{
+    public void SetAnimationHandler(IAnimationHandler animationHandler);
+    public void InvokeAnimationEvent(string eventName);
+}
+
+public interface IAnimationHandler
+{
+    public Dictionary<string, Action> AnimationEvents { get; }
+}
+
+public interface IRifleCombatAnimationHandler : IAnimationHandler
+{
+    public event Action OnReloaded;
+
+    public void InvokeOnReloaded();
+}
+
+public interface IBulletTrail
+{
+    void VisualizeFire(Vector3 start, Vector3 end);
+}
+
+public interface IBulletDamageDealerSystem
+{
+    public void DealDamage(IDamagable target, float damage, Vector3 hitPoint, float critRate, float impulse);
+}
+
+public interface ICursor
+{
+    public Sprite Sprite { get; }
+    public Vector2 HotSpot { get; }
 }

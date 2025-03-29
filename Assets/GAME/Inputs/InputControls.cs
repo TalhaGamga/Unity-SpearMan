@@ -136,6 +136,15 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Aim"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""0f5794cd-ea73-4d17-aa5f-6832ab7b9c1e"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -160,6 +169,17 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
                     ""action"": ""Reload"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a65b727a-395a-4b97-891f-22333ecc9a71"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Aim"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -174,6 +194,7 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
         m_Rifle = asset.FindActionMap("Rifle", throwIfNotFound: true);
         m_Rifle_Fire = m_Rifle.FindAction("Fire", throwIfNotFound: true);
         m_Rifle_Reload = m_Rifle.FindAction("Reload", throwIfNotFound: true);
+        m_Rifle_Aim = m_Rifle.FindAction("Aim", throwIfNotFound: true);
     }
 
     ~@InputControls()
@@ -297,12 +318,14 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     private List<IRifleActions> m_RifleActionsCallbackInterfaces = new List<IRifleActions>();
     private readonly InputAction m_Rifle_Fire;
     private readonly InputAction m_Rifle_Reload;
+    private readonly InputAction m_Rifle_Aim;
     public struct RifleActions
     {
         private @InputControls m_Wrapper;
         public RifleActions(@InputControls wrapper) { m_Wrapper = wrapper; }
         public InputAction @Fire => m_Wrapper.m_Rifle_Fire;
         public InputAction @Reload => m_Wrapper.m_Rifle_Reload;
+        public InputAction @Aim => m_Wrapper.m_Rifle_Aim;
         public InputActionMap Get() { return m_Wrapper.m_Rifle; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -318,6 +341,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @Reload.started += instance.OnReload;
             @Reload.performed += instance.OnReload;
             @Reload.canceled += instance.OnReload;
+            @Aim.started += instance.OnAim;
+            @Aim.performed += instance.OnAim;
+            @Aim.canceled += instance.OnAim;
         }
 
         private void UnregisterCallbacks(IRifleActions instance)
@@ -328,6 +354,9 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
             @Reload.started -= instance.OnReload;
             @Reload.performed -= instance.OnReload;
             @Reload.canceled -= instance.OnReload;
+            @Aim.started -= instance.OnAim;
+            @Aim.performed -= instance.OnAim;
+            @Aim.canceled -= instance.OnAim;
         }
 
         public void RemoveCallbacks(IRifleActions instance)
@@ -354,5 +383,6 @@ public partial class @InputControls: IInputActionCollection2, IDisposable
     {
         void OnFire(InputAction.CallbackContext context);
         void OnReload(InputAction.CallbackContext context);
+        void OnAim(InputAction.CallbackContext context);
     }
 }

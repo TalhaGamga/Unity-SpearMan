@@ -2,6 +2,7 @@ public class RifleInputHandler : IInputHandler
 {
     private IRifleCombat _rifleCombat;
     private IHumanoidCombatPromptReceiver _promptReceiver;
+
     public RifleInputHandler(IRifleCombat rifleCombat, IHumanoidCombatPromptReceiver promptReceiver)
     {
         _rifleCombat = rifleCombat;
@@ -14,6 +15,7 @@ public class RifleInputHandler : IInputHandler
         _promptReceiver.OnSecondaryCombatInput += _rifleCombat.Reload;
         _promptReceiver.OnPrimaryCombatCancel += _rifleCombat.StopFiring;
         _promptReceiver.OnReloadInput += _rifleCombat.Reload;
+        _promptReceiver.OnAimInput += _rifleCombat.Aim;
     }
 
     public void UnbindInputs()
@@ -22,5 +24,6 @@ public class RifleInputHandler : IInputHandler
         _promptReceiver.OnSecondaryCombatInput -= _rifleCombat.Reload;
         _promptReceiver.OnPrimaryCombatCancel -= _rifleCombat.StopFiring;
         _promptReceiver.OnReloadInput -= _rifleCombat.Reload;
+        _promptReceiver.OnAimInput -= _rifleCombat.Aim;
     }
 }

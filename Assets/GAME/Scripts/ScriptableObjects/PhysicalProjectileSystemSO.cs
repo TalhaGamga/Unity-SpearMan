@@ -7,6 +7,12 @@ public class PhysicalProjectileSystemSO : ProjectileSystemBase
 {
     [SerializeField] private GameObject _projectilePrefab;
 
+    public override event Action<ProjectileGatheredInfo> OnProjectileGatheredInfo;
+
+    public override void Init()
+    {
+    }
+
     public override IProjectile CreateProjectile()
     {
         if (_projectilePrefab == null)

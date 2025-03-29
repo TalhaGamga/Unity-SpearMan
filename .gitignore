@@ -1,5 +1,6 @@
 # Ignore the PaidAssets folder
 PaidAssets/
+FreeAssets/
 
 # =============== #
 # Unity Generated #
