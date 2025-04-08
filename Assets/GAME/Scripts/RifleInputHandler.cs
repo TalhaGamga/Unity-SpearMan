@@ -11,19 +11,17 @@ public class RifleInputHandler : IInputHandler
 
     public void BindInputs()
     {
-        _promptReceiver.OnPrimaryCombatInput += _rifleCombat.Fire;
-        _promptReceiver.OnSecondaryCombatInput += _rifleCombat.Reload;
+        _promptReceiver.OnPrimaryCombatInput += _rifleCombat.AttemptFire;
         _promptReceiver.OnPrimaryCombatCancel += _rifleCombat.StopFiring;
         _promptReceiver.OnReloadInput += _rifleCombat.Reload;
-        _promptReceiver.OnAimInput += _rifleCombat.Aim;
+        _promptReceiver.OnAimInput += _rifleCombat.TakeAim;
     }
 
     public void UnbindInputs()
     {
-        _promptReceiver.OnPrimaryCombatInput -= _rifleCombat.Fire;
-        _promptReceiver.OnSecondaryCombatInput -= _rifleCombat.Reload;
+        _promptReceiver.OnPrimaryCombatInput -= _rifleCombat.AttemptFire;
         _promptReceiver.OnPrimaryCombatCancel -= _rifleCombat.StopFiring;
         _promptReceiver.OnReloadInput -= _rifleCombat.Reload;
-        _promptReceiver.OnAimInput -= _rifleCombat.Aim;
+        _promptReceiver.OnAimInput -= _rifleCombat.TakeAim;
     }
 }

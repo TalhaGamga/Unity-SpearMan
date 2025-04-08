@@ -9,4 +9,6 @@ public static class GameObjectExtensions
 
         return component;
     }
+
+    public static T OrNull<T>(this T obj) where T : Object => obj ? obj : null;
 }

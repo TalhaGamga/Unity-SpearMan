@@ -1,16 +1,11 @@
 using System;
 using UnityEngine;
-using DG.Tweening;
-using System.Collections.Generic;
 
 [CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/RecoilSystem")]
 public class RecoilSystemSO : ScriptableObject, IRecoilSystem
 {
-    public Action<float, float> OnKickback { get; set; }
+    public event Action<float, float> OnKickback;
 
-    private List<IKickbackReceiver> _kickbackReceivers;
-
-    private Transform _firearmTransform;
     private float _lastTimeFired = 0f;
     private float _recoilTimer = 0f;
     private float _currentRecoil = 0f;
@@ -23,21 +18,14 @@ public class RecoilSystemSO : ScriptableObject, IRecoilSystem
     private float _recoveryDelay;
     private bool _isFirstShot = true;
 
-    public void Init(Transform firearmTransform, List<IKickbackReceiver> kickbackReceivers)
+    public void Init()
     {
-        _firearmTransform = firearmTransform;
         _lastTimeFired = 0f;
         _recoilTimer = 0f;
         _currentRecoil = 0f;
         _recoilTimer = 0f;
+        _recoveryDelay = 0f;
         _isFirstShot = true;
-
-        _kickbackReceivers = kickbackReceivers;
-
-        foreach (var receiver in _kickbackReceivers)
-        {
-            OnKickback += receiver.ApplyKickback;
-        }
     }
 
     public void KickBack()
@@ -65,16 +53,8 @@ public class RecoilSystemSO : ScriptableObject, IRecoilSystem
         float recoilStrength = Mathf.Lerp(0.1f, _maxRecoil, (_currentRecoil / _maxRecoil) * 0.01f);
         float punchStrength = recoilStrength * 0.5f;
 
-        _firearmTransform.DOShakePosition(_shakeDuration, punchStrength, 10, 90, false, true)
-            .SetEase(Ease.OutQuad);
-
         _recoveryDelay = Mathf.Lerp(0.1f, 0.6f, frequencyFactor);
 
         OnKickback?.Invoke(recoilStrength, _recoveryDelay);
-    }
-
-    public void RecoveryCurrentRecoil()
-    {
-        _currentRecoil = Mathf.Lerp(_currentRecoil, 0, _recoveryDelay * 0.05f);
     }
 }

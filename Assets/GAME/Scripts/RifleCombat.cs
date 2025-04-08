@@ -1,5 +1,7 @@
-using System.Collections.Generic;
+using System;
+using System.Collections;
 using UnityEngine;
+using DG.Tweening;
 
 public class RifleCombat : IRifleCombat
 {
@@ -9,79 +11,111 @@ public class RifleCombat : IRifleCombat
 
     #region PRIVATE
     private IRifle _rifle;
-    private IHumanoidCombatPromptReceiver _promptReceiver;
 
-    private IFireSystem _fireSystem;
-    private IAmmoSystem _ammoSystem;
-    private IAimSystem _aimSystem;
-    private IProjectileSystem _projectileSystem;
-    private IBulletDamageDealerSystem _damageDealerSystem;
+    private IFireTriggerSystem _fireTriggerSystem;
     private IRecoilSystem _recoilSystem;
+    private IAimSystem _aimSystem;
+    private IAmmoSystem _ammoSystem;
+    private IProjectileSystem _projectileSystem;
+    private IBulletTrail _bulletTrail;
+    private ICameraController _cameraController;
+
+    private Transform _firePoint;
+    private Transform _rifleTransform;
 
     private RifleInputHandler _inputHandler;
     private CombatManager _combatManager;
-    private Transform _rifleTransform;
     private Transform _characterModelTransform;
 
-    private bool _isHoldingFire;
-    private float _fireCooldown;
+    private bool _isHoldingFire = false;
+
+    private event Action onProjectileFired;
+
+    private float _recoilStrength;
+    private float _recoilRecoveryDelay;
     #endregion
 
     public RifleCombat(IRifle rifle)
     {
-        _fireSystem = rifle.FireSystem;
-        _ammoSystem = rifle.AmmoSystem;
-        _aimSystem = rifle.AimSystem;
-        _projectileSystem = rifle.ProjectileSystem;
-        _damageDealerSystem = rifle.DamageDealerSystem;
-        _rifleTransform = rifle.WeaponTransform;
-        _recoilSystem = rifle.RecoilSystem;
-
         _rifle = rifle;
+
+        _fireTriggerSystem = rifle.FireSystem;
+        _recoilSystem = rifle.RecoilSystem;
+        _aimSystem = rifle.AimSystem;
+        _ammoSystem = rifle.AmmoSystem;
+        _projectileSystem = rifle.ProjectileSystem;
+        _bulletTrail = rifle.BulletTrail;
+        _rifleTransform = _rifle.WeaponTransform;
     }
 
-    public void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver)
+    public void Init(IHumanoidCombatPromptReceiver promptReceiver, CombatManager combatManager)
     {
-        _combatManager = combatManager;
-        _characterModelTransform = combatManager.characterModelTransform;
-
-        _promptReceiver = promptReceiver;
         _inputHandler = new RifleInputHandler(this, promptReceiver);
-        _aimSystem.Init(_rifleTransform, Camera.main);
-        _fireSystem.Init();
+        _combatManager = combatManager;
+
         _projectileSystem.Init();
-        _recoilSystem.Init(_rifle.WeaponTransform, new List<IKickbackReceiver>() { _aimSystem });
+        _fireTriggerSystem.Init();
+        _aimSystem.Init(Camera.main);
+        _recoilSystem.Init();
+        _ammoSystem.Init();
+
+        _characterModelTransform = combatManager._characterModelTransform;
+        _firePoint = _rifle.FirePoint;
+        ServiceLocator.ForSceneOf(_combatManager).Get<ICameraManager>(out ICameraManager cameraManager); //CONTINUE
+        cameraManager.SetCameraController(new FirearmCameraController());
+    }
+
+    public void Enable()
+    {
+        _fireTriggerSystem.OnFireAttempt += _ammoSystem.TryConsumeAmmo;
+        _ammoSystem.OnAmmoConsumed += fireProjectile;
+        _ammoSystem.OnReloadStarted += handleReloadTimer;
+        _aimSystem.OnAiming += handleAimRotation;
+
+        onProjectileFired += _recoilSystem.KickBack;
+        _recoilSystem.OnKickback += onKickback;
+        _recoilSystem.OnKickback += CursorManager.Instance.AnimateFiring;
+        _projectileSystem.OnProjectileGatheredInfo += distributeInfoOnProjectileGathered;
 
         _inputHandler.BindInputs();
+
+        CursorManager.Instance?.SetFirearmCursor(_rifle.FirearmCursorData);
+    }
+
+    public void Disable()
+    {
+        _fireTriggerSystem.OnFireAttempt -= _ammoSystem.TryConsumeAmmo;
+        _ammoSystem.OnAmmoConsumed -= fireProjectile;
+        _ammoSystem.OnReloadStarted -= handleReloadTimer;
+        _aimSystem.OnAiming -= handleAimRotation;
+
+        onProjectileFired -= _recoilSystem.KickBack;
+        _recoilSystem.OnKickback -= onKickback;
+        _recoilSystem.OnKickback -= CursorManager.Instance.AnimateFiring;
+        _projectileSystem.OnProjectileGatheredInfo -= distributeInfoOnProjectileGathered;
+        _inputHandler.UnbindInputs();
     }
 
     public void Tick()
     {
-        if (_isHoldingFire)
-        {
-            handleAutomaticFire();
-        }
-
-        else
-        {
-            _aimSystem.RecoveryKickback();
-            _recoilSystem.RecoveryCurrentRecoil();
-        }
-
-        handleRotation();
+        _aimSystem.Tick();
+        _fireTriggerSystem.Tick();
+        handleRecoilRecovery();
     }
 
     public void FixedTick()
     {
     }
 
-    public void Fire()
+    public void AttemptFire()
     {
+        _fireTriggerSystem.AttemptFire();
         _isHoldingFire = true;
     }
 
     public void StopFiring()
     {
+        _fireTriggerSystem.StopFire();
         _isHoldingFire = false;
     }
 
@@ -90,51 +124,75 @@ public class RifleCombat : IRifleCombat
         _ammoSystem.Reload();
     }
 
-    public void Aim(Vector2 aimInput)
+    public void TakeAim(Vector2 aimInput)
     {
-        _aimSystem.UpdateAim(aimInput);
+        _aimSystem.TakeAimInput(aimInput, _rifleTransform);
     }
 
-    public void End()
+    private void fireProjectile()
     {
-        _inputHandler.UnbindInputs();
+        IProjectile projectile = _projectileSystem.CreateProjectile();
+        projectile.Fire(_firePoint.position, _firePoint.forward, 0);
+
+        onProjectileFired.Invoke();
     }
 
-    private void handleAutomaticFire()
+    private void handleAimRotation(Vector2 direction)
     {
-        if (_fireCooldown > 0)
-        {
-            _fireCooldown -= Time.deltaTime;
-            return;
-        }
-
-        TryFire();
-    }
-
-    private void TryFire()
-    {
-        if (!_ammoSystem.IsReloading && _ammoSystem.HasAmmo && _fireSystem.CanFire)
-        {
-            IProjectile projectile = _projectileSystem.CreateProjectile();
-            _fireSystem.Fire(projectile, _rifle.FirePoint.position, _rifle.FirePoint.forward);
-            _fireCooldown = _fireSystem.FireRate;
-        }
-    }
-
-    private void handleRotation()
-    {
-        Quaternion aimRotation = _aimSystem.GetAimRotation();
         bool isFlipped = _characterModelTransform.localScale.x < 0;
+        float angle = Mathf.Atan2(direction.y + _recoilStrength, direction.x) * Mathf.Rad2Deg;
 
         if (isFlipped)
         {
-            aimRotation = Quaternion.Euler(aimRotation.eulerAngles.x, aimRotation.eulerAngles.y, aimRotation.eulerAngles.z + 180f);
+            angle += 180f;
         }
 
         float dot = Vector3.Dot(_rifle.WeaponTransform.right, _characterModelTransform.right);
+        _rifleTransform.rotation = Quaternion.Euler((dot > 0 ? 0f : 180f), 0f, angle * (dot < 0 ? -1 : +1));
+    }
 
-        _rifleTransform.localScale = new Vector3(1f, (dot < 0) ? -1f : 1f, 1f);
+    private void handleReloadTimer(float reloadTime)
+    {
+        _combatManager.StartCoroutine(reloadCoroutine(reloadTime));
+    }
 
-        _rifleTransform.rotation = aimRotation;
+    private IEnumerator reloadCoroutine(float reloadTime)
+    {
+        yield return new WaitForSeconds(reloadTime);
+        _ammoSystem.FinishReload();
+    }
+
+    private void distributeInfoOnProjectileGathered(ProjectileGatheredInfo info)
+    {
+        _bulletTrail.VisualizeFire(info.FirePoint, info.EndPoint);
+    }
+
+    private void onKickback(float recoilStrength, float recoveryDelay)
+    {
+        _rifleTransform.DOKill();
+
+        Sequence recoilSequence = DOTween.Sequence();
+
+        recoilSequence.Append(_rifleTransform.DOScale(new Vector3(0.95f,
+                                                                  1.05f,
+                                                                  1f), 0.05f)
+            .SetEase(Ease.OutQuad));
+
+        recoilSequence.Join(_rifleTransform.DOPunchPosition(Vector3.left * recoilStrength * 0.1f, 0.1f, 10, 1f)
+            .SetEase(Ease.OutQuad));
+
+        recoilSequence.Append(_rifleTransform.DOScale(new Vector3(1, 1, 1), recoveryDelay * 0.5f)
+            .SetEase(Ease.OutElastic));
+
+        recoilSequence.Play();
+
+        _recoilStrength = recoilStrength;
+        _recoilRecoveryDelay = recoveryDelay;
+
+    }
+
+    private void handleRecoilRecovery()
+    {
+        _recoilStrength = Mathf.Lerp(_recoilStrength, 0, _recoilRecoveryDelay * 0.05f);
     }
 }

@@ -2,33 +2,40 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/FireSystem")]
-public class FireSystemSO : ScriptableObject, IFireSystem
+public class FireSystemSO : ScriptableObject, IFireTriggerSystem
 {
     public event Action OnFired;
+    public event Action OnFireAttempt;
+
     public float FireRate => _fireRate;
     public bool CanFire => Time.time >= _lastFireTime + _fireRate;
 
     [SerializeField] private float _fireRate = 0.2f;
-    [SerializeField] private float projectileSpeed = 50f;
-    [SerializeField] private SoundData soundData;
 
     private float _lastFireTime = 0f;
+    private bool _isTryingFire;
 
     public void Init()
     {
         _lastFireTime = 0f;
     }
 
-    public void Fire(IProjectile Projectile, Vector3 Origin, Vector3 Direction)
+    public void AttemptFire()
     {
-        _lastFireTime = Time.time;
+        _isTryingFire = true;
+    }
 
-        Projectile.Fire(Origin, Direction, projectileSpeed);
+    public void StopFire()
+    {
+        _isTryingFire = false;
+    }
 
-        OnFired?.Invoke();
-
-        SoundManager.Instance.CreateSoundBuilder()
-        .WithRandomPitch(-0.25f, 0.25f)
-        .Play(soundData);
+    public void Tick()
+    {
+        if (_isTryingFire && CanFire)
+        {
+            _lastFireTime = Time.time;
+            OnFireAttempt?.Invoke();
+        }
     }
 }

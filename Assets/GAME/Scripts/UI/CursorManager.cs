@@ -13,9 +13,9 @@ public class CursorManager : PersistentSingleton<CursorManager>
         _cursorTicker = _firearmCursorHandler;
     }
 
-    public void AnimateFiring(float recoilAmount, float recoveryTime)
+    public void AnimateFiring(float recoilAmount, float recoveryDelay)
     {
-        _firearmCursorHandler.AnimateRecoil(recoilAmount, recoveryTime);
+        _firearmCursorHandler.AnimateRecoil(recoilAmount, recoveryDelay);
     }
 
     private void Update()

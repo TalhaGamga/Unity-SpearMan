@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class CombatManager : MonoBehaviour, ICombatManager
 {
-    public Transform characterModelTransform;
+    public Transform _characterModelTransform;
 
     public float CombatSpeedModifier { get; set; }
     public float DamageModifier { get; set; }
@@ -23,6 +23,7 @@ public class CombatManager : MonoBehaviour, ICombatManager
     private void OnDisable()
     {
         EventBus.OnItemUsed -= onItemUsed;
+        currentCombat?.Disable();
     }
 
     private void Update()
@@ -37,8 +38,10 @@ public class CombatManager : MonoBehaviour, ICombatManager
 
     public void SetCombat(ICombatBase newCombat)
     {
-        currentCombat?.End();
-        newCombat?.Init(this, _promptReceiver);
+        currentCombat?.Disable();
+
+        newCombat?.Init(_promptReceiver, this);
+        newCombat?.Enable();
         currentCombat = newCombat;
     }
 
@@ -46,7 +49,7 @@ public class CombatManager : MonoBehaviour, ICombatManager
     {
         if (currentCombat != null && currentCombat.Equals(combat))
         {
-            currentCombat?.End();
+            currentCombat?.Disable();
             currentCombat = null;
         }
     }

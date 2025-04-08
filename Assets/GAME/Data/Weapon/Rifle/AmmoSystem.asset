@@ -12,6 +12,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af731d96859682a49be0602c75e163c4, type: 3}
   m_Name: AmmoSystem
   m_EditorClassIdentifier: 
-  _currentAmmo: 150
+  _currentAmmo: 73
   maxAmmo: 150
   reloadTime: 3
+  ammoConsumeSound:
+    clip: {fileID: 8300000, guid: 46da252bbc68e0c4d845b50460086f24, type: 3}
+    mixerGroup: {fileID: 0}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 0
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0
+  reloadSound:
+    clip: {fileID: 8300000, guid: dfe231a54fefc5b4f84531f5c820b9a8, type: 3}
+    mixerGroup: {fileID: 0}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 0
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0

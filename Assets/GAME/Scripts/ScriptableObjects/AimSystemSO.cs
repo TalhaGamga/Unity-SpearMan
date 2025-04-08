@@ -1,51 +1,37 @@
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/AimSystem")]
 public class AimSystemSO : ScriptableObject, IAimSystem
 {
     private Vector3 _aimDirection = Vector3.right;
-    private Transform _weaponTransform;
     private Camera _mainCamera;
     private Vector3 _worldMousePos;
     private float _kickBack;
     private float _kickbackDelay;
 
-    public void Init(Transform weaponTransform, Camera camera)
+    public event Action<Vector2> OnAiming;
+
+    public void Init(Camera camera)
     {
-        _weaponTransform = weaponTransform;
         _mainCamera = camera;
         _kickBack = 0;
         _kickbackDelay = 0;
     }
 
-    public void UpdateAim(Vector2 aimTarget)
+    public void TakeAimInput(Vector2 aimTarget, Transform weapon)
     {
-        float zDepth = Mathf.Abs(_mainCamera.transform.position.z - _weaponTransform.position.z);
+        float zDepth = Mathf.Abs(_mainCamera.transform.position.z - weapon.position.z);
 
         _worldMousePos = _mainCamera.ScreenToWorldPoint(new Vector3(aimTarget.x, aimTarget.y, zDepth));
 
-        Vector2 weaponPos = new Vector2(_weaponTransform.position.x, _weaponTransform.position.y);
+        Vector2 weaponPos = new Vector2(weapon.position.x, weapon.position.y);
 
-        Vector2 direction = (_worldMousePos - (Vector3)weaponPos).normalized;
-
-        _aimDirection = direction;
+        _aimDirection = (_worldMousePos - (Vector3)weaponPos).normalized;
     }
 
-    public Quaternion GetAimRotation()
+    public void Tick()
     {
-        float angle = Mathf.Atan2(_aimDirection.y + _kickBack, _aimDirection.x) * Mathf.Rad2Deg;
-
-        return Quaternion.Euler(0, 0, angle);
-    }
-
-    public void ApplyKickback(float strength, float kickbackDelay)
-    {
-        _kickBack = strength;
-        _kickbackDelay = kickbackDelay;
-    }
-
-    public void RecoveryKickback()
-    {
-        _kickBack = Mathf.Lerp(_kickBack, 0, _kickbackDelay * 0.05f);
+        OnAiming?.Invoke(_aimDirection);
     }
 }

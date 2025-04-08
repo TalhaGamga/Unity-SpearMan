@@ -5,7 +5,6 @@ using UnityEngine;
 public class HitscanProjectile : ScriptableObject, IProjectile
 {
     public event Action<ProjectileGatheredInfo> OnProjectileFiredAndHit;
-
     [SerializeField] private float range = 100f;
 
     public void Fire(Vector3 origin, Vector3 direction, float speed)
@@ -14,7 +13,7 @@ public class HitscanProjectile : ScriptableObject, IProjectile
 
         if (hit.collider != null)
         {
-            Debug.Log($"Hitscan Hit: {hit.collider.gameObject.name}");
+            //Debug.Log($"Hitscan Hit: {hit.collider.gameObject.name}");
         }
 
         Vector3 endPoint = hit.collider != null ? hit.point : origin + direction * range;

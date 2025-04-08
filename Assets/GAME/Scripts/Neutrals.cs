@@ -23,8 +23,9 @@ public interface ICombatManager
 
 public interface ICombatBase : ITickable, IFixedTickable
 {
-    void Init(CombatManager combatManager, IHumanoidCombatPromptReceiver promptReceiver);
-    void End();
+    void Init(IHumanoidCombatPromptReceiver promptReceiver, CombatManager combatManager);
+    void Enable();
+    void Disable();
 }
 
 public interface ICombat<T> : ICombatBase where T : IWeapon
@@ -34,29 +35,29 @@ public interface ICombat<T> : ICombatBase where T : IWeapon
 
 public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm
 {
-    void Fire();
+    void AttemptFire();
     void StopFiring();
     void Reload();
-    void Aim(Vector2 aimInput);
+    void TakeAim(Vector2 aimInput);
 }
 
 public interface IRifleCombat : IFirearmCombat<IRifle> { }
 
-public interface IWeapon : IEquipable, ITickable, IFixedTickable
+public interface IWeapon : IEquipable
 {
-    public Transform WeaponTransform { get; }
     void SetCombat(ICombatManager combatManager);
+    public Transform WeaponTransform { get; }
 }
 
 public interface IFirearm : IWeapon
 {
+    public FirearmCursorDataSO FirearmCursorData { get; }
     public Transform FirePoint { get; }
-    public IFireSystem FireSystem { get; }
+    public IFireTriggerSystem FireSystem { get; }
     public IRecoilSystem RecoilSystem { get; }
     public IAimSystem AimSystem { get; }
     public IAmmoSystem AmmoSystem { get; }
     public IProjectileSystem ProjectileSystem { get; }
-    public IBulletDamageDealerSystem DamageDealerSystem { get; }
     public IBulletTrail BulletTrail { get; }
 }
 
@@ -209,14 +210,15 @@ public interface IInventoryManager
     public Action OnInventoryLoaded { get; set; }
 }
 
-public interface IFireSystem
+public interface IFireTriggerSystem : ITickable
 {
-    public event Action OnFired;
+    public event Action OnFireAttempt;
     public void Init();
     public bool CanFire { get; }
     public float FireRate { get; }
 
-    void Fire(IProjectile projectile, Vector3 origin, Vector3 direction);
+    void AttemptFire();
+    void StopFire();
     //public Action OnMissed { get; set; }
 }
 
@@ -227,22 +229,19 @@ public interface IDamagable
 
 public interface IAmmoSystem
 {
-    event Action<bool> OnReloadStateChanged;
     event Action<float> OnReloadStarted;
     event Action OnAmmoConsumed;
-    public bool IsReloading { get; }
-    public bool HasAmmo { get; }
-    void ConsumeAmmo();
+    void Init();
+    void TryConsumeAmmo();
     void Reload();
     void FinishReload();
 }
 
 public interface IRecoilSystem
 {
-    void Init(Transform firearmTransform, List<IKickbackReceiver> kickbackReceivers);
+    void Init();
     void KickBack();
-    void RecoveryCurrentRecoil();
-    public Action<float, float> OnKickback { get; set; }
+    event Action<float, float> OnKickback;
 }
 
 public interface IKickbackReceiver
@@ -250,12 +249,11 @@ public interface IKickbackReceiver
     void ApplyKickback(float strength, float recoveryDelay);
 }
 
-public interface IAimSystem : IKickbackReceiver
+public interface IAimSystem : ITickable
 {
-    void Init(Transform weaponTransform, Camera camera);
-    void UpdateAim(Vector2 aimTarget);
-    void RecoveryKickback();
-    Quaternion GetAimRotation();
+    public event Action<Vector2> OnAiming;
+    void Init(Camera camera);
+    void TakeAimInput(Vector2 aimTarget, Transform weapon);
 }
 
 public interface IProjectileSystem
@@ -316,11 +314,27 @@ public interface IBulletTrail
 
 public interface IBulletDamageDealerSystem
 {
-    public void DealDamage(IDamagable target, float damage, Vector3 hitPoint, float critRate, float impulse);
+    void DealDamage(IDamagable target, float damage, Vector3 hitPoint, float critRate, float impulse);
 }
 
-public interface ICursor
+public interface ICameraController
 {
-    public Sprite Sprite { get; }
-    public Vector2 HotSpot { get; }
+    void Tick();
+    void OnActivate();
+    void OnDeactivate();
+    void ApplyImpulse(Vector2 direction, float strength);
+    void Shake(float intensity, float duration);
+    void SetZoom(float amount, float duration);
+}
+
+
+public interface ICameraManager
+{
+    ICameraController CurrentController { get; }
+
+    void SetController(ICameraController controller);
+    void Shake(float intensity, float duration);
+    void ApplyImpulse(Vector2 direction, float strength);
+    void SetZoom(float amount, float duration);
+    void SetCameraController(ICameraController controller);
 }

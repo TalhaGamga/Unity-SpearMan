@@ -20,7 +20,6 @@ public class SpearCombat : ICombat<ISpear>
     public void Tick()
     {
         Debug.Log("Spear Combat");
-        Weapon?.Tick();
     }
 
     public void FixedTick()
@@ -30,5 +29,28 @@ public class SpearCombat : ICombat<ISpear>
     public void End()
     {
         Debug.Log("Spear combat has ended");
+    }
+
+    public void Init()
+    {
+    }
+
+    public void Init(IHumanoidCombatPromptReceiver promptReceiver)
+    {
+    }
+
+    public void Enable()
+    {
+        throw new System.NotImplementedException();
+    } 
+
+    public void Disable()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Init(IHumanoidCombatPromptReceiver promptReceiver, CombatManager combatManager)
+    {
+        throw new System.NotImplementedException();
     }
 }
