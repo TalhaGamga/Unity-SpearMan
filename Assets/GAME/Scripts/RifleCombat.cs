@@ -18,7 +18,6 @@ public class RifleCombat : IRifleCombat
     private IAmmoSystem _ammoSystem;
     private IProjectileSystem _projectileSystem;
     private IBulletTrail _bulletTrail;
-    private ICameraController _cameraController;
 
     private Transform _firePoint;
     private Transform _rifleTransform;
@@ -61,8 +60,6 @@ public class RifleCombat : IRifleCombat
 
         _characterModelTransform = combatManager._characterModelTransform;
         _firePoint = _rifle.FirePoint;
-        ServiceLocator.ForSceneOf(_combatManager).Get<ICameraManager>(out ICameraManager cameraManager); //CONTINUE
-        cameraManager.SetCameraController(new FirearmCameraController());
     }
 
     public void Enable()
@@ -188,7 +185,6 @@ public class RifleCombat : IRifleCombat
 
         _recoilStrength = recoilStrength;
         _recoilRecoveryDelay = recoveryDelay;
-
     }
 
     private void handleRecoilRecovery()

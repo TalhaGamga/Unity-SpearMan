@@ -317,24 +317,8 @@ public interface IBulletDamageDealerSystem
     void DealDamage(IDamagable target, float damage, Vector3 hitPoint, float critRate, float impulse);
 }
 
-public interface ICameraController
+public interface ICameraTargeting
 {
-    void Tick();
-    void OnActivate();
-    void OnDeactivate();
-    void ApplyImpulse(Vector2 direction, float strength);
-    void Shake(float intensity, float duration);
-    void SetZoom(float amount, float duration);
-}
-
-
-public interface ICameraManager
-{
-    ICameraController CurrentController { get; }
-
-    void SetController(ICameraController controller);
-    void Shake(float intensity, float duration);
-    void ApplyImpulse(Vector2 direction, float strength);
-    void SetZoom(float amount, float duration);
-    void SetCameraController(ICameraController controller);
+    Transform GetFollowTarget();
+    Transform GetLookAtTarget(); // Can be null
 }

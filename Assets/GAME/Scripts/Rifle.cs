@@ -12,8 +12,6 @@ public class Rifle : MonoBehaviour, IRifle
     public Transform WeaponTransform => _transform;
     public FirearmCursorDataSO FirearmCursorData => _firearmCursorData;
 
-    private ICameraController _cameraController;
-
     [Header("Systems")]
     [SerializeField] private FireSystemSO fireSystem;
     [SerializeField] private RecoilSystemSO recoilSystem;
