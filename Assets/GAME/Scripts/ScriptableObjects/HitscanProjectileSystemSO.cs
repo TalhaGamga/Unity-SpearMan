@@ -6,7 +6,7 @@ public class HitscanProjectileSystemSO : ProjectileSystemBase
 {
     [SerializeField] private HitscanProjectile _hitscanProjectile;
 
-    public override event Action<ProjectileGatheredInfo> OnProjectileGatheredInfo;
+    public override event Action<ProjectileHitInfo> OnProjectileGatheredInfo;
 
     public override void Init()
     {

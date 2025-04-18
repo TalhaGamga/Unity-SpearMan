@@ -1,11 +1,16 @@
 using UnityEngine;
 
-public class CursorManager : PersistentSingleton<CursorManager>
+public class CursorManager : MonoBehaviour
 {
     [Header("Cursor Modules")]
     [SerializeField] private FirearmCursorHandler _firearmCursorHandler;
 
     private ITickable _cursorTicker;
+
+    private void Awake()
+    {
+        ServiceLocator.Global.Register<CursorManager>(this);
+    }
 
     public void SetFirearmCursor(FirearmCursorDataSO cursorDataSO)
     {

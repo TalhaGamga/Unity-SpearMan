@@ -1,3 +1,4 @@
+using R3;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -222,11 +223,6 @@ public interface IFireTriggerSystem : ITickable
     //public Action OnMissed { get; set; }
 }
 
-public interface IDamagable
-{
-    void TakeDamage(float damage);
-}
-
 public interface IAmmoSystem
 {
     event Action<float> OnReloadStarted;
@@ -258,7 +254,7 @@ public interface IAimSystem : ITickable
 
 public interface IProjectileSystem
 {
-    public event Action<ProjectileGatheredInfo> OnProjectileGatheredInfo;
+    public event Action<ProjectileHitInfo> OnProjectileGatheredInfo;
     public void Init();
     IProjectile CreateProjectile();
 }
@@ -269,8 +265,15 @@ public interface IHitscanProjectileSystem : IProjectileSystem
 public interface IProjectile
 {
     //event Action OnHit;
-    event Action<ProjectileGatheredInfo> OnProjectileFiredAndHit;
+    event Action<ProjectileHitInfo> OnProjectileFiredAndHit;
     void Fire(Vector3 origin, Vector3 direction, float speed);
+}
+
+public struct ProjectileHitInfo
+{
+    public Vector3 FirePoint;
+    public Vector3 EndPoint;
+    public GameObject HitObject;
 }
 
 public interface IPhysicalProjectile : IProjectile
@@ -314,7 +317,7 @@ public interface IBulletTrail
 
 public interface IBulletDamageDealerSystem
 {
-    void DealDamage(IDamagable target, float damage, Vector3 hitPoint, float critRate, float impulse);
+    void DealDamage(IDamageable target, float damage, Vector3 hitPoint, float critRate, float impulse);
 }
 
 public interface ICameraTargeting
@@ -322,3 +325,41 @@ public interface ICameraTargeting
     Transform GetFollowTarget();
     Transform GetLookAtTarget(); // Can be null
 }
+
+public interface ICameraEffect<T>
+{
+    void Tick(float deltaTime);
+    bool IsFinished { get; }
+    void Apply(T t);
+}
+
+public interface ICameraEffectSystem<T>
+{
+    public List<ICameraEffect<T>> ActiveEffects { get; }
+    void Inject(ICameraEffect<T> effect);
+    void Tick(T t);
+}
+public interface IDamageable
+{
+    void ReceiveDamage(float amount);
+}
+public interface IKnockbackable
+{
+    void ApplyForce(Vector3 vector3);
+}
+
+public interface IDamageEvent
+{
+    void Consume(TargetContext ctx);
+}
+
+public interface IFeedbackEvent
+{
+    void Trigger(TargetContext ctx);
+}
+
+public interface IDamageEventSource
+{
+    Observable<IDamageEvent> Stream(GameObject target);
+}
+

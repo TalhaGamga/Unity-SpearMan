@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "ScriptableObjects/Weapon/Firearm/HitscanProjectile")]
 public class HitscanProjectile : ScriptableObject, IProjectile
 {
-    public event Action<ProjectileGatheredInfo> OnProjectileFiredAndHit;
+    public event Action<ProjectileHitInfo> OnProjectileFiredAndHit;
     [SerializeField] private float range = 100f;
 
     public void Fire(Vector3 origin, Vector3 direction, float speed)
@@ -18,14 +18,8 @@ public class HitscanProjectile : ScriptableObject, IProjectile
 
         Vector3 endPoint = hit.collider != null ? hit.point : origin + direction * range;
 
-        ProjectileGatheredInfo info = new ProjectileGatheredInfo() { FirePoint = origin, EndPoint = endPoint };
+        ProjectileHitInfo info = new ProjectileHitInfo() { FirePoint = origin, EndPoint = endPoint, HitObject = hit.collider.gameObject };
 
         OnProjectileFiredAndHit?.Invoke(info);
     }
-}
-
-public struct ProjectileGatheredInfo
-{
-    public Vector3 FirePoint;
-    public Vector3 EndPoint;
 }

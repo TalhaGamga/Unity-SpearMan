@@ -71,12 +71,15 @@ public class RifleCombat : IRifleCombat
 
         onProjectileFired += _recoilSystem.KickBack;
         _recoilSystem.OnKickback += onKickback;
-        _recoilSystem.OnKickback += CursorManager.Instance.AnimateFiring;
-        _projectileSystem.OnProjectileGatheredInfo += distributeInfoOnProjectileGathered;
+
+        ServiceLocator.Global.Get<CursorManager>(out CursorManager cursorManager);
+        cursorManager.SetFirearmCursor(_rifle.FirearmCursorData);
+        _recoilSystem.OnKickback += cursorManager.AnimateFiring;
+
+
+        _projectileSystem.OnProjectileGatheredInfo += distributeProjectileHitInfo;
 
         _inputHandler.BindInputs();
-
-        CursorManager.Instance?.SetFirearmCursor(_rifle.FirearmCursorData);
     }
 
     public void Disable()
@@ -88,8 +91,11 @@ public class RifleCombat : IRifleCombat
 
         onProjectileFired -= _recoilSystem.KickBack;
         _recoilSystem.OnKickback -= onKickback;
-        _recoilSystem.OnKickback -= CursorManager.Instance.AnimateFiring;
-        _projectileSystem.OnProjectileGatheredInfo -= distributeInfoOnProjectileGathered;
+
+        ServiceLocator.Global.Get<CursorManager>(out CursorManager cursorManager);
+        _recoilSystem.OnKickback -= cursorManager.AnimateFiring;
+
+        _projectileSystem.OnProjectileGatheredInfo -= distributeProjectileHitInfo;
         _inputHandler.UnbindInputs();
     }
 
@@ -159,9 +165,14 @@ public class RifleCombat : IRifleCombat
         _ammoSystem.FinishReload();
     }
 
-    private void distributeInfoOnProjectileGathered(ProjectileGatheredInfo info)
+    private void distributeProjectileHitInfo(ProjectileHitInfo info)
     {
         _bulletTrail.VisualizeFire(info.FirePoint, info.EndPoint);
+        if (info.HitObject.TryGetComponent<ReactiveDamageDispatcher>(out ReactiveDamageDispatcher damageDispatcher))
+        {
+            var source = new BulletDamageEventSource(10, (info.HitObject.transform.position - info.EndPoint).normalized * 25, "FX");
+            damageDispatcher.Apply(source, info.HitObject);
+        }
     }
 
     private void onKickback(float recoilStrength, float recoveryDelay)
