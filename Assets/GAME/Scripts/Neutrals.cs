@@ -5,6 +5,8 @@ using UnityEngine;
 
 public interface IMovementManager
 {
+    public Transform CharacterModelTransform { get; }
+    public Observable<MovementSnapshot> Stream { get; }
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     bool IsGrounded();
@@ -13,6 +15,7 @@ public interface IMovementManager
 
 public interface ICombatManager
 {
+    public Observable<CombatSnapshot> Stream { get; }
     void SetCombat(ICombatBase newCombat);
     void UnsettleCombat(ICombatBase combat);
     public float CombatSpeedModifier { get; set; }
@@ -72,7 +75,7 @@ public interface ISpear : IWeapon
 
 public interface IMover : ITickable, IFixedTickable
 {
-    void Init(MovementManager movementManager);
+    void Init(IMovementManager movementManager);
     void TriggerJump();
     void CancelJump();
     void End();
@@ -273,6 +276,7 @@ public struct ProjectileHitInfo
 {
     public Vector3 FirePoint;
     public Vector3 EndPoint;
+    public Vector3 Direction;
     public GameObject HitObject;
 }
 
@@ -290,12 +294,6 @@ public interface IInputHandler
 {
     void BindInputs();
     void UnbindInputs();
-}
-
-public interface IAnimatorSystem
-{
-    public void SetAnimationHandler(IAnimationHandler animationHandler);
-    public void InvokeAnimationEvent(string eventName);
 }
 
 public interface IAnimationHandler
@@ -339,6 +337,7 @@ public interface ICameraEffectSystem<T>
     void Inject(ICameraEffect<T> effect);
     void Tick(T t);
 }
+
 public interface IDamageable
 {
     void ReceiveDamage(float amount);
@@ -348,18 +347,17 @@ public interface IKnockbackable
     void ApplyForce(Vector3 vector3);
 }
 
-public interface IDamageEvent
+public interface IDestructible
+{
+    void Break();
+}
+
+public interface IReactiveEvent
 {
     void Consume(TargetContext ctx);
 }
 
-public interface IFeedbackEvent
-{
-    void Trigger(TargetContext ctx);
-}
-
 public interface IDamageEventSource
 {
-    Observable<IDamageEvent> Stream(GameObject target);
+    Observable<IReactiveEvent> Stream(GameObject target);
 }
-

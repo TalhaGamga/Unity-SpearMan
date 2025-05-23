@@ -1,4 +1,4 @@
-public sealed class DamageEvent : IDamageEvent
+public sealed class DamageEvent : IReactiveEvent
 {
     private readonly float _amount;
     public DamageEvent(float amount) => _amount = amount;

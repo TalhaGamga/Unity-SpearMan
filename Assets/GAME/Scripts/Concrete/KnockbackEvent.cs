@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public sealed class KnockbackEvent : IDamageEvent
+public sealed class KnockbackEvent : IReactiveEvent
 {
     private readonly Vector3 _direction;
     private readonly float _strength;
@@ -12,6 +12,6 @@ public sealed class KnockbackEvent : IDamageEvent
     public void Consume(TargetContext ctx)
     {
         Debug.Log("Consumed");
-        ctx.Knockbackable?.ApplyForce(_direction);
+        ctx.Knockbackable?.ApplyForce(_direction * _strength);
     }
 }

@@ -5,21 +5,51 @@ using UnityEngine;
 public class HitscanProjectile : ScriptableObject, IProjectile
 {
     public event Action<ProjectileHitInfo> OnProjectileFiredAndHit;
+
     [SerializeField] private float range = 100f;
+    [SerializeField] private LayerMask hitMask3D = ~0;
+    [SerializeField] private LayerMask hitMask2D = ~0;
 
     public void Fire(Vector3 origin, Vector3 direction, float speed)
     {
-        RaycastHit2D hit = Physics2D.Raycast(origin, direction, range);
+        GameObject hitObject = null;
+        Vector3 endPoint = origin + direction * range;
+        float closestDistance = float.MaxValue;
+        Vector3 _direction = Vector3.zero;
 
-        if (hit.collider != null)
+        // 3D Raycast
+        if (Physics.Raycast(origin, direction, out RaycastHit hit3D, range, hitMask3D))
         {
-            //Debug.Log($"Hitscan Hit: {hit.collider.gameObject.name}");
+            hitObject = hit3D.collider.gameObject;
+            endPoint = hit3D.point;
+            closestDistance = hit3D.distance;
+            _direction = direction;
         }
 
-        Vector3 endPoint = hit.collider != null ? hit.point : origin + direction * range;
+        // 2D Raycast
+        RaycastHit2D hit2D = Physics2D.Raycast(origin, direction, range, hitMask2D);
+        if (hit2D.collider != null && hit2D.distance < closestDistance)
+        {
+            hitObject = hit2D.collider.gameObject;
+            endPoint = hit2D.point;
+            closestDistance = hit2D.distance;
+            _direction = direction;
+        }
 
-        ProjectileHitInfo info = new ProjectileHitInfo() { FirePoint = origin, EndPoint = endPoint, HitObject = hit.collider.gameObject };
+        // Construct and dispatch info
+        ProjectileHitInfo info = new ProjectileHitInfo
+        {
+            FirePoint = origin,
+            EndPoint = endPoint,
+            HitObject = hitObject,
+            Direction = _direction
+        };
 
         OnProjectileFiredAndHit?.Invoke(info);
     }
+}
+public enum HitscanMode
+{
+    Use3D,
+    Use2D
 }

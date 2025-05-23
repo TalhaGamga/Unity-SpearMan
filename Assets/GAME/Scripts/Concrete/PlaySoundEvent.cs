@@ -1,4 +1,4 @@
-public sealed class PlaySoundEvent : IDamageEvent
+public sealed class PlaySoundEvent : IReactiveEvent
 {
     public void Consume(TargetContext ctx)
     {

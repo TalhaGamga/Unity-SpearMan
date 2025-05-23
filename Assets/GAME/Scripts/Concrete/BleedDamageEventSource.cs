@@ -17,10 +17,10 @@ public sealed class BleedDamageEventSource : IDamageEventSource
         _fx = fx;
     }
 
-    public Observable<IDamageEvent> Stream(GameObject target)
+    public Observable<IReactiveEvent> Stream(GameObject target)
     {
         return Observable.Interval(TimeSpan.FromSeconds(_interval))
             .Take(_ticks)
-            .Select(_ => (IDamageEvent)new DamageEvent(_perTick));
+            .Select(_ => (IReactiveEvent)new DamageEvent(_perTick));
     }
 }

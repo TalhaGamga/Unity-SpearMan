@@ -92,9 +92,6 @@ public class RifleCombat : IRifleCombat
         onProjectileFired -= _recoilSystem.KickBack;
         _recoilSystem.OnKickback -= onKickback;
 
-        ServiceLocator.Global.Get<CursorManager>(out CursorManager cursorManager);
-        _recoilSystem.OnKickback -= cursorManager.AnimateFiring;
-
         _projectileSystem.OnProjectileGatheredInfo -= distributeProjectileHitInfo;
         _inputHandler.UnbindInputs();
     }
@@ -165,12 +162,13 @@ public class RifleCombat : IRifleCombat
         _ammoSystem.FinishReload();
     }
 
-    private void distributeProjectileHitInfo(ProjectileHitInfo info)
+    private void distributeProjectileHitInfo(ProjectileHitInfo info) //Make Here better
     {
         _bulletTrail.VisualizeFire(info.FirePoint, info.EndPoint);
-        if (info.HitObject.TryGetComponent<ReactiveDamageDispatcher>(out ReactiveDamageDispatcher damageDispatcher))
+
+        if (info.HitObject != null && info.HitObject.TryGetComponent<ReactiveDamageDispatcher>(out ReactiveDamageDispatcher damageDispatcher))
         {
-            var source = new BulletDamageEventSource(10, (info.HitObject.transform.position - info.EndPoint).normalized * 25, "FX");
+            var source = new BulletDamageEventSource(10, 10, info.FirePoint, info.Direction, "FX");
             damageDispatcher.Apply(source, info.HitObject);
         }
     }

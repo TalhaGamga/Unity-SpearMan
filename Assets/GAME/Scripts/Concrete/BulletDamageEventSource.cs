@@ -5,19 +5,25 @@ public sealed class BulletDamageEventSource : IDamageEventSource
 {
     private readonly float _damage;
     private readonly Vector3 _force;
+    private readonly float _strength;
     private readonly string _fx;
+    private readonly Vector3 _origin;
+    private readonly Vector3 _direction;
 
-    public BulletDamageEventSource(float damage, Vector3 force, string fx)
+    public BulletDamageEventSource(float damage, float strength, Vector3 origin, Vector3 direction, string fx)
     {
         _damage = damage;
-        _force = force;
+        _strength = strength;
+        _direction = direction;
+        _origin = origin;
         _fx = fx;
+        _force = direction * strength;
     }
 
-    public Observable<IDamageEvent> Stream(GameObject target)
+    public Observable<IReactiveEvent> Stream(GameObject target)
     {
-        Debug.Log("Streaming");
-        return Observable.Return<IDamageEvent>(new DamageEvent(_damage))
-            .Concat(Observable.Return<IDamageEvent>(new KnockbackEvent(_force, 1)));
+        return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
+            .Concat(Observable.Return<IReactiveEvent>(new KnockbackEvent(_direction, _strength))
+            .Concat(Observable.Return<IReactiveEvent>(new BreakEvent())));
     }
 }

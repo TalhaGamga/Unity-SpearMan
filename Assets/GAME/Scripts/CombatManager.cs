@@ -1,8 +1,11 @@
+using R3;
 using UnityEngine;
 
 public class CombatManager : MonoBehaviour, ICombatManager
 {
     public Transform _characterModelTransform;
+    public Observable<CombatSnapshot> Stream => _stream;
+    private readonly Subject<CombatSnapshot> _stream = new();
 
     public float CombatSpeedModifier { get; set; }
     public float DamageModifier { get; set; }

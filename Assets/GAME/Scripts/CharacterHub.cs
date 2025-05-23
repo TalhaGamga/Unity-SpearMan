@@ -1,13 +1,14 @@
+using R3;
 using UnityEngine;
 
 public class CharacterHub : MonoBehaviour
 {
-    IMovementManager movementController;
-    ICombatManager combatManager;
+    [SerializeField] AnimatorSystem _animatorSystem;
+    [SerializeField] MovementManager _movementManager;
+    [SerializeField] CombatManager _combatManager;
 
     private void Start()
     {
-        movementController = GetComponent<MovementManager>();
-        combatManager = GetComponent<CombatManager>();
+        _animatorSystem.RegisterStreams(_movementManager.Stream.AsSystemObservable(),_combatManager.Stream.AsSystemObservable());
     }
 }
