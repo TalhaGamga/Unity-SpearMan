@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour, ICombatManager
+public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider
 {
     public Transform _characterModelTransform;
     public Observable<CombatSnapshot> Stream => _stream;
@@ -13,10 +13,7 @@ public class CombatManager : MonoBehaviour, ICombatManager
     public float AccuracyModifier { get; set; }
     public float CritModifier { get; set; }
 
-    [SerializeField] private CharacterPromptReceiver promptReceiver;
-
     private ICombatBase currentCombat;
-    private IHumanoidCombatPromptReceiver _promptReceiver => promptReceiver;
 
     private void OnEnable()
     {
@@ -43,7 +40,6 @@ public class CombatManager : MonoBehaviour, ICombatManager
     {
         currentCombat?.Disable();
 
-        newCombat?.Init(_promptReceiver, this);
         newCombat?.Enable();
         currentCombat = newCombat;
     }
@@ -63,5 +59,10 @@ public class CombatManager : MonoBehaviour, ICombatManager
         {
             inventoryItem.Use(this);
         }
+    }
+
+    public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
+    {
+        return null;
     }
 }

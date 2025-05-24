@@ -2,13 +2,13 @@
     "name": "InputControls",
     "maps": [
         {
-            "name": "Movement",
-            "id": "fef0d152-28d3-4522-83a6-df812047ed0c",
+            "name": "Player",
+            "id": "706efad1-4e84-4b0c-8a28-a7d0eb7c0873",
             "actions": [
                 {
                     "name": "Move",
                     "type": "Value",
-                    "id": "589a4031-ec70-456d-98cc-d9c27be77d15",
+                    "id": "042c6035-59da-4746-a4ec-cfe68286c7bf",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -17,17 +17,28 @@
                 {
                     "name": "Jump",
                     "type": "Button",
-                    "id": "fe148dfd-abd5-4f12-ab03-e140a005ca11",
+                    "id": "084a31c7-6ce1-416f-bbf5-dc1074f0532a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": true
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
                 {
+                    "name": "",
+                    "id": "6adfea79-f4a9-44ab-902e-b345ce51d539",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
                     "name": "2D Vector",
-                    "id": "4dceb282-2ffa-49f6-acda-e1c879507bfa",
+                    "id": "f845c0b0-d7f7-449b-ac0b-b91f82c48b1e",
                     "path": "2DVector",
                     "interactions": "",
                     "processors": "",
@@ -38,7 +49,7 @@
                 },
                 {
                     "name": "up",
-                    "id": "79608763-ba25-4430-9211-eac73a135ba2",
+                    "id": "3b83e83b-2c30-481b-9490-fc1306ad9753",
                     "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
@@ -49,7 +60,7 @@
                 },
                 {
                     "name": "down",
-                    "id": "0c33d74b-5057-431b-aa6a-c0f36bfaf2f9",
+                    "id": "b0f1c44a-cd98-4d39-bf92-25af53cb668d",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
@@ -60,7 +71,7 @@
                 },
                 {
                     "name": "left",
-                    "id": "ffdc6789-7cf2-4dd2-a167-fb369c0e0f86",
+                    "id": "8b5d2987-0f24-4ef4-928a-04b4681b2833",
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
@@ -71,7 +82,7 @@
                 },
                 {
                     "name": "right",
-                    "id": "213f8ff5-eccb-40c8-acc1-19c90e638b52",
+                    "id": "ccafec5c-75f7-4bfe-bfe7-5e2e12b3718a",
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
@@ -79,85 +90,6 @@
                     "action": "Move",
                     "isComposite": false,
                     "isPartOfComposite": true
-                },
-                {
-                    "name": "",
-                    "id": "3ce61389-dc69-45fd-84f8-f9d6115b004e",
-                    "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Jump",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "Rifle",
-            "id": "285560a3-3fbd-4be3-a7e9-f2e9269b7152",
-            "actions": [
-                {
-                    "name": "Fire",
-                    "type": "Button",
-                    "id": "ca9f4cef-9aba-4421-9dc6-67e495966d01",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Reload",
-                    "type": "Button",
-                    "id": "ea9cce3d-2930-4797-841d-f36c12382800",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Aim",
-                    "type": "PassThrough",
-                    "id": "0f5794cd-ea73-4d17-aa5f-6832ab7b9c1e",
-                    "expectedControlType": "Vector2",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "e27a0a58-2798-44cd-809d-3562075f8d3a",
-                    "path": "<Mouse>/leftButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Fire",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ec025092-f271-43c9-b1ba-9e4dc28f9596",
-                    "path": "<Keyboard>/r",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Reload",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "a65b727a-395a-4b97-891f-22333ecc9a71",
-                    "path": "<Mouse>/position",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Aim",
-                    "isComposite": false,
-                    "isPartOfComposite": false
                 }
             ]
         }

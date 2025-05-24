@@ -1,3 +1,4 @@
+using R3;
 using UnityEngine;
 
 public class SpearCombat : ICombat<ISpear>
@@ -50,6 +51,11 @@ public class SpearCombat : ICombat<ISpear>
     }
 
     public void Init(IHumanoidCombatPromptReceiver promptReceiver, CombatManager combatManager)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
     {
         throw new System.NotImplementedException();
     }

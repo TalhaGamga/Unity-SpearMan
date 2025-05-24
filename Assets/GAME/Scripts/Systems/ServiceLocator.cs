@@ -59,7 +59,11 @@ public class ServiceLocator : MonoBehaviour
             }
 
             var container = new GameObject(k_globalServiceLocatorNamae, typeof(ServiceLocatorGlobal));
-            container.AddComponent<ServiceLocator>();
+
+            if (!container.GetComponent<ServiceLocator>()) // Add Service Locator if no exist
+            {
+                container.AddComponent<ServiceLocator>();
+            }
 
             return _global;
         }

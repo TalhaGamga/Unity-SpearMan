@@ -200,4 +200,9 @@ public class RifleCombat : IRifleCombat
     {
         _recoilStrength = Mathf.Lerp(_recoilStrength, 0, _recoilRecoveryDelay * 0.05f);
     }
+
+    public R3.Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
+    {
+        throw new NotImplementedException();
+    }
 }

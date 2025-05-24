@@ -3,10 +3,28 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public interface IReactiveCapabilityProvider
+{
+    Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability);
+}
+
+public interface IMovementInputReceiver
+{
+    void HandleInput(MovementAction action);
+    void SetMoveInput(Vector2 move);
+}
+
+public interface IMovementStateProvider
+{
+    bool IsGrounded { get; }
+    bool CurrentSpeed { get; }
+}
+
 public interface IMovementManager
 {
     public Transform CharacterModelTransform { get; }
     public Observable<MovementSnapshot> Stream { get; }
+    
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     bool IsGrounded();
@@ -32,7 +50,7 @@ public interface ICombatBase : ITickable, IFixedTickable
     void Disable();
 }
 
-public interface ICombat<T> : ICombatBase where T : IWeapon
+public interface ICombat<T> : IReactiveCapabilityProvider, ICombatBase where T : IWeapon
 {
     public T Weapon { get; }
 }
@@ -73,12 +91,13 @@ public interface ISpear : IWeapon
 {
 }
 
-public interface IMover : ITickable, IFixedTickable
+public interface IMover
 {
     void Init(IMovementManager movementManager);
-    void TriggerJump();
-    void CancelJump();
     void End();
+    public void HandleInput(MovementAction action);
+    void SetMoveInput(Vector2 move);
+    public void UpdateMover(float deltaTime);
 }
 
 public enum StateType
