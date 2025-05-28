@@ -4,41 +4,43 @@ using UnityEngine.InputSystem;
 public class PlayerInputHandler : MonoBehaviour
 {
     [SerializeField] private MovementManager movementManager;
+    [SerializeField] private InputReader _input;
     private IMovementInputReceiver _movementManager => movementManager;
 
     private Vector2 _moveInput;
 
-    public void OnMove(InputAction.CallbackContext ctx)
+    private void Start()
     {
-        Debug.Log("OnMove");
-        _moveInput = ctx.ReadValue<Vector2>();
+        _input.Move += direction => _moveInput = direction;
+        _input.Jump += isJumpKeyPressed =>
+        {
+            if (isJumpKeyPressed)
+            {
+                _movementManager.HandleInput(new MovementAction()
+                { ActionType = MovementActionType.Jump });
+            }
+            else
+            {
+                _movementManager.HandleInput(new MovementAction()
+                { ActionType = MovementActionType.Land });
+            }
+        };
+
+        _input.Enable();
     }
 
-    public void OnJump(InputAction.CallbackContext ctx)
+    public void OnJump(bool isJumping)
     {
-        if (ctx.performed)
-        {
-            var action = new MovementAction(MovementActionType.Jump, ctx);
-            _movementManager.HandleInput(action);
-        }
+
     }
 
     public void OnDash(InputAction.CallbackContext ctx)
     {
-        if (ctx.performed)
-        {
-            var action = new MovementAction(MovementActionType.Dash, ctx);
-            _movementManager.HandleInput(action);
-        }
+
     }
 
     public void OnClimb(InputAction.CallbackContext ctx)
     {
-        if (ctx.performed)
-        {
-            var action = new MovementAction(MovementActionType.Climb, ctx);
-            _movementManager.HandleInput(action);
-        }
     }
 
     private void Update()

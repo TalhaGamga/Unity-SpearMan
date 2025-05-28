@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider
+public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider, IInitializable<CharacterHub>
 {
     public Transform _characterModelTransform;
     public Observable<CombatSnapshot> Stream => _stream;
@@ -64,5 +64,10 @@ public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityP
     public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
     {
         return null;
+    }
+
+    public void Initialize(CharacterHub t)
+    {
+
     }
 }

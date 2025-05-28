@@ -1,8 +1,10 @@
-using UnityEngine.InputSystem;
+using UnityEngine;
 
 public enum MovementActionType
 {
+    Move,
     Jump,
+    Land,
     Dash,
     Climb,
     SwimUp,
@@ -13,11 +15,6 @@ public enum MovementActionType
 public struct MovementAction
 {
     public MovementActionType ActionType;
-    public InputAction.CallbackContext InputContext;
-
-    public MovementAction(MovementActionType actionType, InputAction.CallbackContext ctx)
-    {
-        ActionType = actionType;
-        InputContext = ctx;
-    }
+    public float Duration;
+    public Vector2 Direction;
 }

@@ -3,6 +3,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public interface IInitializable<T>
+{
+    void Initialize(T t);
+}
 public interface IReactiveCapabilityProvider
 {
     Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability);
@@ -17,17 +22,18 @@ public interface IMovementInputReceiver
 public interface IMovementStateProvider
 {
     bool IsGrounded { get; }
-    bool CurrentSpeed { get; }
+    float CurrentSpeed { get; }
 }
 
 public interface IMovementManager
 {
-    public Transform CharacterModelTransform { get; }
+    public Transform CharacterOrientator { get; }
+    public Transform CharacterTranslater { get; }
     public Observable<MovementSnapshot> Stream { get; }
-    
+
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
-    bool IsGrounded();
+    bool GetIsGrounded();
     void SetMover(IMover newMover);
 }
 
@@ -98,6 +104,8 @@ public interface IMover
     public void HandleInput(MovementAction action);
     void SetMoveInput(Vector2 move);
     public void UpdateMover(float deltaTime);
+
+    public Observable<MovementSnapshot> Stream { get; }
 }
 
 public enum StateType

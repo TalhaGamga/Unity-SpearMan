@@ -12,6 +12,7 @@ public readonly struct MovementSnapshot
     public MovementSnapshot(MoveState state, float speed) { State = state; Speed = speed; }
     public static MovementSnapshot Default => new MovementSnapshot(MoveState.Idle, 0);
 }
+
 public readonly struct CombatSnapshot
 {
     public readonly CombatState State; public readonly float Energy;
@@ -26,7 +27,7 @@ public readonly struct ReactionSnapshot
 }
 
 [RequireComponent(typeof(Animator))]
-public sealed class AnimatorSystem : MonoBehaviour
+public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 {
     [Header("Animator parameter names")]
     [SerializeField] string moveStateParam = "MoveState";
@@ -35,8 +36,8 @@ public sealed class AnimatorSystem : MonoBehaviour
     [SerializeField] string energyParam = "Energy";
     [SerializeField] string isHitParam = "IsHit";
 
-    Animator _anim;
-    readonly CompositeDisposable _disposables = new();
+    private Animator _anim;
+    private readonly CompositeDisposable _disposables = new();
 
     void Awake() => _anim = GetComponent<Animator>();
 
@@ -63,7 +64,8 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     void ApplyMovement(in MovementSnapshot s)
     {
-        Debug.Log(s);
+        Debug.Log(s.State);
+        Debug.Log(s.Speed);
         _anim.SetInteger(moveStateParam, (int)s.State);
         _anim.SetFloat(moveSpeedParam, s.Speed);
     }
@@ -80,4 +82,23 @@ public sealed class AnimatorSystem : MonoBehaviour
     }
 
     void OnDestroy() => _disposables.Dispose();
+
+    public void Initialize(CharacterHub hub)
+    {
+        IObservable<MovementSnapshot> moveStream;
+        IObservable<CombatSnapshot> combatStream;
+
+        moveStream = hub.GetModule<MovementManager>().Stream.AsSystemObservable();
+        combatStream = hub.GetModule<CombatManager>().Stream.AsSystemObservable();
+
+        moveStream?
+            .ToObservable()
+            .Subscribe(mvt => ApplyMovement(mvt))
+            .AddTo(_disposables);
+
+        combatStream?
+            .ToObservable()
+            .Subscribe(cmb => ApplyCombat(cmb))
+            .AddTo(_disposables);
+    }
 }
