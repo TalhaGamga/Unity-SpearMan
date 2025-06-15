@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using R3;
 
-public enum MoveState { Idle, Walk, Run }
+public enum MoveState { Idle, Walk, Run, Jump, Fall, Landed }
 public enum CombatState { None, Fire, Reload, Melee }
 public enum ReactionState { None, Hit, Dead }
 
@@ -64,8 +64,6 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 
     void ApplyMovement(in MovementSnapshot s)
     {
-        Debug.Log(s.State);
-        Debug.Log(s.Speed);
         _anim.SetInteger(moveStateParam, (int)s.State);
         _anim.SetFloat(moveSpeedParam, s.Speed);
     }

@@ -1,4 +1,5 @@
 using R3;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class RbMover : IMover
@@ -131,7 +132,6 @@ public class RbMover : IMover
             _jumpQueued = false;
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
-            Debug.Log("Jump triggered");
         }
         else if (isGrounded)
         {
@@ -180,11 +180,6 @@ public class RbMover : IMover
         bool justLanded = _wasFallingLastFrame && isGrounded;
         bool justStartedFalling = !isGrounded && _wasGroundedLastFrame;
 
-        if (justLanded)
-            Debug.Log("Landed");
-        if (justStartedFalling)
-            Debug.Log("Started Falling");
-
         // --- Update memory for next frame ---
         _wasGroundedLastFrame = isGrounded;
         _wasFallingLastFrame = _isFalling;
@@ -193,9 +188,42 @@ public class RbMover : IMover
         float rawSpeed = targetVel.magnitude;
         _smoothedSpeed = Mathf.Lerp(_smoothedSpeed, rawSpeed, 1 - Mathf.Exp(-_speedLerpRate * deltaTime));
 
-        MoveState state = _smoothedSpeed < 0.1f ? MoveState.Idle
-                          : _smoothedSpeed < 5f ? MoveState.Walk
-                                                : MoveState.Run;
+        //MoveState state = _smoothedSpeed < 0.1f ? MoveState.Idle
+        //                  : _smoothedSpeed < 5f ? MoveState.Walk
+        //                                        : MoveState.Run;
+
+        MoveState state = MoveState.Idle;
+
+        if (justLanded)
+        {
+            state = MoveState.Landed;
+        }
+
+        else if (_isJumping && rbVel.y > .1f)
+        {
+            state = MoveState.Jump;
+        }
+
+        else if (_isFalling)
+        {
+            state = MoveState.Fall;
+        }
+
+        else if (_smoothedSpeed < .1f)
+        {
+            state = MoveState.Idle;
+        }
+
+        else if (_smoothedSpeed < 4f)
+        {
+            state = MoveState.Walk;
+        }
+
+        else
+        {
+            state = MoveState.Run;
+        }
+
 
         // Emit only if state or displayed speed has changed meaningfully
         if (state != _lastState || Mathf.Abs(_smoothedSpeed - _lastRawSpeed) > 0.01f)
