@@ -1,4 +1,3 @@
-using R3;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,10 +7,10 @@ public class CharacterHub : MonoBehaviour
     [SerializeField] MovementManager _movementManager;
     [SerializeField] CombatManager _combatManager;
 
-    private List<Component> _modules; 
+    private List<Component> _modules;
 
     private void Awake()
-    {   
+    {
         _modules = new List<Component>()
         {
             _animatorSystem,

@@ -4,13 +4,14 @@ using UnityEngine.InputSystem;
 public class PlayerInputHandler : MonoBehaviour
 {
     [SerializeField] private MovementManager movementManager;
+    [SerializeField] private CombatManager combatManager;
     [SerializeField] private InputReader _input;
     private IMovementInputReceiver _movementManager => movementManager;
-
+    private ICombatInputReceiver _combatInputReceiver => combatManager;
     private Vector2 _moveInput;
 
     private void Start()
-    {
+    { 
         _input.Move += direction => _moveInput = direction;
         _input.Jump += isJumpKeyPressed =>
         {
@@ -18,7 +19,7 @@ public class PlayerInputHandler : MonoBehaviour
             {
                 _movementManager.HandleInput(new MovementAction()
                 { ActionType = MovementActionType.Jump });
-            }
+            } 
             else
             {
                 _movementManager.HandleInput(new MovementAction()

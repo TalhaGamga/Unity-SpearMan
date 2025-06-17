@@ -10,7 +10,6 @@ public interface IInputReader
 }
 
 [CreateAssetMenu(menuName = "ScriptableObjects/InputReader")]
-
 public class InputReader : ScriptableObject, IPlayerActions, IInputReader
 {
     public event UnityAction<Vector2> Move = delegate { };

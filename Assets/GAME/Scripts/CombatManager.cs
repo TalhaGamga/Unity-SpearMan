@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider, IInitializable<CharacterHub>
+public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider, ICombatInputReceiver, IInitializable<CharacterHub>
 {
     public Transform _characterModelTransform;
     public Observable<CombatSnapshot> Stream => _stream;
@@ -24,6 +24,10 @@ public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityP
     {
         EventBus.OnItemUsed -= onItemUsed;
         currentCombat?.Disable();
+    }
+
+    public void HandleInput()
+    {
     }
 
     private void Update()

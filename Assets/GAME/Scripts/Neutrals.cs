@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public interface IInitializable<T>
 {
     void Initialize(T t);
@@ -17,6 +16,11 @@ public interface IMovementInputReceiver
 {
     void HandleInput(MovementAction action);
     void SetMoveInput(Vector2 move);
+}
+
+public interface ICombatInputReceiver
+{
+    void HandleInput();
 }
 
 public interface IMovementStateProvider
@@ -51,7 +55,7 @@ public interface ICombatManager
 
 public interface ICombatBase : ITickable, IFixedTickable
 {
-    void Init(IHumanoidCombatPromptReceiver promptReceiver, CombatManager combatManager);
+    void Init(CombatManager combatManager);
     void Enable();
     void Disable();
 }
@@ -99,13 +103,15 @@ public interface ISpear : IWeapon
 
 public interface IMover
 {
+    public Observable<MovementSnapshot> Stream { get; }
+
     void Init(IMovementManager movementManager);
     void End();
     public void HandleInput(MovementAction action);
     void SetMoveInput(Vector2 move);
-    public void UpdateMover(float deltaTime);
 
-    public Observable<MovementSnapshot> Stream { get; }
+    void SetRootMotionDelta(Vector3 delta);
+    public void UpdateMover(float deltaTime);
 }
 
 public enum StateType

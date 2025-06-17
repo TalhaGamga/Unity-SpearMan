@@ -9,7 +9,6 @@ public class EquipmentManager : MonoBehaviour, IEquipmentManager
     public Transform Hand { get { return hand; } private set { } }
 
     [SerializeField] Transform hand;
-    [SerializeField] private Spear defaultWeapon;
 
     private void OnEnable()
     {

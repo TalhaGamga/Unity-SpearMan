@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using UnityEngine;
 using R3;
 
 public enum MoveState { Idle, Walk, Run, Jump, Fall, Landed }
 public enum CombatState { None, Fire, Reload, Melee }
 public enum ReactionState { None, Hit, Dead }
+public enum TargetState { }
 
 public readonly struct MovementSnapshot
 {
@@ -19,6 +20,7 @@ public readonly struct CombatSnapshot
     public CombatSnapshot(CombatState state, float energy) { State = state; Energy = energy; }
     public static CombatSnapshot Default => new CombatSnapshot(CombatState.None, 0);
 }
+
 public readonly struct ReactionSnapshot
 {
     public readonly ReactionState State; public readonly float Impact;
@@ -26,7 +28,19 @@ public readonly struct ReactionSnapshot
     public static ReactionSnapshot Default => new ReactionSnapshot(ReactionState.None, 0);
 }
 
-[RequireComponent(typeof(Animator))]
+public readonly struct RootMotionFrame
+{
+    public readonly Vector3 DeltaPosition;
+    public readonly Quaternion DeltaRotation;
+
+    public RootMotionFrame(Vector3 pos, Quaternion rot)
+    {
+        DeltaPosition = pos;
+        DeltaRotation = rot;
+    }
+}
+
+
 public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 {
     [Header("Animator parameter names")]
@@ -39,7 +53,15 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
     private Animator _anim;
     private readonly CompositeDisposable _disposables = new();
 
-    void Awake() => _anim = GetComponent<Animator>();
+    public Observable<RootMotionFrame> RootMotionStream => _rootMotionSubject;
+    private readonly Subject<RootMotionFrame> _rootMotionSubject = new();
+
+    void Awake() => _anim = GetComponentInChildren<Animator>();
+
+    private void Start()
+    {
+        _anim.applyRootMotion = true;
+    }
 
     public void RegisterStreams(
         IObservable<MovementSnapshot> moveStream,
@@ -60,6 +82,14 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
         //    .ToObservable()
         //    .Subscribe(rct => ApplyReaction(rct))
         //    .AddTo(_disposables);
+    }
+
+    private void OnAnimatorMove() // Make here hybrid supporting
+    {
+        var deltaPos = _anim.deltaPosition;
+        var deltaRot = _anim.deltaRotation;
+
+        _rootMotionSubject.OnNext(new RootMotionFrame(deltaPos, deltaRot));
     }
 
     void ApplyMovement(in MovementSnapshot s)

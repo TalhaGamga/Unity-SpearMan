@@ -1,16 +1,13 @@
 using R3;
+using System;
 using UnityEngine;
 
-public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IMovementStateProvider, IReactiveCapabilityProvider, IInitializable<CharacterHub>
+public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider, IInitializable<CharacterHub>
 {
     public Transform CharacterOrientator => _characterModelTransform;
     public Transform CharacterTranslater => _characterTransform;
 
     public Observable<MovementSnapshot> Stream => _currentMover.Stream;
-
-    public bool IsGrounded => _isGrounded;
-    public float CurrentSpeed => _currentSpeed;
-
 
     [SerializeField] private Transform _characterModelTransform;
     [SerializeField] private Transform _characterTransform;
@@ -19,14 +16,15 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     [SerializeField] private float _groundCheckDistance = 0.1f;
 
     private IMover _currentMover;
-    private bool _isGrounded;
     private float _speedModifier = 1f;
     private float _jumpModifier = 1f;
     private float _currentSpeed;
+    private Vector3 _lastRootMotionDelta = Vector3.zero;
 
     private readonly BehaviorSubject<(bool, string)> _movability = new((true, ""));
     private readonly BehaviorSubject<(bool, string)> _jumpability = new((true, ""));
     private readonly Subject<MovementSnapshot> _stream = new();
+    private readonly CompositeDisposable _disposables = new();
 
     private void OnDrawGizmosSelected()
     {
@@ -36,11 +34,16 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
             foreach (var checkPoint in _groundCheckPoints)
             {
                 if (checkPoint == null) continue;
-                Gizmos.DrawLine(checkPoint.position, checkPoint.position + Vector3.down * _groundCheckDistance);
+                Gizmos.DrawSphere(checkPoint.position, _groundCheckDistance);
             }
         }
+
     }
 
+    private void OnDestroy()
+    {
+        _disposables.Dispose();
+    }
 
     private void Awake()
     {
@@ -85,19 +88,22 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     {
         foreach (var checkPoint in _groundCheckPoints)
         {
-            if (checkPoint == null) continue;
-
-            // Cast a ray straight down from each point
-            if (Physics.Raycast(checkPoint.position, Vector3.down, out RaycastHit hit, _groundCheckDistance, _groundLayer))
-            {
-                return true; // At least one point is touching ground
-            }
+            return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _groundLayer).Length > 0;
         }
-        return false; // No points touching ground
+
+        return false;
     }
 
     public void Initialize(CharacterHub hub)
     {
+        hub.GetModule<AnimatorSystem>()
+            .RootMotionStream
+            .Subscribe(onRootMotion)
+            .AddTo(_disposables);
+    }
 
+    private void onRootMotion(RootMotionFrame root)
+    {
+        _currentMover?.SetRootMotionDelta(root.DeltaPosition);
     }
 }

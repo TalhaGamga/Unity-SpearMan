@@ -49,6 +49,5 @@ public class Rifle : MonoBehaviour, IRifle
 
     public void SetCombat(ICombatManager combatManager)
     {
-        combatManager.SetCombat(new RifleCombat(this));
     }
 }
