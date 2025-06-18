@@ -18,12 +18,12 @@ public class PlayerInputHandler : MonoBehaviour
             if (isJumpKeyPressed)
             {
                 _movementManager.HandleInput(new MovementAction()
-                { ActionType = MovementActionType.Jump });
+                { ActionType = MovementType.Jump });
             } 
             else
             {
                 _movementManager.HandleInput(new MovementAction()
-                { ActionType = MovementActionType.Land });
+                { ActionType = MovementType.Land });
             }
         };
 

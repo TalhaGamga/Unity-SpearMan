@@ -34,7 +34,7 @@ public class RbMover : IMover
     private bool _wasFallingLastFrame;
     private bool _isFalling;
 
-    private MoveState _lastState = MoveState.Idle;
+    private MovementType _lastState = MovementType.Idle;
     private float _lastBlendSpeed = 0f;
     private float _smoothedBlendSpeed = 0f;
     private const float _speedLerpRate = 10f;
@@ -65,13 +65,13 @@ public class RbMover : IMover
 
     public void HandleInput(MovementAction action)
     {
-        if (action.ActionType == MovementActionType.Jump)
+        if (action.ActionType == MovementType.Jump)
         {
             _jumpQueued = true;
             _jumpHeld = true;
             _jumpBufferTimer = _jumpBufferTime;
         }
-        else if (action.ActionType == MovementActionType.Land)
+        else if (action.ActionType == MovementType.Land)
         {
             _jumpHeld = false;
         }
@@ -165,13 +165,13 @@ public class RbMover : IMover
         _smoothedBlendSpeed = Mathf.Lerp(_smoothedBlendSpeed, inputBlendSpeed, 1 - Mathf.Exp(-_speedLerpRate * deltaTime));
 
         // --- State (from input magnitude, not speed) ---
-        MoveState state = MoveState.Idle;
-        if (justLanded) state = MoveState.Landed;
-        else if (_isJumping && rbVel.y > .1f) state = MoveState.Jump;
-        else if (_isFalling) state = MoveState.Fall;
-        else if (_moveInput.sqrMagnitude < 0.01f) state = MoveState.Idle;
-        else if (_moveInput.sqrMagnitude < 0.96f) state = MoveState.Walk;
-        else state = MoveState.Run;
+        MovementType state = MovementType.Idle;
+        if (justLanded) state = MovementType.Land;
+        else if (_isJumping && rbVel.y > .1f) state = MovementType.Jump;
+        else if (_isFalling) state = MovementType.Fall;
+        else if (_moveInput.sqrMagnitude < 0.01f) state = MovementType.Idle;
+        else if (_moveInput.sqrMagnitude < 0.96f) state = MovementType.Walk;
+        else state = MovementType.Run;
 
         // --- Emit MovementSnapshot only on change ---
         if (state != _lastState || Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f)

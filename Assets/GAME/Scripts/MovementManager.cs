@@ -74,6 +74,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     {
         _currentMover?.UpdateMover(Time.deltaTime);
     }
+
     public void HandleInput(MovementAction action)
     {
         _currentMover.HandleInput(action);

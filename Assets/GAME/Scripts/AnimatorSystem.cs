@@ -2,44 +2,6 @@
 using UnityEngine;
 using R3;
 
-public enum MoveState { Idle, Walk, Run, Jump, Fall, Landed }
-public enum CombatState { None, Fire, Reload, Melee }
-public enum ReactionState { None, Hit, Dead }
-public enum TargetState { }
-
-public readonly struct MovementSnapshot
-{
-    public readonly MoveState State; public readonly float Speed;
-    public MovementSnapshot(MoveState state, float speed) { State = state; Speed = speed; }
-    public static MovementSnapshot Default => new MovementSnapshot(MoveState.Idle, 0);
-}
-
-public readonly struct CombatSnapshot
-{
-    public readonly CombatState State; public readonly float Energy;
-    public CombatSnapshot(CombatState state, float energy) { State = state; Energy = energy; }
-    public static CombatSnapshot Default => new CombatSnapshot(CombatState.None, 0);
-}
-
-public readonly struct ReactionSnapshot
-{
-    public readonly ReactionState State; public readonly float Impact;
-    public ReactionSnapshot(ReactionState state, float impact) { State = state; Impact = impact; }
-    public static ReactionSnapshot Default => new ReactionSnapshot(ReactionState.None, 0);
-}
-
-public readonly struct RootMotionFrame
-{
-    public readonly Vector3 DeltaPosition;
-    public readonly Quaternion DeltaRotation;
-
-    public RootMotionFrame(Vector3 pos, Quaternion rot)
-    {
-        DeltaPosition = pos;
-        DeltaRotation = rot;
-    }
-}
-
 
 public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 {
@@ -106,7 +68,7 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 
     void ApplyReaction(in ReactionSnapshot s)
     {
-        _anim.SetBool(isHitParam, s.State == ReactionState.Hit);
+        _anim.SetBool(isHitParam, s.State == ReactionType.Hit);
     }
 
     void OnDestroy() => _disposables.Dispose();
