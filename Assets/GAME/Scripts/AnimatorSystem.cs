@@ -25,36 +25,34 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
         _anim.applyRootMotion = true;
     }
 
-    public void RegisterStreams(
-        IObservable<MovementSnapshot> moveStream,
-        IObservable<CombatSnapshot> combatStream
-        /*,IObservable<ReactionSnapshot> reactionStream*/)
+    public void HandleInput(AnimatorAction action)
     {
-        moveStream?
-            .ToObservable()
-            .Subscribe(mvt => ApplyMovement(mvt))
-            .AddTo(_disposables);
-
-        combatStream?
-            .ToObservable()
-            .Subscribe(cmb => ApplyCombat(cmb))
-            .AddTo(_disposables);
-
-        //reactionStream?
-        //    .ToObservable()
-        //    .Subscribe(rct => ApplyReaction(rct))
-        //    .AddTo(_disposables);
+        _anim.applyRootMotion = action.UseRootMotion;
+        switch (action.ActionType)
+        {
+            case AnimationType.Idle:
+                break;
+            case AnimationType.Run:
+                break;
+            case AnimationType.Jump:
+                break;
+            default:
+                break;
+        }
     }
 
     private void OnAnimatorMove() // Make here hybrid supporting
     {
-        var deltaPos = _anim.deltaPosition;
-        var deltaRot = _anim.deltaRotation;
+        if (_anim.applyRootMotion)
+        {
+            var deltaPos = _anim.deltaPosition;
+            var deltaRot = _anim.deltaRotation;
 
-        _rootMotionSubject.OnNext(new RootMotionFrame(deltaPos, deltaRot));
+            _rootMotionSubject.OnNext(new RootMotionFrame(deltaPos, deltaRot));
+        }
     }
 
-    void ApplyMovement(in MovementSnapshot s)
+    public void ApplyMovement(MovementSnapshot s)
     {
         _anim.SetInteger(moveStateParam, (int)s.State);
         _anim.SetFloat(moveSpeedParam, s.Speed);
@@ -75,20 +73,20 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
 
     public void Initialize(CharacterHub hub)
     {
-        IObservable<MovementSnapshot> moveStream;
-        IObservable<CombatSnapshot> combatStream;
+        //IObservable<MovementSnapshot> moveStream;
+        //IObservable<CombatSnapshot> combatStream;
 
-        moveStream = hub.GetModule<MovementManager>().Stream.AsSystemObservable();
-        combatStream = hub.GetModule<CombatManager>().Stream.AsSystemObservable();
+        //moveStream = hub.GetModule<MovementManager>().Stream.AsSystemObservable();
+        //combatStream = hub.GetModule<CombatManager>().Stream.AsSystemObservable();
 
-        moveStream?
-            .ToObservable()
-            .Subscribe(mvt => ApplyMovement(mvt))
-            .AddTo(_disposables);
+        //moveStream?
+        //    .ToObservable()
+        //    .Subscribe(mvt => ApplyMovement(mvt))
+        //    .AddTo(_disposables);
 
-        combatStream?
-            .ToObservable()
-            .Subscribe(cmb => ApplyCombat(cmb))
-            .AddTo(_disposables);
+        //combatStream?
+        //    .ToObservable()
+        //    .Subscribe(cmb => ApplyCombat(cmb))
+        //    .AddTo(_disposables);
     }
 }

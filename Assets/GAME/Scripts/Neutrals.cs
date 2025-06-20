@@ -20,7 +20,7 @@ public interface IMovementInputReceiver
 
 public interface ICombatInputReceiver
 {
-    void HandleInput();
+    void HandleInput(CombatAction combatAction);
 }
 
 public interface IMovementStateProvider
@@ -110,7 +110,7 @@ public interface IMover
     public void HandleInput(MovementAction action);
     void SetMoveInput(Vector2 move);
 
-    void SetRootMotionDelta(Vector3 delta);
+    void HandleRootMotion(Vector3 delta);
     public void UpdateMover(float deltaTime);
 }
 
@@ -393,4 +393,9 @@ public interface IReactiveEvent
 public interface IDamageEventSource
 {
     Observable<IReactiveEvent> Stream(GameObject target);
+}
+
+public interface IIntentMapper
+{
+    ActionIntent? MapInputToIntent(InputType input, CharacterSnapshot snapshot);
 }

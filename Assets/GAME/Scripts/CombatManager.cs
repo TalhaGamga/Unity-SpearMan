@@ -5,7 +5,7 @@ public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityP
 {
     public Transform _characterModelTransform;
     public Observable<CombatSnapshot> Stream => _stream;
-    private readonly Subject<CombatSnapshot> _stream = new();
+    public Subject<CombatSnapshot> SnapshotStream { get; } = new();
 
     public float CombatSpeedModifier { get; set; }
     public float DamageModifier { get; set; }
@@ -14,6 +14,7 @@ public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityP
     public float CritModifier { get; set; }
 
     private ICombatBase currentCombat;
+    private readonly Subject<CombatSnapshot> _stream = new();
 
     private void OnEnable()
     {
@@ -26,8 +27,9 @@ public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityP
         currentCombat?.Disable();
     }
 
-    public void HandleInput()
+    public void HandleInput(CombatAction combatAction)
     {
+        //Debug.Log(combatAction);
     }
 
     private void Update()

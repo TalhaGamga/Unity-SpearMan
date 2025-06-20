@@ -14,6 +14,8 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
 {
     public event UnityAction<Vector2> Move = delegate { };
     public event UnityAction<bool> Jump = delegate { };
+    public event UnityAction<bool> Attack = delegate { };
+
     public Vector2 Direction => _inputActions.Player.Move.ReadValue<Vector2>();
     public bool IsJumpKeyPressed => _inputActions.Player.Jump.IsPressed();
 
@@ -50,6 +52,15 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
 
     public void OnAttack(InputAction.CallbackContext context)
     {
+        switch (context.phase)
+        {
+            case InputActionPhase.Started:
+                Attack.Invoke(true);
+                break;
+            case InputActionPhase.Canceled:
+                Attack.Invoke(false);
+                break;
+        }
     }
 
     public void OnCrouch(InputAction.CallbackContext context)

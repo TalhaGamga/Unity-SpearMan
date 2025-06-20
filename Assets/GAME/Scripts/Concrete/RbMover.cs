@@ -59,9 +59,13 @@ public class RbMover : IMover
 
     public void End() => _moveInput = Vector2.zero;
 
-    public void SetMoveInput(Vector2 move) => _moveInput = move;
+    public void SetMoveInput(Vector2 move)
+    {
+        _moveInput = move;
+        //Debug.Log(_moveInput);
+    }
 
-    public void SetRootMotionDelta(Vector3 delta) => _rootMotionDelta = delta;
+    public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
 
     public void HandleInput(MovementAction action)
     {

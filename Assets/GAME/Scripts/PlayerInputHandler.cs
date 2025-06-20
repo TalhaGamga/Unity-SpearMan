@@ -1,38 +1,47 @@
+using R3;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerInputHandler : MonoBehaviour
 {
-    [SerializeField] private MovementManager movementManager;
-    [SerializeField] private CombatManager combatManager;
     [SerializeField] private InputReader _input;
-    private IMovementInputReceiver _movementManager => movementManager;
-    private ICombatInputReceiver _combatInputReceiver => combatManager;
-    private Vector2 _moveInput;
+    [SerializeField] private CharacterHub _hub;
+
+    public Subject<InputType> InputStream { get; } = new();
+    public BehaviorSubject<Vector2> MovementDirectionStream { get; } = new(Vector2.zero);
 
     private void Start()
-    { 
-        _input.Move += direction => _moveInput = direction;
-        _input.Jump += isJumpKeyPressed =>
+    {
+        _input.Move += direction => MovementDirectionStream.OnNext(direction);
+
+        _input.Move += direction =>
         {
-            if (isJumpKeyPressed)
+            InputStream.OnNext(new InputType
             {
-                _movementManager.HandleInput(new MovementAction()
-                { ActionType = MovementType.Jump });
-            } 
-            else
+                Action = PlayerAction.Run,
+                IsHeld = direction.magnitude > 0
+            });
+        };
+
+        _input.Jump += isPressed =>
+        {
+            InputStream.OnNext(new InputType
             {
-                _movementManager.HandleInput(new MovementAction()
-                { ActionType = MovementType.Land });
-            }
+                Action = PlayerAction.Jump,
+                IsHeld = isPressed
+            });
+        };
+
+        _input.Attack += isPressed =>
+        {
+            InputStream.OnNext(new InputType 
+            {
+                Action = PlayerAction.Attack,
+                IsHeld = isPressed
+            });
         };
 
         _input.Enable();
-    }
-
-    public void OnJump(bool isJumping)
-    {
-
     }
 
     public void OnDash(InputAction.CallbackContext ctx)
@@ -42,10 +51,5 @@ public class PlayerInputHandler : MonoBehaviour
 
     public void OnClimb(InputAction.CallbackContext ctx)
     {
-    }
-
-    private void Update()
-    {
-        _movementManager.SetMoveInput(_moveInput);
     }
 }

@@ -1,5 +1,4 @@
 using R3;
-using System;
 using UnityEngine;
 
 public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider, IInitializable<CharacterHub>
@@ -8,6 +7,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     public Transform CharacterTranslater => _characterTransform;
 
     public Observable<MovementSnapshot> Stream => _currentMover.Stream;
+    public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default); // System will be like
 
     [SerializeField] private Transform _characterModelTransform;
     [SerializeField] private Transform _characterTransform;
@@ -19,7 +19,6 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     private float _speedModifier = 1f;
     private float _jumpModifier = 1f;
     private float _currentSpeed;
-    private Vector3 _lastRootMotionDelta = Vector3.zero;
 
     private readonly BehaviorSubject<(bool, string)> _movability = new((true, ""));
     private readonly BehaviorSubject<(bool, string)> _jumpability = new((true, ""));
@@ -65,6 +64,15 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
         _currentMover?.End();
         _currentMover = newMover;
         _currentMover?.Init(this);
+
+        _disposables.Clear();
+
+        _currentMover.Stream
+            .Subscribe(snapshot =>
+            {
+                SnapshotStream.OnNext(snapshot);
+            })
+            .AddTo(_disposables);
     }
 
     public void SetSpeedModifier(float newModifier) => _speedModifier = newModifier;
@@ -78,6 +86,11 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     public void HandleInput(MovementAction action)
     {
         _currentMover.HandleInput(action);
+    }
+
+    public void HandleRootMotion(RootMotionFrame rootMotion)
+    {
+        _currentMover.HandleRootMotion(rootMotion.DeltaPosition);
     }
 
     public void SetMoveInput(Vector2 move)
@@ -97,14 +110,5 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
 
     public void Initialize(CharacterHub hub)
     {
-        hub.GetModule<AnimatorSystem>()
-            .RootMotionStream
-            .Subscribe(onRootMotion)
-            .AddTo(_disposables);
-    }
-
-    private void onRootMotion(RootMotionFrame root)
-    {
-        _currentMover?.SetRootMotionDelta(root.DeltaPosition);
     }
 }
