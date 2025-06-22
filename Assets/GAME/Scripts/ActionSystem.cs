@@ -1,4 +1,5 @@
 using R3;
+using System.Collections.Generic;
 
 public class ActionSystem
 {
@@ -15,6 +16,8 @@ public class ActionSystem
 
     private readonly CompositeIntentMapper _intentMapper;
 
+    private readonly Dictionary<PlayerAction, InputType> _heldInputs = new();
+
     public ActionSystem(
         Observable<InputType> inputStream,
         Observable<MovementSnapshot> movementStream,
@@ -30,6 +33,12 @@ public class ActionSystem
         {
             _movementSnapshot = snapshot;
             MovementSnapshotStream.OnNext(snapshot);
+
+            foreach (var held in _heldInputs.Values)
+            {
+                if (held.Behavior == InputBehavior.Stateful)
+                    processIntent(held);
+            }
         });
         combatStream.Subscribe(snapshot => _combatSnapshot = snapshot);
         reactionStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
@@ -40,6 +49,16 @@ public class ActionSystem
     }
 
     public void OnInput(InputType input)
+    {
+        if (input.IsHeld)
+            _heldInputs[input.Action] = input;
+        else
+            _heldInputs.Remove(input.Action);
+
+        processIntent(input);
+    }
+
+    private void processIntent(InputType input)
     {
         var snapshot = new CharacterSnapshot(
             _movementSnapshot, _combatSnapshot, _reactionSnapshot

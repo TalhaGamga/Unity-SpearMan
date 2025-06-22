@@ -184,6 +184,7 @@ public class RbMover : IMover
             _lastBlendSpeed = _smoothedBlendSpeed;
             _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed));
         }
+        Debug.Log(state);
 
         // --- Reset root motion ---
         _rootMotionDelta = Vector3.zero;

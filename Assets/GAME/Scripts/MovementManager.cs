@@ -48,6 +48,10 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     {
         SetMover(new RbMover());
     }
+    private void Update()
+    {
+        _currentMover?.UpdateMover(Time.deltaTime);
+    }
 
     public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
     {
@@ -78,10 +82,6 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     public void SetSpeedModifier(float newModifier) => _speedModifier = newModifier;
     public void SetJumpModifier(float newModifier) => _jumpModifier = newModifier;
 
-    private void Update()
-    {
-        _currentMover?.UpdateMover(Time.deltaTime);
-    }
 
     public void HandleInput(MovementAction action)
     {
