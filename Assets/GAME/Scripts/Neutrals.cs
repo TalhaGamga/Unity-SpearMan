@@ -53,6 +53,7 @@ public interface ICombat
     void Init(ICombatManager combatManager);
     void Update(float deltaTime);
     void HandleInput(CombatAction action);
+    void OnAnimationFrame(AnimationFrame frame);
     void OnWeaponCollision(Collider other);
     void End();
 }

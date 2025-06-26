@@ -39,4 +39,9 @@ public class SwordCombat : ICombat
         _canDealDamage = false;
         _stream.OnNext(CombatSnapshot.Default);
     }
+
+    public void OnAnimationFrame(AnimationFrame frame)
+    {
+        Debug.Log(frame.StateName);
+    }
 }

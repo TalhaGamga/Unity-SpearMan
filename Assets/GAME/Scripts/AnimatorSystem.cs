@@ -14,7 +14,10 @@ public sealed class AnimatorSystem : MonoBehaviour
     private readonly CompositeDisposable _disposables = new();
 
     public Observable<RootMotionFrame> RootMotionStream => _rootMotionSubject;
+    public Observable<AnimationFrame> AnimationFrameStream => _animationFrameStream;
+
     private readonly Subject<RootMotionFrame> _rootMotionSubject = new();
+    private readonly Subject<AnimationFrame> _animationFrameStream = new();
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
@@ -61,6 +64,19 @@ public sealed class AnimatorSystem : MonoBehaviour
         _anim.SetInteger(combatStateParam, (int)s.State);
         _anim.SetTrigger(s.State.ToString());
         _anim.SetFloat(energyParam, s.Energy);
+    }
+
+    public void OnAnimationEvent(string key) // May change
+    {
+        var stateInfo = _anim.GetCurrentAnimatorStateInfo(1);
+
+        _animationFrameStream.OnNext(new AnimationFrame(
+            key,
+            stateInfo.IsName("") ? "" : stateInfo.shortNameHash.ToString(),
+            stateInfo.normalizedTime,
+            1,
+            _anim
+            ));
     }
 
     void ApplyReaction(in ReactionSnapshot s)

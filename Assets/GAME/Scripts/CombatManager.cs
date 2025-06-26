@@ -28,7 +28,7 @@ public class CombatManager : MonoBehaviour, ICombatManager, ICombatInputReceiver
 
     public void SetWeapon(IWeapon newWeapon)
     {
-        _currentCombat?.End(); 
+        _currentCombat?.End();
 
         _currentWeapon = newWeapon;
         _currentCombat = newWeapon.CreateCombat(this, SnapshotStream);
@@ -37,5 +37,10 @@ public class CombatManager : MonoBehaviour, ICombatManager, ICombatInputReceiver
     public void HandleInput(CombatAction action)
     {
         _currentCombat?.HandleInput(action);
+    }
+
+    public void OnAnimationFrame(AnimationFrame frame)
+    {
+        _currentCombat?.OnAnimationFrame(frame);
     }
 }

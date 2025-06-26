@@ -49,6 +49,10 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_movementManager.HandleRootMotion)
             .AddTo(_disposables);
 
+        _animatorSystem.AnimationFrameStream
+            .Subscribe(_combatManager.OnAnimationFrame)
+            .AddTo(_disposables);
+
         _modules = new List<Component>()
         {
             _animatorSystem,
