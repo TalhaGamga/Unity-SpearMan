@@ -3,10 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IInitializable<T>
-{
-    void Initialize(T t);
-}
+
 public interface IReactiveCapabilityProvider
 {
     Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability);
@@ -15,7 +12,7 @@ public interface IReactiveCapabilityProvider
 public interface IMovementInputReceiver
 {
     void HandleInput(MovementAction action);
-    void SetMoveInput(Vector2 move);
+    //void SetMoveInput(Vector2 move);
 }
 
 public interface ICombatInputReceiver
@@ -33,7 +30,6 @@ public interface IMovementManager
 {
     public Transform CharacterOrientator { get; }
     public Transform CharacterTranslater { get; }
-    public Observable<MovementSnapshot> Stream { get; }
 
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
@@ -43,62 +39,27 @@ public interface IMovementManager
 
 public interface ICombatManager
 {
-    public Observable<CombatSnapshot> Stream { get; }
-    void SetCombat(ICombatBase newCombat);
-    void UnsettleCombat(ICombatBase combat);
-    public float CombatSpeedModifier { get; set; }
-    public float DamageModifier { get; set; }
-    public float RangedAttackModifier { get; set; }
-    public float AccuracyModifier { get; set; }
-    public float CritModifier { get; set; }
+    void SetWeapon(IWeapon newWeapon);
+    //void UnsettleCombat(ICombatBase combat);
+    //public float CombatSpeedModifier { get; set; }
+    //public float DamageModifier { get; set; }
+    //public float RangedAttackModifier { get; set; }
+    //public float AccuracyModifier { get; set; }
+    //public float CritModifier { get; set; }
 }
 
-public interface ICombatBase : ITickable, IFixedTickable
+public interface ICombat
 {
-    void Init(CombatManager combatManager);
-    void Enable();
-    void Disable();
+    void Init(ICombatManager combatManager);
+    void Update(float deltaTime);
+    void HandleInput(CombatAction action);
+    void OnWeaponCollision(Collider other);
+    void End();
 }
 
-public interface ICombat<T> : IReactiveCapabilityProvider, ICombatBase where T : IWeapon
+public interface IWeapon
 {
-    public T Weapon { get; }
-}
-
-public interface IFirearmCombat<T> : ICombat<T> where T : IFirearm
-{
-    void AttemptFire();
-    void StopFiring();
-    void Reload();
-    void TakeAim(Vector2 aimInput);
-}
-
-public interface IRifleCombat : IFirearmCombat<IRifle> { }
-
-public interface IWeapon : IEquipable
-{
-    void SetCombat(ICombatManager combatManager);
-    public Transform WeaponTransform { get; }
-}
-
-public interface IFirearm : IWeapon
-{
-    public FirearmCursorDataSO FirearmCursorData { get; }
-    public Transform FirePoint { get; }
-    public IFireTriggerSystem FireSystem { get; }
-    public IRecoilSystem RecoilSystem { get; }
-    public IAimSystem AimSystem { get; }
-    public IAmmoSystem AmmoSystem { get; }
-    public IProjectileSystem ProjectileSystem { get; }
-    public IBulletTrail BulletTrail { get; }
-}
-
-public interface IRifle : IFirearm
-{
-}
-
-public interface ISpear : IWeapon
-{
+    ICombat CreateCombat(ICombatManager combatManager, BehaviorSubject<CombatSnapshot> snapshotStream);
 }
 
 public interface IMover
@@ -108,7 +69,7 @@ public interface IMover
     void Init(IMovementManager movementManager);
     void End();
     public void HandleInput(MovementAction action);
-    void SetMoveInput(Vector2 move);
+    //void SetMoveInput(Vector2 move);
 
     void HandleRootMotion(Vector3 delta);
     public void UpdateMover(float deltaTime);

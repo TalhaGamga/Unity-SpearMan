@@ -8,11 +8,12 @@ public class ActionSystem
     public Subject<AnimatorAction> AnimatorActions { get; } = new();
 
     public Subject<MovementSnapshot> MovementSnapshotStream { get; } = new();
+    public Subject<CombatSnapshot> CombatSnapshotStream { get; } = new();
 
 
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
-    public CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
-    public ReactionSnapshot _reactionSnapshot = ReactionSnapshot.Default;
+    private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
+    private ReactionSnapshot _reactionSnapshot = ReactionSnapshot.Default;
 
     private readonly CompositeIntentMapper _intentMapper;
 
@@ -40,7 +41,13 @@ public class ActionSystem
                     processIntent(held);
             }
         });
-        combatStream.Subscribe(snapshot => _combatSnapshot = snapshot);
+
+        combatStream.Subscribe(snapshot =>
+        {
+            _combatSnapshot = snapshot;
+            CombatSnapshotStream.OnNext(snapshot);
+        });
+
         reactionStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
     }
 

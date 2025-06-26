@@ -2,7 +2,8 @@ public enum PlayerAction
 {
     None,
     Run,
-    Attack,
+    PrimaryAttack,
+    SecondaryAttack,
     Parry,
     Dash,
     Jump,

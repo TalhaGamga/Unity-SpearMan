@@ -36,28 +36,28 @@ public class CombatInventoryItemSO : InventoryItemSO, ICombatInventoryItem
 
     public void Use(ICombatManager combatManager)
     {
-        if (weaponPrefab == null)
-        {
-            Debug.LogError($"CombatPrefab is missing in {ItemName} SO!");
-            return;
-        }
+        //if (weaponPrefab == null)
+        //{
+        //    Debug.LogError($"CombatPrefab is missing in {ItemName} SO!");
+        //    return;
+        //}
 
-        if (weaponObj == null)
-        {
-            weaponObj = Object.Instantiate(weaponPrefab);
-        }
+        //if (weaponObj == null)
+        //{
+        //    weaponObj = Object.Instantiate(weaponPrefab);
+        //}
 
-        IWeapon weapon = weaponObj.GetComponent<IWeapon>();
+        //IWeapon weapon = weaponObj.GetComponent<IWeapon>();
 
-        if (weapon != null)
-        {
-            weapon.SetCombat(combatManager); // This must not be done here.
-            Debug.Log($"{ItemName} has set the Combat.");
-        }
+        //if (weapon != null)
+        //{
+        //    weapon.SetCombat(combatManager); // This must not be done here.
+        //    Debug.Log($"{ItemName} has set the Combat.");
+        //}
 
-        else
-        {
-            Debug.LogError($"WeaponPrefab {weaponPrefab.name} does not have an IWeapon component!");
-        }
+        //else
+        //{
+        //    Debug.LogError($"WeaponPrefab {weaponPrefab.name} does not have an IWeapon component!");
+        //}
     }
 }

@@ -6,7 +6,7 @@ public static class InputBehaviorMap
     {
         { PlayerAction.Run, InputBehavior.Stateful },
         { PlayerAction.Jump, InputBehavior.Eventful },
-        { PlayerAction.Attack, InputBehavior.Eventful },
+        { PlayerAction.PrimaryAttack, InputBehavior.Eventful },
         // Extend...
     };
 }

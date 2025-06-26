@@ -1,79 +1,41 @@
 using R3;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour, ICombatManager, IReactiveCapabilityProvider, ICombatInputReceiver, IInitializable<CharacterHub>
+public class CombatManager : MonoBehaviour, ICombatManager, ICombatInputReceiver
 {
-    public Transform _characterModelTransform;
-    public Observable<CombatSnapshot> Stream => _stream;
-    public Subject<CombatSnapshot> SnapshotStream { get; } = new();
+    public BehaviorSubject<CombatSnapshot> SnapshotStream { get; } = new(CombatSnapshot.Default);
 
-    public float CombatSpeedModifier { get; set; }
-    public float DamageModifier { get; set; }
-    public float RangedAttackModifier { get; set; }
-    public float AccuracyModifier { get; set; }
-    public float CritModifier { get; set; }
+    private IWeapon _currentWeapon;
+    private ICombat _currentCombat;
 
-    private ICombatBase currentCombat;
-    private readonly Subject<CombatSnapshot> _stream = new();
+    private readonly CompositeDisposable _disposables = new();
 
-    private void OnEnable()
+    private void Awake()
     {
-        EventBus.OnItemUsed += onItemUsed;
+        SetWeapon(GetComponentInChildren<IWeapon>());
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
-        EventBus.OnItemUsed -= onItemUsed;
-        currentCombat?.Disable();
-    }
-
-    public void HandleInput(CombatAction combatAction)
-    {
-        //Debug.Log(combatAction);
+        _disposables.Dispose();
+        _currentCombat?.End();
     }
 
     private void Update()
     {
-        currentCombat?.Tick();
+        _currentCombat?.Update(Time.deltaTime);
     }
 
-    private void FixedUpdate()
+    public void SetWeapon(IWeapon newWeapon)
     {
-        currentCombat?.FixedTick();
+        _currentCombat?.End(); 
+
+        _currentWeapon = newWeapon;
+        _currentCombat = newWeapon.CreateCombat(this, SnapshotStream);
     }
 
-    public void SetCombat(ICombatBase newCombat)
+    public void HandleInput(CombatAction action)
     {
-        currentCombat?.Disable();
-
-        newCombat?.Enable();
-        currentCombat = newCombat;
-    }
-
-    public void UnsettleCombat(ICombatBase combat)
-    {
-        if (currentCombat != null && currentCombat.Equals(combat))
-        {
-            currentCombat?.Disable();
-            currentCombat = null;
-        }
-    }
-
-    private void onItemUsed(ItemUsedEvent itemEvent)
-    {
-        if (itemEvent.Item is ICombatInventoryItem inventoryItem)
-        {
-            inventoryItem.Use(this);
-        }
-    }
-
-    public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
-    {
-        return null;
-    }
-
-    public void Initialize(CharacterHub t)
-    {
-
+        _currentCombat?.HandleInput(action);
     }
 }

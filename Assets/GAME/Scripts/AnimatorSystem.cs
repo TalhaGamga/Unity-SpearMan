@@ -1,9 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using R3;
 
-
-public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
+public sealed class AnimatorSystem : MonoBehaviour
 {
     [Header("Animator parameter names")]
     [SerializeField] string moveStateParam = "MoveState";
@@ -58,9 +56,10 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
         _anim.SetFloat(moveSpeedParam, s.Speed);
     }
 
-    void ApplyCombat(in CombatSnapshot s)
+    public void ApplyCombat(CombatSnapshot s)
     {
         _anim.SetInteger(combatStateParam, (int)s.State);
+        _anim.SetTrigger(s.State.ToString());
         _anim.SetFloat(energyParam, s.Energy);
     }
 
@@ -70,23 +69,4 @@ public sealed class AnimatorSystem : MonoBehaviour, IInitializable<CharacterHub>
     }
 
     void OnDestroy() => _disposables.Dispose();
-
-    public void Initialize(CharacterHub hub)
-    {
-        //IObservable<MovementSnapshot> moveStream;
-        //IObservable<CombatSnapshot> combatStream;
-
-        //moveStream = hub.GetModule<MovementManager>().Stream.AsSystemObservable();
-        //combatStream = hub.GetModule<CombatManager>().Stream.AsSystemObservable();
-
-        //moveStream?
-        //    .ToObservable()
-        //    .Subscribe(mvt => ApplyMovement(mvt))
-        //    .AddTo(_disposables);
-
-        //combatStream?
-        //    .ToObservable()
-        //    .Subscribe(cmb => ApplyCombat(cmb))
-        //    .AddTo(_disposables);
-    }
 }

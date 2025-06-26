@@ -59,22 +59,28 @@ public class RbMover : IMover
 
     public void End() => _moveInput = Vector2.zero;
 
-    public void SetMoveInput(Vector2 move)
-    {
-        _moveInput = move;
-        //Debug.Log(_moveInput);
-    }
+    //public void SetMoveInput(Vector2 move)
+    //{
+    //    _moveInput = move;
+    //    //Debug.Log(_moveInput);
+    //}
 
     public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
 
     public void HandleInput(MovementAction action)
     {
+        if (action.ActionType == MovementType.Run)
+        {
+            _moveInput = action.Direction;
+        }
+
         if (action.ActionType == MovementType.Jump)
         {
             _jumpQueued = true;
             _jumpHeld = true;
             _jumpBufferTimer = _jumpBufferTime;
         }
+
         else if (action.ActionType == MovementType.Land)
         {
             _jumpHeld = false;
@@ -184,8 +190,7 @@ public class RbMover : IMover
             _lastBlendSpeed = _smoothedBlendSpeed;
             _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed));
         }
-        Debug.Log(state);
-
+        Debug.Log(_lastState);
         // --- Reset root motion ---
         _rootMotionDelta = Vector3.zero;
     }

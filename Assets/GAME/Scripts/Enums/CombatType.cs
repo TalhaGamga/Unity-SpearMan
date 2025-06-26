@@ -1,11 +1,8 @@
 public enum CombatType
 {
-    None,
-    Attack,
-    Fire,
+    Idle,
+    PrimaryAttack,
+    SecondaryAttack,
+    Parry,
     Reload,
-    Melee,
-    Slash,
-    JumpSlash,
-    Parry
 }

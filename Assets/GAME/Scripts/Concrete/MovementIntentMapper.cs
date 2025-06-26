@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public class MovementIntentMapper : IIntentMapper
 {
     public ActionIntent? MapInputToIntent(InputType input, CharacterSnapshot snapshot)
@@ -8,7 +6,11 @@ public class MovementIntentMapper : IIntentMapper
         {
             return new ActionIntent()
             {
-                Movement = new MovementAction { ActionType = MovementType.Run },
+                Movement = new MovementAction
+                {
+                    Direction = input.Direction,
+                    ActionType = MovementType.Run
+                },
                 Animator = new AnimatorAction
                 {
                     ActionType = AnimationType.Run,

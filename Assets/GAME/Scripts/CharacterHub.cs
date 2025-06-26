@@ -41,8 +41,8 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_animatorSystem.ApplyMovement)
             .AddTo(_disposables);
 
-        _inputHandler.MovementDirectionStream
-            .Subscribe(_movementManager.SetMoveInput)
+        _actionSystem.CombatSnapshotStream
+            .Subscribe(_animatorSystem.ApplyCombat)
             .AddTo(_disposables);
 
         _animatorSystem.RootMotionStream
@@ -55,33 +55,6 @@ public class CharacterHub : MonoBehaviour
             _movementManager,
             _combatManager
         };
-    }
-
-    private void Start()
-    {
-        //foreach (var module in _modules)
-        //{
-        //    if (module is IInitializable<CharacterHub> initializable)
-        //    {
-        //        initializable.Initialize(this);
-        //    }
-        //}
-    }
-
-    private void Update()
-    {
-    }
-
-
-
-    public T GetModule<T>() where T : class
-    {
-        foreach (var m in _modules)
-        {
-            if (m is T t) return t;
-        }
-
-        return null;
     }
 
     private void OnDestroy()

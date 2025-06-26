@@ -8,16 +8,14 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField] private CharacterHub _hub;
 
     public Subject<InputType> InputStream { get; } = new();
-    public BehaviorSubject<Vector2> MovementDirectionStream { get; } = new(Vector2.zero);
 
     private void Start()
     {
-        _input.Move += direction => MovementDirectionStream.OnNext(direction);
-
         _input.Move += direction =>
         {
             InputStream.OnNext(new InputType
             {
+                Direction = direction,
                 Action = PlayerAction.Run,
                 IsHeld = direction.magnitude > 0
             });
@@ -34,9 +32,9 @@ public class PlayerInputHandler : MonoBehaviour
 
         _input.Attack += isPressed =>
         {
-            InputStream.OnNext(new InputType 
+            InputStream.OnNext(new InputType
             {
-                Action = PlayerAction.Attack,
+                Action = PlayerAction.PrimaryAttack,
                 IsHeld = isPressed
             });
         };

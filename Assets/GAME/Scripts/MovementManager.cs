@@ -1,13 +1,12 @@
 using R3;
 using UnityEngine;
 
-public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider, IInitializable<CharacterHub>
+public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider
 {
+    public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default); // System will be like
+
     public Transform CharacterOrientator => _characterModelTransform;
     public Transform CharacterTranslater => _characterTransform;
-
-    public Observable<MovementSnapshot> Stream => _currentMover.Stream;
-    public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default); // System will be like
 
     [SerializeField] private Transform _characterModelTransform;
     [SerializeField] private Transform _characterTransform;
@@ -39,28 +38,19 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
 
     }
 
+    private void Awake()
+    {
+        SetMover(new RbMover());
+    }
+
     private void OnDestroy()
     {
         _disposables.Dispose();
     }
 
-    private void Awake()
-    {
-        SetMover(new RbMover());
-    }
     private void Update()
     {
         _currentMover?.UpdateMover(Time.deltaTime);
-    }
-
-    public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
-    {
-        return capability switch
-        {
-            Capability.Movability => _movability,
-            Capability.Jumpability => _jumpability,
-            _ => Observable.Return((true, ""))
-        };
     }
 
     public void SetMover(IMover newMover)
@@ -93,10 +83,10 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
         _currentMover.HandleRootMotion(rootMotion.DeltaPosition);
     }
 
-    public void SetMoveInput(Vector2 move)
-    {
-        _currentMover?.SetMoveInput(move);
-    }
+    //public void SetMoveInput(Vector2 move)
+    //{
+    //    _currentMover?.SetMoveInput(move);
+    //}
 
     public bool GetIsGrounded()
     {
@@ -108,7 +98,13 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
         return false;
     }
 
-    public void Initialize(CharacterHub hub)
+    public Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability)
     {
+        return capability switch
+        {
+            Capability.Movability => _movability,
+            Capability.Jumpability => _jumpability,
+            _ => Observable.Return((true, ""))
+        };
     }
 }

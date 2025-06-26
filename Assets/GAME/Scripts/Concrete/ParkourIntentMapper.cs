@@ -4,7 +4,7 @@ public class ParkourIntentMapper : IIntentMapper
     {
         if (snapshot.Movement.State == MovementType.Parkour)
         {
-            if (input.Action == PlayerAction.Attack && input.IsHeld)
+            if (input.Action == PlayerAction.PrimaryAttack && input.IsHeld)
             {
                 return new ActionIntent
                 {

@@ -162,7 +162,6 @@ public class ServiceLocator : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void resetStatics()
     {
-        Debug.Log("Reset");
         _global = null;
         _sceneContainers = new Dictionary<Scene, ServiceLocator>();
         _tmpSceneGameObjects = new List<GameObject>();
