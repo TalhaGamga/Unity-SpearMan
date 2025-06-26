@@ -66,18 +66,13 @@ public sealed class AnimatorSystem : MonoBehaviour
         _anim.SetFloat(energyParam, s.Energy);
     }
 
-    public void OnAnimationEvent(string key) // May change
+    public void OnAnimationEvent(string eventString)
     {
-        var stateInfo = _anim.GetCurrentAnimatorStateInfo(1);
-
-        _animationFrameStream.OnNext(new AnimationFrame(
-            key,
-            stateInfo.IsName("") ? "" : stateInfo.shortNameHash.ToString(),
-            stateInfo.normalizedTime,
-            1,
-            _anim
-            ));
+        int layer = 0; // or parse from string as above!
+        var frame = AnimationEventParser.ToAnimationFrame(eventString, _anim, layer);
+        _animationFrameStream.OnNext(frame);
     }
+
 
     void ApplyReaction(in ReactionSnapshot s)
     {
