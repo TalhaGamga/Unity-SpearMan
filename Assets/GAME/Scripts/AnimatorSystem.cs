@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using R3;
+using System.Collections.Generic;
 
 public sealed class AnimatorSystem : MonoBehaviour
 {
@@ -55,15 +56,13 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     public void ApplyMovement(MovementSnapshot s)
     {
-        _anim.SetInteger(moveStateParam, (int)s.State);
-        _anim.SetFloat(moveSpeedParam, s.Speed);
+        var movementUpdates = AnimationParameterMapper.MapMovement(s);
+        ApplyAnimatorUpdates(movementUpdates);
     }
 
     public void ApplyCombat(CombatSnapshot s)
     {
         _anim.SetInteger(combatStateParam, (int)s.State);
-        _anim.SetTrigger(s.State.ToString());
-        _anim.SetFloat(energyParam, s.Energy);
     }
 
     public void OnAnimationEvent(string eventString)
@@ -73,6 +72,27 @@ public sealed class AnimatorSystem : MonoBehaviour
         _animationFrameStream.OnNext(frame);
     }
 
+    public void ApplyAnimatorUpdates(IEnumerable<AnimatorParamUpdate> updates)
+    {
+        foreach (var update in updates)
+        {
+            switch (update.ParamType)
+            {
+                case AnimatorControllerParameterType.Float:
+                    _anim.SetFloat(update.ParamName, (float)update.Value);
+                    break;
+                case AnimatorControllerParameterType.Int:
+                    _anim.SetInteger(update.ParamName, (int)update.Value);
+                    break;
+                case AnimatorControllerParameterType.Bool:
+                    _anim.SetBool(update.ParamName, (bool)update.Value);
+                    break;
+                case AnimatorControllerParameterType.Trigger:
+                    _anim.SetTrigger(update.ParamName);
+                    break;
+            }
+        }
+    }
 
     void ApplyReaction(in ReactionSnapshot s)
     {

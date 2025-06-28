@@ -66,7 +66,7 @@ public interface IWeapon
 public interface IMover
 {
     public Observable<MovementSnapshot> Stream { get; }
-
+    public MovementType LastState { get;}
     void Init(IMovementManager movementManager);
     void End();
     public void HandleInput(MovementAction action);
@@ -359,5 +359,5 @@ public interface IDamageEventSource
 
 public interface IIntentMapper
 {
-    ActionIntent? MapInputToIntent(InputType input, CharacterSnapshot snapshot);
+    ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot characterSnapshot);
 }

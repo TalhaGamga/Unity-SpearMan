@@ -18,11 +18,11 @@ public class CharacterHub : MonoBehaviour
     private void Awake()
     {
         _actionSystem = new ActionSystem(
-            _inputHandler.InputStream,
+            _inputHandler.InputSnapshotStream,
             _movementManager.SnapshotStream,
             _combatManager.SnapshotStream,
             _dummyReactionStream,
-            new CompositeIntentMapper(new MovementIntentMapper(), new SwordIntentMapper())
+            new CompositeIntentMapper(new SwordIntentMapper(), new MovementIntentMapper())
             );
 
         _actionSystem.MovementInputStream
@@ -37,6 +37,7 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_animatorSystem.HandleInput)
             .AddTo(_disposables);
 
+        #region // Make here better
         _actionSystem.MovementSnapshotStream
             .Subscribe(_animatorSystem.ApplyMovement)
             .AddTo(_disposables);
@@ -44,9 +45,18 @@ public class CharacterHub : MonoBehaviour
         _actionSystem.CombatSnapshotStream
             .Subscribe(_animatorSystem.ApplyCombat)
             .AddTo(_disposables);
+        #endregion
 
         _animatorSystem.RootMotionStream
             .Subscribe(_movementManager.HandleRootMotion)
+            .AddTo(_disposables);
+
+        _actionSystem.CombatSnapshotStream
+            .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
+            .AddTo(_disposables);
+
+        _actionSystem.MovementSnapshotStream
+            .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
             .AddTo(_disposables);
 
         _animatorSystem.AnimationFrameStream

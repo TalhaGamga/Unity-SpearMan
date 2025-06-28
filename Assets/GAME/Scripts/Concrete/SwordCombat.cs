@@ -23,7 +23,7 @@ public class SwordCombat : ICombat
     public void HandleInput(CombatAction action)
     {
         #region
-        _currentSnapshot = new CombatSnapshot(action.ActionType, 1f);
+        _currentSnapshot = new CombatSnapshot(action.ActionType, 1f, false);
         _stream.OnNext(_currentSnapshot);
         #endregion
 
@@ -51,37 +51,17 @@ public class SwordCombat : ICombat
         // Example: handle attack action and hit/cancel logic by event
         if (frame.ActionType == "Slash")
         {
-            if (frame.EventKey == "HitWindowStart" || (frame.Stage == 1 && frame.IsCancelable))
-            {
-                // Open damage window
-                _canDealDamage = true;
-                _currentSnapshot = new CombatSnapshot(CombatType.PrimaryAttack, 1f);
-                _stream.OnNext(_currentSnapshot);
-            }
-            else if (frame.EventKey == "HitWindowEnd")
-            {
-                // Close damage window
-                _canDealDamage = false;
-            }
-            else if (frame.EventKey == "AttackCancelableStart" || frame.IsCancelable)
-            {
-                // Allow attack cancel (transition to movement or another attack)
-                _isCancelable = true;
-            }
-            else if (frame.EventKey == "AttackCancelableEnd")
-            {
-                // End cancel window
-                _isCancelable = false;
-            }
-            else if (frame.EventKey == "SlashEnd")
-            {
-                // End attack, reset state
-                _canDealDamage = false;
-                _isCancelable = false;
-                End();
-            }
+            _stream.OnNext(_currentSnapshot);
+            _currentSnapshot = new CombatSnapshot(CombatType.InPrimaryAttack, 1f, frame.IsCancelable);
+            _stream.OnNext(_currentSnapshot);
+            //Debug.Log("In Primary Attack Called");
+        }
+
+        if (frame.ActionType == "SlashEnd")
+        {
+            _currentSnapshot = new CombatSnapshot(CombatType.Idle, 1f, frame.IsCancelable);
+            _stream.OnNext(_currentSnapshot);
+            //Debug.Log("End Primary Attack Called");
         }
     }
-
-
 }

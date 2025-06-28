@@ -14,6 +14,8 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private float _groundCheckDistance = 0.1f;
 
+    [SerializeField] private MovementType currentState;
+
     private IMover _currentMover;
     private float _speedModifier = 1f;
     private float _jumpModifier = 1f;
@@ -51,6 +53,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     private void Update()
     {
         _currentMover?.UpdateMover(Time.deltaTime);
+        currentState = _currentMover.LastState;
     }
 
     public void SetMover(IMover newMover)
@@ -83,10 +86,6 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
         _currentMover.HandleRootMotion(rootMotion.DeltaPosition);
     }
 
-    //public void SetMoveInput(Vector2 move)
-    //{
-    //    _currentMover?.SetMoveInput(move);
-    //}
 
     public bool GetIsGrounded()
     {

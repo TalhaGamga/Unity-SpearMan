@@ -1,5 +1,5 @@
 using R3;
-using System.Collections.Generic;
+using UnityEngine;
 
 public class ActionSystem
 {
@@ -10,17 +10,17 @@ public class ActionSystem
     public Subject<MovementSnapshot> MovementSnapshotStream { get; } = new();
     public Subject<CombatSnapshot> CombatSnapshotStream { get; } = new();
 
-
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
     private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
     private ReactionSnapshot _reactionSnapshot = ReactionSnapshot.Default;
 
     private readonly CompositeIntentMapper _intentMapper;
 
-    private readonly Dictionary<PlayerAction, InputType> _heldInputs = new();
+    // The latest full input snapshot (provided by PlayerInputHandler)
+    private InputSnapshot _currentInputSnapshot = InputSnapshot.Empty;
 
     public ActionSystem(
-        Observable<InputType> inputStream,
+        Observable<InputSnapshot> inputSnapshotStream,
         Observable<MovementSnapshot> movementStream,
         Observable<CombatSnapshot> combatStream,
         Observable<ReactionSnapshot> reactionStream,
@@ -29,17 +29,12 @@ public class ActionSystem
     {
         _intentMapper = intentMapper;
 
-        inputStream.Subscribe(OnInput);
+        inputSnapshotStream.Subscribe(OnInputSnapshot);
+
         movementStream.Subscribe(snapshot =>
         {
             _movementSnapshot = snapshot;
             MovementSnapshotStream.OnNext(snapshot);
-
-            foreach (var held in _heldInputs.Values)
-            {
-                if (held.Behavior == InputBehavior.Stateful)
-                    processIntent(held);
-            }
         });
 
         combatStream.Subscribe(snapshot =>
@@ -51,27 +46,25 @@ public class ActionSystem
         reactionStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
     }
 
-    public void Update()
+    private void OnInputSnapshot(InputSnapshot inputSnapshot)
     {
+        _currentInputSnapshot = inputSnapshot;
+        ProcessIntent();
     }
 
-    public void OnInput(InputType input)
+    public void OnInputOrContextChanged()
     {
-        if (input.IsHeld)
-            _heldInputs[input.Action] = input;
-        else
-            _heldInputs.Remove(input.Action);
-
-        processIntent(input);
+        ProcessIntent();
     }
 
-    private void processIntent(InputType input)
+    private void ProcessIntent()
     {
-        var snapshot = new CharacterSnapshot(
+        var characterSnapshot = new CharacterSnapshot(
             _movementSnapshot, _combatSnapshot, _reactionSnapshot
-            );
+        );
 
-        var intent = _intentMapper.MapInputToIntent(input, snapshot);
+        // Map using full current input and character snapshot
+        var intent = _intentMapper.MapInputToIntent(_currentInputSnapshot, characterSnapshot);
 
         if (intent != null)
         {
@@ -83,4 +76,8 @@ public class ActionSystem
                 AnimatorActions.OnNext(intent.Value.Animator.Value);
         }
     }
+
+    // Optionally, you can also have public methods to trigger intent processing
+    // e.g., in response to state changes (attack becomes cancelable, etc.),
+    // by simply calling ProcessIntent() to always use the latest InputSnapshot.
 }

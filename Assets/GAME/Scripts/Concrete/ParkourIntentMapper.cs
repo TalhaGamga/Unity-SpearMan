@@ -1,18 +1,7 @@
 public class ParkourIntentMapper : IIntentMapper
 {
-    public ActionIntent? MapInputToIntent(InputType input, CharacterSnapshot snapshot)
+    public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot characterSnapshot)
     {
-        if (snapshot.Movement.State == MovementType.Parkour)
-        {
-            if (input.Action == PlayerAction.PrimaryAttack && input.IsHeld)
-            {
-                return new ActionIntent
-                {
-                    Movement = new MovementAction { ActionType = MovementType.Parkour },
-                    Animator = new AnimatorAction { ActionType = AnimationType.ParkourAttack }
-                };
-            }
-        }
-        return null;
+        throw new System.NotImplementedException();
     }
 }

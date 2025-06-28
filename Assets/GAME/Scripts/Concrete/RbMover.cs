@@ -4,6 +4,7 @@ using UnityEngine;
 public class RbMover : IMover
 {
     public Observable<MovementSnapshot> Stream => _stream;
+    public MovementType LastState => _lastState;
 
     private Rigidbody _rb;
     private Transform _characterOrientator;
@@ -34,7 +35,7 @@ public class RbMover : IMover
     private bool _wasFallingLastFrame;
     private bool _isFalling;
 
-    private MovementType _lastState = MovementType.Idle;
+    public MovementType _lastState = MovementType.Idle;
     private float _lastBlendSpeed = 0f;
     private float _smoothedBlendSpeed = 0f;
     private const float _speedLerpRate = 10f;
@@ -190,7 +191,6 @@ public class RbMover : IMover
             _lastBlendSpeed = _smoothedBlendSpeed;
             _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed));
         }
-        Debug.Log(_lastState);
         // --- Reset root motion ---
         _rootMotionDelta = Vector3.zero;
     }
