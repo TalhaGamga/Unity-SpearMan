@@ -8,44 +8,75 @@ public class PlayerInputHandler : MonoBehaviour
         = new BehaviorSubject<InputSnapshot>(InputSnapshot.Empty);
 
     private readonly Dictionary<PlayerAction, InputType> _currentInputs = new();
+    private readonly Dictionary<PlayerAction, InputType> _previousInputs = new();
     private InputSnapshot _lastSnapshot;
 
     [SerializeField] private InputReader _input;
 
     private void Start()
     {
-        // Register event listeners to update input state
         _input.Move += direction =>
         {
-            UpdateInput(PlayerAction.Run, new InputType
-            {
-                Action = PlayerAction.Run,
-                IsHeld = direction.magnitude > 0,
-                Direction = direction
-            });
+            HandleInput(PlayerAction.Run, direction.magnitude > 0, direction);
         };
 
         _input.Jump += isPressed =>
         {
-            UpdateInput(PlayerAction.Jump, new InputType
-            {
-                Action = PlayerAction.Jump,
-                IsHeld = isPressed
-            });
+            HandleInput(PlayerAction.Jump, isPressed);
         };
 
         _input.Attack += isPressed =>
         {
-            UpdateInput(PlayerAction.PrimaryAttack, new InputType
-            {
-                Action = PlayerAction.PrimaryAttack,
-                IsHeld = isPressed
-            });
+            HandleInput(PlayerAction.PrimaryAttack, isPressed);
         };
 
-        // Add more listeners for other actions as needed...
-
         _input.Enable();
+    }
+
+    private void HandleInput(PlayerAction action, bool isHeld, Vector2 direction = default)
+    {
+        var behavior = InputBehaviorMap.Behavior.TryGetValue(action, out var b) ? b : InputBehavior.Eventful;
+
+        bool wasHeld = _currentInputs.TryGetValue(action, out var prevInput) && prevInput.IsHeld;
+
+        var input = new InputType
+        {
+            Action = action,
+            IsHeld = isHeld,
+            Direction = direction,
+            Value = 0f, // Fill as needed
+            WasPresseedThisFrame = false
+        };
+
+        if (behavior == InputBehavior.Eventful)
+        {
+            // If this is a new press, mark as JustPressed for this snapshot only
+            input.WasPresseedThisFrame = isHeld && !wasHeld;
+            input.IsHeld = input.WasPresseedThisFrame; // Only 'true' for the frame it is pressed
+
+            UpdateInput(action, input);
+
+            // Immediately "unset" the eventful input for next snapshots so it's only one-shot
+            if (input.WasPresseedThisFrame)
+            {
+                var resetInput = input;
+                resetInput.IsHeld = false;
+                resetInput.WasPresseedThisFrame = false;
+                // Delay this until next frame to avoid race conditions if needed
+                StartCoroutine(ResetEventfulInputNextFrame(action, resetInput));
+            }
+        }
+        else // Stateful
+        {
+            input.WasPresseedThisFrame = isHeld && !wasHeld; // Optionally track, but mainly use IsHeld
+            UpdateInput(action, input);
+        }
+    }
+
+    private System.Collections.IEnumerator ResetEventfulInputNextFrame(PlayerAction action, InputType resetInput)
+    {
+        yield return null;
+        UpdateInput(action, resetInput);
     }
 
     /// <summary>
@@ -53,20 +84,20 @@ public class PlayerInputHandler : MonoBehaviour
     /// </summary>
     private void UpdateInput(PlayerAction action, InputType newInput)
     {
+        _previousInputs[action] = _currentInputs.TryGetValue(action, out var prev) ? prev : default;
+
         bool changed = !_currentInputs.TryGetValue(action, out var prevInput) || !InputEquals(prevInput, newInput);
 
         if (changed)
         {
             _currentInputs[action] = newInput;
 
-            // Construct a new snapshot
             var newSnapshot = new InputSnapshot
             {
                 CurrentInputs = new Dictionary<PlayerAction, InputType>(_currentInputs),
                 TimeStamp = Time.time
             };
 
-            // Only emit if changed (optional, since we checked above)
             if (!InputSnapshotEquals(_lastSnapshot, newSnapshot))
             {
                 _lastSnapshot = newSnapshot;
@@ -75,12 +106,12 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    // Basic equality comparison for InputType (expand as needed)
     private bool InputEquals(InputType a, InputType b)
     {
         return a.IsHeld == b.IsHeld &&
                a.Value == b.Value &&
-               a.Direction == b.Direction; // If Direction is a struct, this works.
+               a.Direction == b.Direction &&
+               a.WasPresseedThisFrame == b.WasPresseedThisFrame;
     }
 
     private bool InputSnapshotEquals(InputSnapshot a, InputSnapshot b)
@@ -98,5 +129,4 @@ public class PlayerInputHandler : MonoBehaviour
         }
         return true;
     }
-
 }

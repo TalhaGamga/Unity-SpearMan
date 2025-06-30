@@ -27,22 +27,6 @@ public sealed class AnimatorSystem : MonoBehaviour
         _anim.applyRootMotion = true;
     }
 
-    public void HandleInput(AnimatorAction action)
-    {
-        _anim.applyRootMotion = action.UseRootMotion;
-        switch (action.ActionType)
-        {
-            case AnimationType.Idle:
-                break;
-            case AnimationType.Run:
-                break;
-            case AnimationType.Jump:
-                break;
-            default:
-                break;
-        }
-    }
-
     private void OnAnimatorMove() // Make here hybrid supporting
     {
         if (_anim.applyRootMotion)
@@ -62,7 +46,8 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     public void ApplyCombat(CombatSnapshot s)
     {
-        _anim.SetInteger(combatStateParam, (int)s.State);
+        var combatUpdates = AnimationParameterMapper.MapCombat(s);
+        ApplyAnimatorUpdates(combatUpdates);
     }
 
     public void OnAnimationEvent(string eventString)
@@ -88,7 +73,14 @@ public sealed class AnimatorSystem : MonoBehaviour
                     _anim.SetBool(update.ParamName, (bool)update.Value);
                     break;
                 case AnimatorControllerParameterType.Trigger:
-                    _anim.SetTrigger(update.ParamName);
+                    if (update.ResetTrigger)
+                        _anim.ResetTrigger(update.ParamName);
+                    else
+                    {
+                        _anim.SetTrigger(update.ParamName);
+                        Debug.Log("Set : " + update.ParamName);
+                    }
+
                     break;
             }
         }

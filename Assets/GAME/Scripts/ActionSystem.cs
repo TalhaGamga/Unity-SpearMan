@@ -1,11 +1,12 @@
 using R3;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ActionSystem
 {
     public Subject<MovementAction> MovementInputStream { get; } = new();
     public Subject<CombatAction> CombatInputStream { get; } = new();
-    public Subject<AnimatorAction> AnimatorActions { get; } = new();
+    public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorActions { get; } = new();
 
     public Subject<MovementSnapshot> MovementSnapshotStream { get; } = new();
     public Subject<CombatSnapshot> CombatSnapshotStream { get; } = new();
@@ -57,7 +58,7 @@ public class ActionSystem
         ProcessIntent();
     }
 
-    private void ProcessIntent()
+    public void ProcessIntent()
     {
         var characterSnapshot = new CharacterSnapshot(
             _movementSnapshot, _combatSnapshot, _reactionSnapshot
@@ -72,8 +73,8 @@ public class ActionSystem
                 MovementInputStream.OnNext(intent.Value.Movement.Value);
             if (intent.Value.Combat.HasValue)
                 CombatInputStream.OnNext(intent.Value.Combat.Value);
-            if (intent.Value.Animator.HasValue)
-                AnimatorActions.OnNext(intent.Value.Animator.Value);
+            if (intent.Value.AnimatorUpdates!=null)
+                AnimatorActions.OnNext(intent.Value.AnimatorUpdates);
         }
     }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider
 {
-    public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default); // System will be like
+    public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default);
 
     public Transform CharacterOrientator => _characterModelTransform;
     public Transform CharacterTranslater => _characterTransform;
@@ -60,24 +60,19 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     {
         _currentMover?.End();
         _currentMover = newMover;
-        _currentMover?.Init(this);
+        _currentMover?.Init(this, SnapshotStream);
 
         _disposables.Clear();
 
-        _currentMover.Stream
-            .Subscribe(snapshot =>
-            {
-                SnapshotStream.OnNext(snapshot);
-            })
-            .AddTo(_disposables);
+        SnapshotStream.AddTo(_disposables);
     }
 
     public void SetSpeedModifier(float newModifier) => _speedModifier = newModifier;
     public void SetJumpModifier(float newModifier) => _jumpModifier = newModifier;
 
-
     public void HandleInput(MovementAction action)
     {
+        Debug.Log("HandleMovementInput");
         _currentMover.HandleInput(action);
     }
 

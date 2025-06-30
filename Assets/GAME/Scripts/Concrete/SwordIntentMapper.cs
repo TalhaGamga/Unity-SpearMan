@@ -1,55 +1,64 @@
+using UnityEngine;
+
 public class SwordIntentMapper : IIntentMapper
 {
-    public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot characterSnapshot)
+    public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
     {
-        // Grab current inputs (null if not present)
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.PrimaryAttack, out var attackInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
-        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
+        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput); 
 
-        // Example: Running Attack
-        if (attackInput.IsHeld && runInput.IsHeld && characterSnapshot.Movement.State == MovementType.Run)
+        // Always map movement for animator parameters 
+        var animatorUpdates = AnimationParameterMapper.MapCombat(snapshot.Combat);
+
+        // 1. Running Attack (stateful + eventful)
+        if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Run)
         {
             return new ActionIntent
             {
                 Movement = new MovementAction { Direction = runInput.Direction, ActionType = MovementType.Run },
                 Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                Animator = new AnimatorAction { ActionType = AnimationType.RunningSlash }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-        // Example: Jumping Attack
-        if (attackInput.IsHeld && jumpInput.IsHeld && characterSnapshot.Movement.State == MovementType.Jump)
+        // 2. Jumping Attack (eventful)
+        if (attackInput.WasPresseedThisFrame && snapshot.Movement.State == MovementType.Jump)
         {
             return new ActionIntent
             {
                 Movement = new MovementAction { ActionType = MovementType.Jump },
                 Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                Animator = new AnimatorAction { ActionType = AnimationType.JumpSlash }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-        // Standard Attack
-        if (attackInput.IsHeld)
+        // 3. Standard Attack (eventful)
+        if (attackInput.WasPresseedThisFrame)
         {
+            Debug.Log("Attack Input given");
             return new ActionIntent
             {
                 Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
                 Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                Animator = new AnimatorAction { ActionType = AnimationType.Slash }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-        // Parry (example, could be eventful)
-        if (parryInput.IsHeld)
+        // 4. Parry (eventful)
+        if (parryInput.WasPresseedThisFrame)
         {
             return new ActionIntent
             {
                 Combat = new CombatAction { ActionType = CombatType.Parry },
-                Animator = new AnimatorAction { ActionType = AnimationType.Parry }
+                AnimatorUpdates = animatorUpdates
             };
         }
+
+        // Optionally: always send animator updates to keep parameters in sync (even if no combat)
+        // If needed, uncomment:
+        // return new ActionIntent { AnimatorUpdates = animatorUpdates };
 
         // No actionable intent
         return null;

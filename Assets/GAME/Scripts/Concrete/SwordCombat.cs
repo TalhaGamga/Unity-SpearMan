@@ -4,11 +4,9 @@ using UnityEngine;
 public class SwordCombat : ICombat
 {
     private readonly Sword _view;
-    private BehaviorSubject<CombatSnapshot> _stream { get; }
-
+    private readonly BehaviorSubject<CombatSnapshot> _stream;
     private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
     private bool _canDealDamage = false;
-    private bool _isCancelable;
 
     public SwordCombat(Sword view, BehaviorSubject<CombatSnapshot> stream)
     {
@@ -18,50 +16,90 @@ public class SwordCombat : ICombat
 
     public void Init(ICombatManager combatManager)
     {
+        // (Optional) Set up references if needed
     }
 
     public void HandleInput(CombatAction action)
     {
-        #region
-        _currentSnapshot = new CombatSnapshot(action.ActionType, 1f, false);
-        _stream.OnNext(_currentSnapshot);
-        #endregion
+        // Only trigger attack on explicit input for eventful actions
+        if (action.ActionType == CombatType.PrimaryAttack)
+        {
+            _currentSnapshot = new CombatSnapshot(
+                state: CombatType.PrimaryAttack,
+                energy: 1f,
+                isCancelable: false,
+                triggerAttack: true  // <-- Only true for this frame!
+            );
+            _stream.OnNext(_currentSnapshot);
 
-        // Handle Input as in the RbMober 
+            // Immediately clear trigger in the next frame/snapshot to ensure it's one-shot
+            // This prevents re-firing unless a new attack input comes in
+            _view.StartCoroutine(ResetAttackTriggerNextFrame());
+        }
+        // You can add parry or other combat actions similarly...
+    }
+
+    private System.Collections.IEnumerator ResetAttackTriggerNextFrame()
+    {
+        yield return null; // wait one frame
+        _currentSnapshot = new CombatSnapshot(
+            state: _currentSnapshot.State,
+            energy: _currentSnapshot.Energy,
+            isCancelable: _currentSnapshot.IsCancelable,
+            resetAttackTrigger: true
+        );
+        _stream.OnNext(_currentSnapshot);
     }
 
     public void Update(float deltaTime)
     {
-        // Handle Update if needed
+        // Handle per-frame combat logic if needed (e.g., charge attack, combo windows, etc)
     }
 
     public void OnWeaponCollision(Collider other)
     {
-        // Deal Damage
+        if (_canDealDamage)
+        {
+            // Deal damage to target
+        }
     }
 
     public void End()
     {
         _canDealDamage = false;
-        _stream.OnNext(CombatSnapshot.Default);
+        _currentSnapshot = CombatSnapshot.Default;
+        _stream.OnNext(_currentSnapshot);
     }
 
-    public void OnAnimationFrame(AnimationFrame frame) // Continue to cancelability
+    public void OnAnimationFrame(AnimationFrame frame)
     {
-        // Example: handle attack action and hit/cancel logic by event
-        if (frame.ActionType == "Slash")
+        Debug.Log("On Animation Frame");
+        // Handle animation-driven state transitions
+        switch (frame.ActionType)
         {
-            _stream.OnNext(_currentSnapshot);
-            _currentSnapshot = new CombatSnapshot(CombatType.InPrimaryAttack, 1f, frame.IsCancelable);
-            _stream.OnNext(_currentSnapshot);
-            //Debug.Log("In Primary Attack Called");
-        }
+            case "Slash":
+                _canDealDamage = true;
+                _currentSnapshot = new CombatSnapshot(
+                    state: CombatType.InPrimaryAttack,
+                    energy: 1f,
+                    isCancelable: frame.IsCancelable,
+                    triggerAttack: false // Not a trigger here; only in HandleInput
+                );
+                _stream.OnNext(_currentSnapshot);
+                break;
 
-        if (frame.ActionType == "SlashEnd")
-        {
-            _currentSnapshot = new CombatSnapshot(CombatType.Idle, 1f, frame.IsCancelable);
-            _stream.OnNext(_currentSnapshot);
-            //Debug.Log("End Primary Attack Called");
+            case "SlashEnd":
+                _canDealDamage = false;
+                _currentSnapshot = new CombatSnapshot(
+                    state: CombatType.Idle,
+                    energy: 1f,
+                    isCancelable: frame.IsCancelable,
+                    triggerAttack: false
+                );
+                _stream.OnNext(_currentSnapshot);
+                break;
+
+                // Add cases for parry, combo, etc if needed
         }
     }
 }

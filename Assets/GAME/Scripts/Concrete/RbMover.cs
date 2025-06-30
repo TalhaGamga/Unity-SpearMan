@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class RbMover : IMover
 {
-    public Observable<MovementSnapshot> Stream => _stream;
+    public BehaviorSubject<MovementSnapshot> Stream => _stream;
     public MovementType LastState => _lastState;
 
     private Rigidbody _rb;
@@ -40,11 +40,12 @@ public class RbMover : IMover
     private float _smoothedBlendSpeed = 0f;
     private const float _speedLerpRate = 10f;
 
-    private readonly Subject<MovementSnapshot> _stream = new();
+    private BehaviorSubject<MovementSnapshot> _stream;
 
-    public void Init(IMovementManager movementManager)
+    public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream)
     {
         _manager = movementManager;
+        _stream = SnapshotStream;
         _characterTranslater = _manager.CharacterTranslater;
         _characterOrientator = _manager.CharacterOrientator;
 
@@ -59,12 +60,6 @@ public class RbMover : IMover
     }
 
     public void End() => _moveInput = Vector2.zero;
-
-    //public void SetMoveInput(Vector2 move)
-    //{
-    //    _moveInput = move;
-    //    //Debug.Log(_moveInput);
-    //}
 
     public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
 

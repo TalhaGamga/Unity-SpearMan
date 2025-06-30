@@ -33,35 +33,37 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_combatManager.HandleInput)
             .AddTo(_disposables);
 
-        _actionSystem.AnimatorActions
-            .Subscribe(_animatorSystem.HandleInput)
-            .AddTo(_disposables);
+        //#region // Make here better
+        //_actionSystem.MovementSnapshotStream
+        //    .Subscribe(_animatorSystem.ApplyMovement)
+        //    .AddTo(_disposables);
 
-        #region // Make here better
-        _actionSystem.MovementSnapshotStream
-            .Subscribe(_animatorSystem.ApplyMovement)
-            .AddTo(_disposables);
-
-        _actionSystem.CombatSnapshotStream
-            .Subscribe(_animatorSystem.ApplyCombat)
-            .AddTo(_disposables);
-        #endregion
+        //_actionSystem.CombatSnapshotStream
+        //    .Subscribe(_animatorSystem.ApplyCombat)
+        //    .AddTo(_disposables);
+        //#endregion
 
         _animatorSystem.RootMotionStream
             .Subscribe(_movementManager.HandleRootMotion)
             .AddTo(_disposables);
 
         _actionSystem.CombatSnapshotStream
+            .DistinctUntilChanged()
             .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
             .AddTo(_disposables);
 
         _actionSystem.MovementSnapshotStream
+            .DistinctUntilChanged()
             .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
             .AddTo(_disposables);
 
         _animatorSystem.AnimationFrameStream
             .Subscribe(_combatManager.OnAnimationFrame)
             .AddTo(_disposables);
+
+        _actionSystem.AnimatorActions
+            .Subscribe(_animatorSystem.ApplyAnimatorUpdates)
+            .AddTo (_disposables);
 
         _modules = new List<Component>()
         {

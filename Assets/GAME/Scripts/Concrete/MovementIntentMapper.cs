@@ -1,100 +1,85 @@
+using System.Linq;
 using UnityEngine;
 
 public class MovementIntentMapper : IIntentMapper
 {
     public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
     {
-        // Access relevant input states
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
+
+        // Animator param updates—always included, even for idle
+        var animatorUpdates = AnimationParameterMapper.MapMovement(snapshot.Movement);
 
         // 1. If attacking, and attack is cancelable, and RUN is held, allow run-cancel
         if (snapshot.IsAttacking && snapshot.Combat.IsCancelable && runInput.IsHeld)
         {
-            return new ActionIntent()
+            var fullAnimatorUpdates = animatorUpdates.Concat(new[] { AnimatorParamUpdate.Trigger("AttackCancel") });
+
+            return new ActionIntent
             {
                 Movement = new MovementAction
                 {
                     Direction = runInput.Direction,
                     ActionType = MovementType.Run
-                },
-                Animator = new AnimatorAction
-                {
-                    ActionType = AnimationType.Run,
-                    UseRootMotion = true
                 },
                 Combat = new CombatAction
                 {
                     ActionType = CombatType.Cancel
-                }
+                },
+                AnimatorUpdates = fullAnimatorUpdates
             };
         }
 
-        // 2. If attacking, and jump is held, allow jump-cancel
-        if (snapshot.IsAttacking && jumpInput.IsHeld)
+        // 2. If attacking, and jump was just pressed, allow jump-cancel (eventful)
+        if (snapshot.IsAttacking && jumpInput.WasPresseedThisFrame)
         {
-            return new ActionIntent()
+            return new ActionIntent
+            { 
+                Movement = new MovementAction { ActionType = MovementType.Jump },
+                AnimatorUpdates = animatorUpdates
+            };
+        }
+
+        // 3. Normal jump (eventful)
+        if (jumpInput.WasPresseedThisFrame)
+        {
+            return new ActionIntent
             {
                 Movement = new MovementAction { ActionType = MovementType.Jump },
-                Animator = new AnimatorAction
-                {
-                    ActionType = AnimationType.Jump,
-                    UseRootMotion = false
-                }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-        // 3. If run is held, move
+        // 4. If run is held, move (stateful)
         if (runInput.IsHeld)
         {
-            return new ActionIntent()
+            return new ActionIntent
             {
                 Movement = new MovementAction
                 {
                     Direction = runInput.Direction,
                     ActionType = MovementType.Run
                 },
-                Animator = new AnimatorAction
-                {
-                    ActionType = AnimationType.Run,
-                    UseRootMotion = true
-                }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-        // 4. If jump is held, jump
-        if (jumpInput.IsHeld)
+        // 5. Idle fallback (no run/jump held)
+        if (!runInput.IsHeld && !jumpInput.IsHeld)
         {
-            return new ActionIntent()
-            {
-                Movement = new MovementAction { ActionType = MovementType.Jump },
-                Animator = new AnimatorAction
-                {
-                    ActionType = AnimationType.Jump,
-                    UseRootMotion = false
-                }
-            };
-        }
-
-        // 5. If no run/jump input held, go idle
-        if ((runInput.IsHeld == false) && (jumpInput.IsHeld == false))
-        {
-            return new ActionIntent()
+            return new ActionIntent
             {
                 Movement = new MovementAction
                 {
                     Direction = Vector2.zero,
                     ActionType = MovementType.Run
                 },
-                Animator = new AnimatorAction
-                {
-                    ActionType = AnimationType.Run,
-                    UseRootMotion = true // or false as needed
-                }
+                AnimatorUpdates = animatorUpdates
             };
         }
 
-
+        // No actionable intent
         return null;
     }
 }
