@@ -65,9 +65,8 @@ public interface IWeapon
 
 public interface IMover
 {
-    public BehaviorSubject<MovementSnapshot> Stream { get; }
     public MovementType LastState { get;}
-    void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream);
+    void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
     void End();
     public void HandleInput(MovementAction action);
     //void SetMoveInput(Vector2 move);

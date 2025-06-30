@@ -4,12 +4,9 @@ using UnityEngine;
 
 public class ActionSystem
 {
-    public Subject<MovementAction> MovementInputStream { get; } = new();
-    public Subject<CombatAction> CombatInputStream { get; } = new();
+    public Subject<MovementAction> MovementIntentStream { get; } = new();
+    public Subject<CombatAction> CombatIntentStream { get; } = new();
     public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorActions { get; } = new();
-
-    public Subject<MovementSnapshot> MovementSnapshotStream { get; } = new();
-    public Subject<CombatSnapshot> CombatSnapshotStream { get; } = new();
 
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
     private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
@@ -22,9 +19,9 @@ public class ActionSystem
 
     public ActionSystem(
         Observable<InputSnapshot> inputSnapshotStream,
-        Observable<MovementSnapshot> movementStream,
-        Observable<CombatSnapshot> combatStream,
-        Observable<ReactionSnapshot> reactionStream,
+        Observable<MovementSnapshot> movementSnapshotStream,
+        Observable<CombatSnapshot> combatSnapshotStream,
+        Observable<ReactionSnapshot> reactionSnapshotStream,
         CompositeIntentMapper intentMapper
         )
     {
@@ -32,19 +29,17 @@ public class ActionSystem
 
         inputSnapshotStream.Subscribe(OnInputSnapshot);
 
-        movementStream.Subscribe(snapshot =>
+        movementSnapshotStream.Subscribe(snapshot =>
         {
             _movementSnapshot = snapshot;
-            MovementSnapshotStream.OnNext(snapshot);
         });
 
-        combatStream.Subscribe(snapshot =>
+        combatSnapshotStream.Subscribe(snapshot =>
         {
             _combatSnapshot = snapshot;
-            CombatSnapshotStream.OnNext(snapshot);
         });
 
-        reactionStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
+        reactionSnapshotStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
     }
 
     private void OnInputSnapshot(InputSnapshot inputSnapshot)
@@ -60,6 +55,7 @@ public class ActionSystem
 
     public void ProcessIntent()
     {
+        Debug.Log("Process Intent");
         var characterSnapshot = new CharacterSnapshot(
             _movementSnapshot, _combatSnapshot, _reactionSnapshot
         );
@@ -70,10 +66,10 @@ public class ActionSystem
         if (intent != null)
         {
             if (intent.Value.Movement.HasValue)
-                MovementInputStream.OnNext(intent.Value.Movement.Value);
+                MovementIntentStream.OnNext(intent.Value.Movement.Value);
             if (intent.Value.Combat.HasValue)
-                CombatInputStream.OnNext(intent.Value.Combat.Value);
-            if (intent.Value.AnimatorUpdates!=null)
+                CombatIntentStream.OnNext(intent.Value.Combat.Value);
+            if (intent.Value.AnimatorUpdates != null)
                 AnimatorActions.OnNext(intent.Value.AnimatorUpdates);
         }
     }

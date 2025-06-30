@@ -38,17 +38,17 @@ public sealed class AnimatorSystem : MonoBehaviour
         }
     }
 
-    public void ApplyMovement(MovementSnapshot s)
-    {
-        var movementUpdates = AnimationParameterMapper.MapMovement(s);
-        ApplyAnimatorUpdates(movementUpdates);
-    }
+    //public void ApplyMovement(MovementSnapshot s)
+    //{
+    //    var movementUpdates = AnimationParameterMapper.MapMovement(s);
+    //    ApplyAnimatorUpdates(movementUpdates);
+    //}
 
-    public void ApplyCombat(CombatSnapshot s)
-    {
-        var combatUpdates = AnimationParameterMapper.MapCombat(s);
-        ApplyAnimatorUpdates(combatUpdates);
-    }
+    //public void ApplyCombat(CombatSnapshot s)
+    //{
+    //    var combatUpdates = AnimationParameterMapper.MapCombat(s);
+    //    ApplyAnimatorUpdates(combatUpdates);
+    //}
 
     public void OnAnimationEvent(string eventString)
     {
@@ -61,26 +61,28 @@ public sealed class AnimatorSystem : MonoBehaviour
     {
         foreach (var update in updates)
         {
+            //_anim.applyRootMotion = update.UseRootMotion;
             switch (update.ParamType)
             {
-                case AnimatorControllerParameterType.Float:
+                case AnimatorParamUpdateType.Float:
                     _anim.SetFloat(update.ParamName, (float)update.Value);
                     break;
-                case AnimatorControllerParameterType.Int:
+                case AnimatorParamUpdateType.Int:
                     _anim.SetInteger(update.ParamName, (int)update.Value);
                     break;
-                case AnimatorControllerParameterType.Bool:
+                case AnimatorParamUpdateType.Bool:
                     _anim.SetBool(update.ParamName, (bool)update.Value);
                     break;
-                case AnimatorControllerParameterType.Trigger:
+                case AnimatorParamUpdateType.Trigger:
                     if (update.ResetTrigger)
                         _anim.ResetTrigger(update.ParamName);
                     else
                     {
                         _anim.SetTrigger(update.ParamName);
-                        Debug.Log("Set : " + update.ParamName);
                     }
-
+                    break;
+                case AnimatorParamUpdateType.RootMotion:
+                    _anim.applyRootMotion = (bool)update.Value;
                     break;
             }
         }

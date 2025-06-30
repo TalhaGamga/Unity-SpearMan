@@ -1,5 +1,6 @@
 public enum CombatType
 {
+    None,
     PrimaryAttack,
     Cancel,
     InPrimaryAttack,

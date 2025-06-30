@@ -4,6 +4,7 @@ using UnityEngine;
 public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider
 {
     public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default);
+    public Subject<MovementTransition> TransitionStream { get; } = new();
 
     public Transform CharacterOrientator => _characterModelTransform;
     public Transform CharacterTranslater => _characterTransform;
@@ -60,7 +61,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     {
         _currentMover?.End();
         _currentMover = newMover;
-        _currentMover?.Init(this, SnapshotStream);
+        _currentMover?.Init(this, SnapshotStream, TransitionStream);
 
         _disposables.Clear();
 
@@ -72,7 +73,6 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
 
     public void HandleInput(MovementAction action)
     {
-        Debug.Log("HandleMovementInput");
         _currentMover.HandleInput(action);
     }
 

@@ -12,7 +12,7 @@ public class CharacterHub : MonoBehaviour
     private List<Component> _modules;
 
     public ActionSystem _actionSystem;
-    private Subject<ReactionSnapshot> _dummyReactionStream = new();
+    private Subject<ReactionSnapshot> _dummyReactionSnapshotStream = new();
     private CompositeDisposable _disposables = new();
 
     private void Awake()
@@ -21,49 +21,33 @@ public class CharacterHub : MonoBehaviour
             _inputHandler.InputSnapshotStream,
             _movementManager.SnapshotStream,
             _combatManager.SnapshotStream,
-            _dummyReactionStream,
+            _dummyReactionSnapshotStream,
             new CompositeIntentMapper(new SwordIntentMapper(), new MovementIntentMapper())
             );
 
-        _actionSystem.MovementInputStream
+        _actionSystem.MovementIntentStream
             .Subscribe(_movementManager.HandleInput)
             .AddTo(_disposables);
 
-        _actionSystem.CombatInputStream
+        _actionSystem.CombatIntentStream
             .Subscribe(_combatManager.HandleInput)
             .AddTo(_disposables);
 
-        //#region // Make here better
-        //_actionSystem.MovementSnapshotStream
-        //    .Subscribe(_animatorSystem.ApplyMovement)
-        //    .AddTo(_disposables);
+        _movementManager.SnapshotStream.
+            Subscribe(_ => _actionSystem.ProcessIntent())
+            .AddTo(_disposables);
 
-        //_actionSystem.CombatSnapshotStream
-        //    .Subscribe(_animatorSystem.ApplyCombat)
-        //    .AddTo(_disposables);
-        //#endregion
+        _actionSystem.AnimatorActions
+            .Subscribe(_animatorSystem.ApplyAnimatorUpdates)
+            .AddTo(_disposables);
 
         _animatorSystem.RootMotionStream
             .Subscribe(_movementManager.HandleRootMotion)
             .AddTo(_disposables);
 
-        _actionSystem.CombatSnapshotStream
-            .DistinctUntilChanged()
-            .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
-            .AddTo(_disposables);
-
-        _actionSystem.MovementSnapshotStream
-            .DistinctUntilChanged()
-            .Subscribe(_ => _actionSystem.OnInputOrContextChanged())
-            .AddTo(_disposables);
-
         _animatorSystem.AnimationFrameStream
             .Subscribe(_combatManager.OnAnimationFrame)
             .AddTo(_disposables);
-
-        _actionSystem.AnimatorActions
-            .Subscribe(_animatorSystem.ApplyAnimatorUpdates)
-            .AddTo (_disposables);
 
         _modules = new List<Component>()
         {

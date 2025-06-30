@@ -21,22 +21,29 @@ public class SwordCombat : ICombat
 
     public void HandleInput(CombatAction action)
     {
+        Debug.Log("Combat Handle Input");
         // Only trigger attack on explicit input for eventful actions
         if (action.ActionType == CombatType.PrimaryAttack)
         {
-            _currentSnapshot = new CombatSnapshot(
-                state: CombatType.PrimaryAttack,
-                energy: 1f,
-                isCancelable: false,
-                triggerAttack: true  // <-- Only true for this frame!
-            );
-            _stream.OnNext(_currentSnapshot);
+            //_currentSnapshot = new CombatSnapshot(
+            //    state: CombatType.PrimaryAttack,
+            //    energy: 1f,
+            //    isCancelable: false,
+            //    triggerAttack: true  // <-- Only true for this frame!
+            //);
+            //_stream.OnNext(_currentSnapshot);
 
             // Immediately clear trigger in the next frame/snapshot to ensure it's one-shot
             // This prevents re-firing unless a new attack input comes in
             _view.StartCoroutine(ResetAttackTriggerNextFrame());
         }
-        // You can add parry or other combat actions similarly...
+
+        if (action.ActionType == CombatType.Cancel)
+        {
+            _currentSnapshot = CombatSnapshot.Default;
+
+            _stream.OnNext(_currentSnapshot);
+        }
     }
 
     private System.Collections.IEnumerator ResetAttackTriggerNextFrame()
@@ -73,7 +80,6 @@ public class SwordCombat : ICombat
 
     public void OnAnimationFrame(AnimationFrame frame)
     {
-        Debug.Log("On Animation Frame");
         // Handle animation-driven state transitions
         switch (frame.ActionType)
         {

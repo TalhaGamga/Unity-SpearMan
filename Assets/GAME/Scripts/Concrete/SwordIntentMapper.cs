@@ -7,10 +7,10 @@ public class SwordIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.PrimaryAttack, out var attackInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
-        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput); 
+        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
 
         // Always map movement for animator parameters 
-        var animatorUpdates = AnimationParameterMapper.MapCombat(snapshot.Combat);
+        var animatorUpdates = AnimationParameterMapper.MapCombat(inputSnapshot, snapshot); // This is based on subsystems snapshot but the subsystems streaming after returning intention. So, this is early. This must be based on input. 
 
         // 1. Running Attack (stateful + eventful)
         if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Run)
@@ -37,7 +37,8 @@ public class SwordIntentMapper : IIntentMapper
         // 3. Standard Attack (eventful)
         if (attackInput.WasPresseedThisFrame)
         {
-            Debug.Log("Attack Input given");
+            Debug.Log("Attack Input");
+
             return new ActionIntent
             {
                 Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },

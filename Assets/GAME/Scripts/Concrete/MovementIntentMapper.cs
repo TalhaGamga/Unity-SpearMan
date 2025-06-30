@@ -8,8 +8,17 @@ public class MovementIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
 
-        // Animator param updates—always included, even for idle
-        var animatorUpdates = AnimationParameterMapper.MapMovement(snapshot.Movement);
+        var animatorUpdates = AnimationParameterMapper.MapMovement(inputSnapshot, snapshot);
+
+        // 0. Handle Falling
+        if (snapshot.Movement.State == MovementType.Fall)
+        {
+            return new ActionIntent
+            {
+                Movement = new MovementAction { ActionType = MovementType.Fall, Direction = runInput.Direction },
+                AnimatorUpdates = animatorUpdates
+            };
+        }
 
         // 1. If attacking, and attack is cancelable, and RUN is held, allow run-cancel
         if (snapshot.IsAttacking && snapshot.Combat.IsCancelable && runInput.IsHeld)
@@ -35,7 +44,7 @@ public class MovementIntentMapper : IIntentMapper
         if (snapshot.IsAttacking && jumpInput.WasPresseedThisFrame)
         {
             return new ActionIntent
-            { 
+            {
                 Movement = new MovementAction { ActionType = MovementType.Jump },
                 AnimatorUpdates = animatorUpdates
             };
@@ -73,13 +82,12 @@ public class MovementIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     Direction = Vector2.zero,
-                    ActionType = MovementType.Run
+                    ActionType = MovementType.Idle
                 },
                 AnimatorUpdates = animatorUpdates
             };
         }
 
-        // No actionable intent
         return null;
     }
 }

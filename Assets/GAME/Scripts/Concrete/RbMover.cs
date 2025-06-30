@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class RbMover : IMover
 {
-    public BehaviorSubject<MovementSnapshot> Stream => _stream;
     public MovementType LastState => _lastState;
 
     private Rigidbody _rb;
@@ -41,11 +40,14 @@ public class RbMover : IMover
     private const float _speedLerpRate = 10f;
 
     private BehaviorSubject<MovementSnapshot> _stream;
+    private Subject<MovementTransition> _transitionStream;
 
-    public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream)
+    public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
     {
         _manager = movementManager;
         _stream = SnapshotStream;
+        _transitionStream = TransitionStream;
+
         _characterTranslater = _manager.CharacterTranslater;
         _characterOrientator = _manager.CharacterOrientator;
 
@@ -61,13 +63,28 @@ public class RbMover : IMover
 
     public void End() => _moveInput = Vector2.zero;
 
-    public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
+    public void HandleRootMotion(Vector3 delta)
+    {
+        _rootMotionDelta = delta;
+        Debug.Log("Root Motion");
+    }
 
     public void HandleInput(MovementAction action)
     {
         if (action.ActionType == MovementType.Run)
         {
             _moveInput = action.Direction;
+        }
+
+        if (action.ActionType == MovementType.Fall)
+        {
+            _moveInput = action.Direction;
+            Debug.Log(_moveInput);
+        }
+
+        if (action.ActionType == MovementType.Idle)
+        {
+            _moveInput = Vector2.zero;
         }
 
         if (action.ActionType == MovementType.Jump)
@@ -182,6 +199,9 @@ public class RbMover : IMover
         // --- Emit MovementSnapshot only on change ---
         if (state != _lastState || Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f)
         {
+            // Emit transition if state changed
+            if (state != _lastState && _transitionStream != null)
+                _transitionStream.OnNext(new MovementTransition { From = _lastState, To = state }); // For spesific transitions
             _lastState = state;
             _lastBlendSpeed = _smoothedBlendSpeed;
             _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed));
