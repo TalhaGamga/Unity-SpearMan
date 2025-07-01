@@ -1,6 +1,5 @@
 using R3;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class ActionSystem
 {
@@ -52,10 +51,16 @@ public class ActionSystem
     {
         ProcessIntent();
     }
-
+    public void Update() // temporary - just for test
+    {
+        var characterSnapshot = new CharacterSnapshot(
+                _movementSnapshot, _combatSnapshot, _reactionSnapshot
+            );
+        var animatorUpdates = AnimationParameterMapper.MapMovement(_currentInputSnapshot, characterSnapshot);
+        AnimatorActions.OnNext(animatorUpdates);
+    }
     public void ProcessIntent()
     {
-        Debug.Log("Process Intent");
         var characterSnapshot = new CharacterSnapshot(
             _movementSnapshot, _combatSnapshot, _reactionSnapshot
         );
@@ -69,8 +74,8 @@ public class ActionSystem
                 MovementIntentStream.OnNext(intent.Value.Movement.Value);
             if (intent.Value.Combat.HasValue)
                 CombatIntentStream.OnNext(intent.Value.Combat.Value);
-            if (intent.Value.AnimatorUpdates != null)
-                AnimatorActions.OnNext(intent.Value.AnimatorUpdates);
+            //if (intent.Value.AnimatorUpdates != null)
+            //    AnimatorActions.OnNext(intent.Value.AnimatorUpdates);
         }
     }
 

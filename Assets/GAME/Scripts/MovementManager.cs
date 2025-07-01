@@ -73,7 +73,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
 
     public void HandleInput(MovementAction action)
     {
-        _currentMover.HandleInput(action);
+        _currentMover.HandleAction(action);
     }
 
     public void HandleRootMotion(RootMotionFrame rootMotion)

@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class MovementIntentMapper : IIntentMapper
 {
+    // Set this to match your RbMover's _maxJumpStage (or make it configurable)
+    private readonly int _maxJumpStage = 2;
+
     public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
     {
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
@@ -40,8 +43,8 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 2. If attacking, and jump was just pressed, allow jump-cancel (eventful)
-        if (snapshot.IsAttacking && jumpInput.WasPresseedThisFrame)
+        // 2. If attacking, and jump was just pressed, allow jump-cancel (eventful, and only if jump available)
+        if (snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
         {
             return new ActionIntent
             {
@@ -50,9 +53,10 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 3. Normal jump (eventful)
-        if (jumpInput.WasPresseedThisFrame)
+        // 3. Normal jump (eventful, only if jump available)
+        if (jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
         {
+            Debug.Log("Jump");
             return new ActionIntent
             {
                 Movement = new MovementAction { ActionType = MovementType.Jump },

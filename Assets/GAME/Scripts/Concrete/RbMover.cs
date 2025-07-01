@@ -34,6 +34,9 @@ public class RbMover : IMover
     private bool _wasFallingLastFrame;
     private bool _isFalling;
 
+    private int _jumpStage = 0;          // Current jump count (0=ground, 1=first jump, etc.)
+    private int _maxJumpStage = 2;       // 1=single, 2=double, 3=triple jump...
+
     public MovementType _lastState = MovementType.Idle;
     private float _lastBlendSpeed = 0f;
     private float _smoothedBlendSpeed = 0f;
@@ -63,37 +66,24 @@ public class RbMover : IMover
 
     public void End() => _moveInput = Vector2.zero;
 
-    public void HandleRootMotion(Vector3 delta)
-    {
-        _rootMotionDelta = delta;
-        Debug.Log("Root Motion");
-    }
+    public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
 
-    public void HandleInput(MovementAction action)
+    public void HandleAction(MovementAction action)
     {
-        if (action.ActionType == MovementType.Run)
-        {
+        // Always update move input on run/fall for air control
+        if (action.ActionType == MovementType.Run || action.ActionType == MovementType.Fall)
             _moveInput = action.Direction;
-        }
-
-        if (action.ActionType == MovementType.Fall)
-        {
-            _moveInput = action.Direction;
-            Debug.Log(_moveInput);
-        }
 
         if (action.ActionType == MovementType.Idle)
-        {
             _moveInput = Vector2.zero;
-        }
 
+        // Jump queue (let air jumps happen too!)
         if (action.ActionType == MovementType.Jump)
         {
             _jumpQueued = true;
             _jumpHeld = true;
             _jumpBufferTimer = _jumpBufferTime;
         }
-
         else if (action.ActionType == MovementType.Land)
         {
             _jumpHeld = false;
@@ -119,7 +109,7 @@ public class RbMover : IMover
         if (isGrounded) _coyoteTimer = _coyoteTime;
         else _coyoteTimer -= deltaTime;
 
-        // --- Root motion delta for ground movement (do not change axis) ---
+        // --- Root motion delta for ground movement ---
         float zRootSpeed = _rootMotionDelta.z / deltaTime;
         float xRootSpeed = _rootMotionDelta.x / deltaTime;
         Vector3 rootMotionVelocity = new Vector3(xRootSpeed, 0f, zRootSpeed);
@@ -128,13 +118,14 @@ public class RbMover : IMover
         float verticalVel = rbVel.y;
         bool jumpingThisFrame = false;
 
-        // --- Jump logic ---
-        if (_jumpQueued && _coyoteTimer > 0f && !_isJumping)
+        // --- Air jump logic: allow jump if not at max stage
+        if (_jumpQueued && _jumpStage < _maxJumpStage)
         {
             verticalVel = _jumpVelocity;
             jumpingThisFrame = true;
             _isJumping = true;
             _jumpQueued = false;
+            _jumpStage++;           // <--- increment jump stage
         }
         else if (isGrounded)
         {
@@ -142,6 +133,7 @@ public class RbMover : IMover
             {
                 verticalVel = 0f;
                 _isJumping = false;
+                _jumpStage = 0;     // <--- reset on landing!
             }
         }
         else
@@ -151,7 +143,7 @@ public class RbMover : IMover
                 verticalVel *= 0.98f;
             verticalVel -= _gravity * deltaTime;
         }
-
+        Debug.Log(_jumpStage);
         Vector3 finalVel = rbVel;
 
         if (isGrounded)
@@ -169,7 +161,7 @@ public class RbMover : IMover
         // --- Apply velocity ---
         _rb.linearVelocity = finalVel;
 
-        // --- Face intended direction based on input (for visuals only) ---
+        // --- Face intended direction ---
         if (_moveInput.sqrMagnitude > 0.01f && _characterOrientator != null)
         {
             Vector3 inputDir = new Vector3(-_moveInput.y, 0f, _moveInput.x);
@@ -183,11 +175,11 @@ public class RbMover : IMover
         _wasGroundedLastFrame = isGrounded;
         _wasFallingLastFrame = _isFalling;
 
-        // --- Animation MoveSpeed for blending (from input magnitude, not root motion) ---
+        // --- Animation MoveSpeed for blending ---
         float inputBlendSpeed = _moveInput.magnitude;
         _smoothedBlendSpeed = Mathf.Lerp(_smoothedBlendSpeed, inputBlendSpeed, 1 - Mathf.Exp(-_speedLerpRate * deltaTime));
 
-        // --- State (from input magnitude, not speed) ---
+        // --- State ---
         MovementType state = MovementType.Idle;
         if (justLanded) state = MovementType.Land;
         else if (_isJumping && rbVel.y > .1f) state = MovementType.Jump;
@@ -196,16 +188,28 @@ public class RbMover : IMover
         else if (_moveInput.sqrMagnitude < 0.96f) state = MovementType.Walk;
         else state = MovementType.Run;
 
-        // --- Emit MovementSnapshot only on change ---
-        if (state != _lastState || Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f)
+        bool stateChanged = (state != _lastState);
+        bool blendChanged = Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f;
+        bool jumpStageChanged = jumpingThisFrame;
+
+        // --- 1. Emit MovementSnapshot FIRST (whenever data changes) ---
+        if (stateChanged || blendChanged || jumpStageChanged)
         {
-            // Emit transition if state changed
-            if (state != _lastState && _transitionStream != null)
-                _transitionStream.OnNext(new MovementTransition { From = _lastState, To = state }); // For spesific transitions
-            _lastState = state;
             _lastBlendSpeed = _smoothedBlendSpeed;
-            _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed));
+            _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed, _jumpStage));
         }
+
+        // --- 2. Then emit transition signal ONLY if state changed ---
+        if (stateChanged)
+        {
+            if (state == MovementType.Fall)
+            {
+                _transitionStream?.OnNext(new MovementTransition { From = _lastState, To = state });
+            }
+
+            _lastState = state;
+        }
+
         // --- Reset root motion ---
         _rootMotionDelta = Vector3.zero;
     }

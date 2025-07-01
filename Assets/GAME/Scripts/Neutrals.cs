@@ -68,7 +68,7 @@ public interface IMover
     public MovementType LastState { get;}
     void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
     void End();
-    public void HandleInput(MovementAction action);
+    public void HandleAction(MovementAction action);
     //void SetMoveInput(Vector2 move);
 
     void HandleRootMotion(Vector3 delta);

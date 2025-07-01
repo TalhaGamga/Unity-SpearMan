@@ -33,9 +33,15 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_combatManager.HandleInput)
             .AddTo(_disposables);
 
-        _movementManager.SnapshotStream.
-            Subscribe(_ => _actionSystem.ProcessIntent())
-            .AddTo(_disposables);
+        //_movementManager.SnapshotStream.
+        //    Subscribe(_ => _actionSystem.ProcessIntent())
+        //    .AddTo(_disposables);
+
+        _movementManager.TransitionStream
+            .Subscribe(transition =>
+            {
+                _actionSystem.ProcessIntent();
+            });
 
         _actionSystem.AnimatorActions
             .Subscribe(_animatorSystem.ApplyAnimatorUpdates)
@@ -55,6 +61,10 @@ public class CharacterHub : MonoBehaviour
             _movementManager,
             _combatManager
         };
+    }
+    private void Update()
+    {
+        _actionSystem.Update();
     }
 
     private void OnDestroy()

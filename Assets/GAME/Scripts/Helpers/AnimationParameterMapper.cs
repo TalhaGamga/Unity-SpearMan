@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 public static class AnimationParameterMapper
 {
@@ -22,7 +21,10 @@ public static class AnimationParameterMapper
         // Example: Jump trigger (fire only on new jump input)
         if (input.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput) && jumpInput.WasPresseedThisFrame)
         {
-            yield return AnimatorParamUpdate.Trigger("Jump");
+            if (snapshot.Movement.JumpStage == 1)
+                yield return AnimatorParamUpdate.Trigger("Jump");
+            else if (snapshot.Movement.JumpStage == 2)
+                yield return AnimatorParamUpdate.Trigger("DoubleJump");
         }
 
         // Example: Dash trigger (add your logic as needed)
@@ -36,6 +38,11 @@ public static class AnimationParameterMapper
         else
             yield return AnimatorParamUpdate.RootMotion(false);
 
+        if (snapshot.Movement.State == MovementType.Land)
+        {
+            yield return AnimatorParamUpdate.Trigger("Jump", reset: true);
+            yield return AnimatorParamUpdate.Trigger("DoubleJump", reset: true);
+        }
         // Example: Land trigger (if you want to fire a land animation)
         // if (snapshot.Movement.StateChangedTo(MovementType.Land)) ...
         //     yield return AnimatorParamUpdate.Trigger("Land");

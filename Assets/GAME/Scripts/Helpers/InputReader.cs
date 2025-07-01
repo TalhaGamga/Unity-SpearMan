@@ -34,7 +34,8 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        Move.Invoke(context.ReadValue<Vector2>());
+        if (context.started || context.canceled)
+            Move.Invoke(context.ReadValue<Vector2>());
     }
 
     public void OnJump(InputAction.CallbackContext context)
