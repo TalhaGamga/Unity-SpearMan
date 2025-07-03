@@ -20,6 +20,9 @@ public sealed class AnimatorSystem : MonoBehaviour
     private readonly Subject<RootMotionFrame> _rootMotionSubject = new();
     private readonly Subject<AnimationFrame> _animationFrameStream = new();
 
+    private HashSet<string> _triggersToResetNextFrame = new();
+    private HashSet<string> _triggersJustSet = new();
+
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
     private void Start()
@@ -38,17 +41,19 @@ public sealed class AnimatorSystem : MonoBehaviour
         }
     }
 
-    //public void ApplyMovement(MovementSnapshot s)
-    //{
-    //    var movementUpdates = AnimationParameterMapper.MapMovement(s);
-    //    ApplyAnimatorUpdates(movementUpdates);
-    //}
+    private void LateUpdate()
+    {
+        // Actually reset triggers from the *previous* frame
+        foreach (var trigger in _triggersToResetNextFrame)
+            _anim.ResetTrigger(trigger);
 
-    //public void ApplyCombat(CombatSnapshot s)
-    //{
-    //    var combatUpdates = AnimationParameterMapper.MapCombat(s);
-    //    ApplyAnimatorUpdates(combatUpdates);
-    //}
+        _triggersToResetNextFrame.Clear();
+
+        // Move just-set triggers into the "reset next frame" set
+        var tmp = _triggersToResetNextFrame;
+        _triggersToResetNextFrame = _triggersJustSet;
+        _triggersJustSet = tmp;
+    }
 
     public void OnAnimationEvent(string eventString)
     {
@@ -57,11 +62,10 @@ public sealed class AnimatorSystem : MonoBehaviour
         _animationFrameStream.OnNext(frame);
     }
 
-    public void ApplyAnimatorUpdates(IEnumerable<AnimatorParamUpdate> updates)
+    public void HandleAnimatorUpdates(IEnumerable<AnimatorParamUpdate> updates)
     {
         foreach (var update in updates)
         {
-            //_anim.applyRootMotion = update.UseRootMotion;
             switch (update.ParamType)
             {
                 case AnimatorParamUpdateType.Float:
@@ -79,6 +83,7 @@ public sealed class AnimatorSystem : MonoBehaviour
                     else
                     {
                         _anim.SetTrigger(update.ParamName);
+                        _triggersJustSet.Add(update.ParamName);
                     }
                     break;
                 case AnimatorParamUpdateType.RootMotion:

@@ -25,6 +25,18 @@ public class CharacterHub : MonoBehaviour
             new CompositeIntentMapper(new SwordIntentMapper(), new MovementIntentMapper())
             );
 
+        _movementManager.TransitionStream
+        .Subscribe(transition =>
+        {
+            _actionSystem.ProcessIntent();
+        });
+
+        _combatManager.TransitionStream
+.Subscribe(transition =>
+        {
+            _actionSystem.ProcessIntent();
+        });
+
         _actionSystem.MovementIntentStream
             .Subscribe(_movementManager.HandleInput)
             .AddTo(_disposables);
@@ -33,18 +45,16 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_combatManager.HandleInput)
             .AddTo(_disposables);
 
-        //_movementManager.SnapshotStream.
-        //    Subscribe(_ => _actionSystem.ProcessIntent())
-        //    .AddTo(_disposables);
+        _movementManager.SnapshotStream.
+            Subscribe(_ => _actionSystem.ProcessAnimator())
+            .AddTo(_disposables);
 
-        _movementManager.TransitionStream
-            .Subscribe(transition =>
-            {
-                _actionSystem.ProcessIntent();
-            });
+        _combatManager.SnapshotStream.
+            Subscribe(_ => _actionSystem.ProcessAnimator())
+            .AddTo(_disposables);
 
-        _actionSystem.AnimatorActions
-            .Subscribe(_animatorSystem.ApplyAnimatorUpdates)
+        _actionSystem.AnimatorUpdates
+            .Subscribe(_animatorSystem.HandleAnimatorUpdates)
             .AddTo(_disposables);
 
         _animatorSystem.RootMotionStream
@@ -61,10 +71,6 @@ public class CharacterHub : MonoBehaviour
             _movementManager,
             _combatManager
         };
-    }
-    private void Update()
-    {
-        _actionSystem.Update();
     }
 
     private void OnDestroy()

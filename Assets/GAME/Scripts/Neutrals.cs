@@ -50,6 +50,7 @@ public interface ICombatManager
 
 public interface ICombat
 {
+    public CombatType CombatType { get; }
     void Init(ICombatManager combatManager);
     void Update(float deltaTime);
     void HandleInput(CombatAction action);
@@ -60,12 +61,12 @@ public interface ICombat
 
 public interface IWeapon
 {
-    ICombat CreateCombat(ICombatManager combatManager, BehaviorSubject<CombatSnapshot> snapshotStream);
+    ICombat CreateCombat(ICombatManager combatManager, BehaviorSubject<CombatSnapshot> snapshotStream, BehaviorSubject<CombatTransition> transitionStream);
 }
 
 public interface IMover
 {
-    public MovementType LastState { get;}
+    public MovementType LastState { get; }
     void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
     void End();
     public void HandleAction(MovementAction action);

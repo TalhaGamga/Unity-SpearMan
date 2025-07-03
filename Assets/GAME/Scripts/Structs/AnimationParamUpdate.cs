@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public enum AnimatorParamUpdateType
 {
     Float, Int, Bool, Trigger, RootMotion

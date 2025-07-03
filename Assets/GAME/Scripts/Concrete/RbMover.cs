@@ -75,7 +75,9 @@ public class RbMover : IMover
             _moveInput = action.Direction;
 
         if (action.ActionType == MovementType.Idle)
+        {
             _moveInput = Vector2.zero;
+        }
 
         // Jump queue (let air jumps happen too!)
         if (action.ActionType == MovementType.Jump)
@@ -143,7 +145,6 @@ public class RbMover : IMover
                 verticalVel *= 0.98f;
             verticalVel -= _gravity * deltaTime;
         }
-        Debug.Log(_jumpStage);
         Vector3 finalVel = rbVel;
 
         if (isGrounded)

@@ -8,58 +8,49 @@ public class SwordIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
-
-        // Always map movement for animator parameters 
-        var animatorUpdates = AnimationParameterMapper.MapCombat(inputSnapshot, snapshot); // This is based on subsystems snapshot but the subsystems streaming after returning intention. So, this is early. This must be based on input. 
-
-        // 1. Running Attack (stateful + eventful)
-        if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Run)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction { Direction = runInput.Direction, ActionType = MovementType.Run },
-                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                AnimatorUpdates = animatorUpdates
-            };
-        }
-
-        // 2. Jumping Attack (eventful)
-        if (attackInput.WasPresseedThisFrame && snapshot.Movement.State == MovementType.Jump)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction { ActionType = MovementType.Jump },
-                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                AnimatorUpdates = animatorUpdates
-            };
-        }
-
-        // 3. Standard Attack (eventful)
+        Debug.Log("ýntent");
+        // 1. Combo-aware Standard Attack (eventful)
+        // (Let SwordCombat decide if this should start or continue a combo)
         if (attackInput.WasPresseedThisFrame)
         {
-            Debug.Log("Attack Input");
+            Debug.Log("Slash Start_1");
+            // Optionally: You could block combos in air if needed
+            if (snapshot.Movement.State == MovementType.Jump || snapshot.Movement.State == MovementType.Fall)
+                return null;
+
+            // Optionally: Only allow if not attacking or in a combo window
+            // if (!snapshot.Combat.IsAttacking && snapshot.Combat.ComboStep == 0)
+            //    return ... // only new attack
 
             return new ActionIntent
             {
+                // If running, movement type could be set to Run, but typically you go Idle when slashing
                 Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
-                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack },
-                AnimatorUpdates = animatorUpdates
+                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
             };
         }
 
-        // 4. Parry (eventful)
+        // 2. Running Attack (eventful)
+        // (Usually handled above, but you can special-case if running state matters)
+        if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Run)
+        {
+            Debug.Log("Slash Start_2");
+
+            return new ActionIntent
+            {
+                Movement = new MovementAction { Direction = runInput.Direction, ActionType = MovementType.Idle },
+                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
+            };
+        }
+
+        // 3. Parry (eventful)
         if (parryInput.WasPresseedThisFrame)
         {
             return new ActionIntent
             {
-                Combat = new CombatAction { ActionType = CombatType.Parry },
-                AnimatorUpdates = animatorUpdates
+                Combat = new CombatAction { ActionType = CombatType.Parry }
             };
         }
-
-        // Optionally: always send animator updates to keep parameters in sync (even if no combat)
-        // If needed, uncomment:
-        // return new ActionIntent { AnimatorUpdates = animatorUpdates };
 
         // No actionable intent
         return null;

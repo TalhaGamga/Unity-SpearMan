@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 public class MovementIntentMapper : IIntentMapper
@@ -11,23 +10,9 @@ public class MovementIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
 
-        var animatorUpdates = AnimationParameterMapper.MapMovement(inputSnapshot, snapshot);
-
-        // 0. Handle Falling
-        if (snapshot.Movement.State == MovementType.Fall)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction { ActionType = MovementType.Fall, Direction = runInput.Direction },
-                AnimatorUpdates = animatorUpdates
-            };
-        }
-
         // 1. If attacking, and attack is cancelable, and RUN is held, allow run-cancel
         if (snapshot.IsAttacking && snapshot.Combat.IsCancelable && runInput.IsHeld)
         {
-            var fullAnimatorUpdates = animatorUpdates.Concat(new[] { AnimatorParamUpdate.Trigger("AttackCancel") });
-
             return new ActionIntent
             {
                 Movement = new MovementAction
@@ -39,7 +24,15 @@ public class MovementIntentMapper : IIntentMapper
                 {
                     ActionType = CombatType.Cancel
                 },
-                AnimatorUpdates = fullAnimatorUpdates
+            };
+        }
+
+        // 0. Handle Falling
+        if (snapshot.Movement.State == MovementType.Fall)
+        {
+            return new ActionIntent
+            {
+                Movement = new MovementAction { ActionType = MovementType.Fall, Direction = runInput.Direction }
             };
         }
 
@@ -48,24 +41,21 @@ public class MovementIntentMapper : IIntentMapper
         {
             return new ActionIntent
             {
-                Movement = new MovementAction { ActionType = MovementType.Jump },
-                AnimatorUpdates = animatorUpdates
+                Movement = new MovementAction { ActionType = MovementType.Jump }
             };
         }
 
         // 3. Normal jump (eventful, only if jump available)
         if (jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
         {
-            Debug.Log("Jump");
             return new ActionIntent
             {
-                Movement = new MovementAction { ActionType = MovementType.Jump },
-                AnimatorUpdates = animatorUpdates
+                Movement = new MovementAction { ActionType = MovementType.Jump }
             };
         }
 
         // 4. If run is held, move (stateful)
-        if (runInput.IsHeld)
+        if (runInput.IsHeld && snapshot.Combat.State == CombatType.Idle)
         {
             return new ActionIntent
             {
@@ -73,8 +63,7 @@ public class MovementIntentMapper : IIntentMapper
                 {
                     Direction = runInput.Direction,
                     ActionType = MovementType.Run
-                },
-                AnimatorUpdates = animatorUpdates
+                }
             };
         }
 
@@ -87,8 +76,7 @@ public class MovementIntentMapper : IIntentMapper
                 {
                     Direction = Vector2.zero,
                     ActionType = MovementType.Idle
-                },
-                AnimatorUpdates = animatorUpdates
+                }
             };
         }
 

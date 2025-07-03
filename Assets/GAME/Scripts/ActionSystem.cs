@@ -5,7 +5,7 @@ public class ActionSystem
 {
     public Subject<MovementAction> MovementIntentStream { get; } = new();
     public Subject<CombatAction> CombatIntentStream { get; } = new();
-    public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorActions { get; } = new();
+    public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorUpdates { get; } = new();
 
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
     private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
@@ -51,14 +51,16 @@ public class ActionSystem
     {
         ProcessIntent();
     }
-    public void Update() // temporary - just for test
+
+    public void ProcessAnimator()
     {
         var characterSnapshot = new CharacterSnapshot(
-                _movementSnapshot, _combatSnapshot, _reactionSnapshot
-            );
-        var animatorUpdates = AnimationParameterMapper.MapMovement(_currentInputSnapshot, characterSnapshot);
-        AnimatorActions.OnNext(animatorUpdates);
+    _movementSnapshot, _combatSnapshot, _reactionSnapshot);
+
+        var updates = AnimationParameterMapper.AnimatorMapper(_currentInputSnapshot, characterSnapshot);
+        AnimatorUpdates.OnNext(updates);
     }
+
     public void ProcessIntent()
     {
         var characterSnapshot = new CharacterSnapshot(
@@ -74,8 +76,6 @@ public class ActionSystem
                 MovementIntentStream.OnNext(intent.Value.Movement.Value);
             if (intent.Value.Combat.HasValue)
                 CombatIntentStream.OnNext(intent.Value.Combat.Value);
-            //if (intent.Value.AnimatorUpdates != null)
-            //    AnimatorActions.OnNext(intent.Value.AnimatorUpdates);
         }
     }
 

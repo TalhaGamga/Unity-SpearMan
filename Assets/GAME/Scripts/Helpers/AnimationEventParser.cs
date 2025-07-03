@@ -26,7 +26,10 @@ public static class AnimationEventParser
         string action = dict.TryGetValue("Action", out var a) ? a : "";
         string eventKey = dict.TryGetValue("EventKey", out var e) ? e : "";
         int stage = dict.TryGetValue("Stage", out var s) && int.TryParse(s, out var st) ? st : 0;
+        int comboStep = dict.TryGetValue("ComboStep", out var cs) && int.TryParse(cs, out var csInt) ? csInt : 0;
+        string comboType = dict.TryGetValue("ComboType", out var ct) ? ct : "";
         bool isCancelable = dict.TryGetValue("Cancelable", out var c) && bool.TryParse(c, out var b) && b;
+
         string stateName = "";
         float normalizedTime = 0f;
         if (anim != null)
@@ -36,6 +39,8 @@ public static class AnimationEventParser
             normalizedTime = stateInfo.normalizedTime;
         }
 
+        // Pass comboStep and comboType to AnimationFrame constructor as needed
+
         return new AnimationFrame(
             action,
             eventKey,
@@ -44,7 +49,9 @@ public static class AnimationEventParser
             stateName,
             normalizedTime,
             layer,
-            anim
+            anim,
+            comboStep,
+            comboType
         );
     }
 }

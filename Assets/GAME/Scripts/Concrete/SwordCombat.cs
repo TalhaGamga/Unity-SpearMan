@@ -3,64 +3,141 @@ using UnityEngine;
 
 public class SwordCombat : ICombat
 {
+    public CombatType CombatType => _currentSnapshot.State;
+
     private readonly Sword _view;
     private readonly BehaviorSubject<CombatSnapshot> _stream;
+    private readonly BehaviorSubject<CombatTransition> _transitionStream;
+
     private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
+
+    // Combo logic
+    private int _currentComboStep = 0;       // 0 = not attacking, 1+ = current step
+    private bool _canCombo = false;
+    private bool _comboQueued = false;  
+    private readonly int _maxCombo = 4;
+
+    // Damage window
     private bool _canDealDamage = false;
 
-    public SwordCombat(Sword view, BehaviorSubject<CombatSnapshot> stream)
+    public SwordCombat(
+        Sword view,
+        BehaviorSubject<CombatSnapshot> stream,
+        BehaviorSubject<CombatTransition> transitionStream)
     {
         _view = view;
         _stream = stream;
+        _transitionStream = transitionStream;
     }
 
-    public void Init(ICombatManager combatManager)
-    {
-        // (Optional) Set up references if needed
-    }
+    public void Init(ICombatManager combatManager) { /* ... */ }
 
     public void HandleInput(CombatAction action)
     {
-        Debug.Log("Combat Handle Input");
-        // Only trigger attack on explicit input for eventful actions
         if (action.ActionType == CombatType.PrimaryAttack)
         {
-            //_currentSnapshot = new CombatSnapshot(
-            //    state: CombatType.PrimaryAttack,
-            //    energy: 1f,
-            //    isCancelable: false,
-            //    triggerAttack: true  // <-- Only true for this frame!
-            //);
-            //_stream.OnNext(_currentSnapshot);
-
-            // Immediately clear trigger in the next frame/snapshot to ensure it's one-shot
-            // This prevents re-firing unless a new attack input comes in
-            _view.StartCoroutine(ResetAttackTriggerNextFrame());
+            // If not in combo, start from step 1
+            if (_currentComboStep == 0)
+            {
+                _currentComboStep = 1;
+                _currentSnapshot = new CombatSnapshot(
+                    state: CombatType.PrimaryAttack,
+                    energy: 1f,
+                    isCancelable: false,
+                    comboStep: _currentComboStep,
+                    triggerAttack: true
+                );
+                _stream.OnNext(_currentSnapshot);
+            }
+            else if (_canCombo && _currentComboStep < _maxCombo)
+            {
+                // Combo window open, advance to next step
+                _currentComboStep++;
+                _currentSnapshot = new CombatSnapshot(
+                    state: CombatType.PrimaryAttack,
+                    energy: 1f,
+                    isCancelable: false,
+                    comboStep: _currentComboStep,
+                    triggerAttack: true
+                );
+                _canCombo = false;
+                _stream.OnNext(_currentSnapshot);
+            }
+            else
+            {
+                // Buffer attack for next combo window
+                _comboQueued = true;
+            }
         }
-
-        if (action.ActionType == CombatType.Cancel)
+        else if (action.ActionType == CombatType.Cancel)
         {
-            _currentSnapshot = CombatSnapshot.Default;
-
-            _stream.OnNext(_currentSnapshot);
+            ResetCombat();
         }
     }
 
-    private System.Collections.IEnumerator ResetAttackTriggerNextFrame()
+    public void OnAnimationFrame(AnimationFrame frame)
     {
-        yield return null; // wait one frame
-        _currentSnapshot = new CombatSnapshot(
-            state: _currentSnapshot.State,
-            energy: _currentSnapshot.Energy,
-            isCancelable: _currentSnapshot.IsCancelable,
-            resetAttackTrigger: true
-        );
-        _stream.OnNext(_currentSnapshot);
-    }
+        // Damage windows
+        if (frame.EventKey == "HitWindowStart")
+        {
+            _canDealDamage = true;
+        }
+        else if (frame.EventKey == "HitWindowEnd")
+        {
+            _canDealDamage = false;
+        }
 
-    public void Update(float deltaTime)
-    {
-        // Handle per-frame combat logic if needed (e.g., charge attack, combo windows, etc)
+        // Combo windows
+        if (frame.EventKey == "ComboWindowOpen")
+        {
+            _canCombo = true;
+            if (_comboQueued && _currentComboStep < _maxCombo)
+            {
+                _comboQueued = false;
+                _currentComboStep++;
+                // Issue next step snapshot; will trigger animator update for the next attack
+                _currentSnapshot = new CombatSnapshot(
+                    state: CombatType.PrimaryAttack,
+                    energy: 1f,
+                    isCancelable: false,
+                    comboStep: _currentComboStep,
+                    triggerAttack: true
+                );
+                _canCombo = false;
+                _stream.OnNext(_currentSnapshot);
+            }
+        }
+        else if (frame.EventKey == "ComboWindowClose")
+        {
+            _canCombo = false;
+        }
+
+        // Phase/state transitions (if you want to track these)
+        if (frame.EventKey == "SlashStart")
+        {
+            Debug.Log("Slash Start");
+            _currentSnapshot = new CombatSnapshot(
+                state: CombatType.InPrimaryAttack,
+                energy: 1f,
+                isCancelable: frame.IsCancelable,
+                comboStep: _currentComboStep
+            );
+            _stream.OnNext(_currentSnapshot);
+            _transitionStream.OnNext(new CombatTransition
+            {
+                From = CombatType.PrimaryAttack,
+                To = CombatType.InPrimaryAttack
+            });
+        }
+        else if (frame.EventKey == "SlashEnd" || frame.EventKey == "ComboAttackEnd")
+        {
+            ResetCombat();
+            _transitionStream.OnNext(new CombatTransition
+            {
+                From = CombatType.PrimaryAttack,
+                To = CombatType.InPrimaryAttack
+            });
+        }
     }
 
     public void OnWeaponCollision(Collider other)
@@ -71,41 +148,17 @@ public class SwordCombat : ICombat
         }
     }
 
-    public void End()
+    public void Update(float deltaTime) { /* ...optional logic... */ }
+
+    public void End() => ResetCombat();
+
+    private void ResetCombat()
     {
         _canDealDamage = false;
+        _currentComboStep = 0;
+        _canCombo = false;
+        _comboQueued = false;
         _currentSnapshot = CombatSnapshot.Default;
         _stream.OnNext(_currentSnapshot);
-    }
-
-    public void OnAnimationFrame(AnimationFrame frame)
-    {
-        // Handle animation-driven state transitions
-        switch (frame.ActionType)
-        {
-            case "Slash":
-                _canDealDamage = true;
-                _currentSnapshot = new CombatSnapshot(
-                    state: CombatType.InPrimaryAttack,
-                    energy: 1f,
-                    isCancelable: frame.IsCancelable,
-                    triggerAttack: false // Not a trigger here; only in HandleInput
-                );
-                _stream.OnNext(_currentSnapshot);
-                break;
-
-            case "SlashEnd":
-                _canDealDamage = false;
-                _currentSnapshot = new CombatSnapshot(
-                    state: CombatType.Idle,
-                    energy: 1f,
-                    isCancelable: frame.IsCancelable,
-                    triggerAttack: false
-                );
-                _stream.OnNext(_currentSnapshot);
-                break;
-
-                // Add cases for parry, combo, etc if needed
-        }
     }
 }

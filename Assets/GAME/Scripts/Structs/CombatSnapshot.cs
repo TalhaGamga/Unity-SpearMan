@@ -1,31 +1,38 @@
 ﻿public readonly struct CombatSnapshot
 {
-    public readonly CombatType State;
-    public readonly float Energy;
-    public readonly bool TriggerAttack;
-    public readonly bool ResetAttackTrigger;
-    public readonly bool TriggerParry;
-    public readonly bool ResetParryTrigger;
-    public readonly bool IsCancelable;
+    public readonly CombatType State;         // E.g., Idle, InPrimaryAttack
+    public readonly float Energy;             // Resource, if needed
+    public readonly bool IsCancelable;        // For animation cancel
+    public readonly int ComboStep;            // Which attack in the chain? (0=idle)
+    public readonly bool TriggerAttack;       // Should Animator fire attack trigger this frame?
+    public readonly bool ResetAttackTrigger;  // Animator resets trigger
+    public readonly bool TriggerParry;        // Example: parry animation trigger
+    public readonly bool ResetParryTrigger;   // Example: reset parry
+
+    // You can extend with more triggers/flags as needed.
 
     public CombatSnapshot(
         CombatType state,
         float energy,
         bool isCancelable,
+        int comboStep = 0,
         bool triggerAttack = false,
-        bool triggerParry = false,
         bool resetAttackTrigger = false,
+        bool triggerParry = false,
         bool resetParryTrigger = false
-        )
+    )
     {
         State = state;
         Energy = energy;
         IsCancelable = isCancelable;
+        ComboStep = comboStep;
         TriggerAttack = triggerAttack;
-        TriggerParry = triggerParry;
         ResetAttackTrigger = resetAttackTrigger;
+        TriggerParry = triggerParry;
         ResetParryTrigger = resetParryTrigger;
     }
 
-    public static CombatSnapshot Default => new CombatSnapshot(CombatType.Idle, 0, false);
+    public static CombatSnapshot Default => new CombatSnapshot(
+        CombatType.Idle, 0f, false, 0, false, false, false, false
+    );
 }
