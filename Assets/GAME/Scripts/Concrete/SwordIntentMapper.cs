@@ -8,12 +8,10 @@ public class SwordIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
-        Debug.Log("ýntent");
         // 1. Combo-aware Standard Attack (eventful)
         // (Let SwordCombat decide if this should start or continue a combo)
         if (attackInput.WasPresseedThisFrame)
         {
-            Debug.Log("Slash Start_1");
             // Optionally: You could block combos in air if needed
             if (snapshot.Movement.State == MovementType.Jump || snapshot.Movement.State == MovementType.Fall)
                 return null;

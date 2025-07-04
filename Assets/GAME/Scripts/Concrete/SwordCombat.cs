@@ -14,8 +14,8 @@ public class SwordCombat : ICombat
     // Combo logic
     private int _currentComboStep = 0;       // 0 = not attacking, 1+ = current step
     private bool _canCombo = false;
-    private bool _comboQueued = false;  
-    private readonly int _maxCombo = 4;
+    private bool _comboQueued = false;
+    private readonly int _maxCombo = 3;
 
     // Damage window
     private bool _canDealDamage = false;
@@ -115,7 +115,6 @@ public class SwordCombat : ICombat
         // Phase/state transitions (if you want to track these)
         if (frame.EventKey == "SlashStart")
         {
-            Debug.Log("Slash Start");
             _currentSnapshot = new CombatSnapshot(
                 state: CombatType.InPrimaryAttack,
                 energy: 1f,
@@ -134,8 +133,8 @@ public class SwordCombat : ICombat
             ResetCombat();
             _transitionStream.OnNext(new CombatTransition
             {
-                From = CombatType.PrimaryAttack,
-                To = CombatType.InPrimaryAttack
+                From = CombatType.InPrimaryAttack,
+                To = CombatType.Idle
             });
         }
     }

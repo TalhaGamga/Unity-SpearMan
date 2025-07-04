@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 public static class AnimationParameterMapper
 {
     public static IEnumerable<AnimatorParamUpdate> AnimatorMapper(InputSnapshot input, CharacterSnapshot snapshot)
@@ -46,7 +47,14 @@ public static class AnimationParameterMapper
         // Primary attack
         if (input.CurrentInputs.TryGetValue(PlayerAction.PrimaryAttack, out var attackInput) && attackInput.WasPresseedThisFrame)
         {
+            Debug.Log("Attack Anim");
             yield return AnimatorParamUpdate.Trigger("Attack");
+            yield return new AnimatorParamUpdate
+            {
+                ParamType = AnimatorParamUpdateType.Int,
+                ParamName = "ComboStep",
+                Value = snapshot.Combat.ComboStep
+            };
         }
 
         if (snapshot.Combat.ResetAttackTrigger == true)
