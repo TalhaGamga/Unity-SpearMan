@@ -75,9 +75,7 @@ public class RbMover : IMover
             _moveInput = action.Direction;
 
         if (action.ActionType == MovementType.Idle)
-        {
-            _moveInput = Vector2.zero;
-        }
+            _moveInput = action.Direction;
 
         // Jump queue (let air jumps happen too!)
         if (action.ActionType == MovementType.Jump)
@@ -127,7 +125,7 @@ public class RbMover : IMover
             jumpingThisFrame = true;
             _isJumping = true;
             _jumpQueued = false;
-            _jumpStage++;           // <--- increment jump stage
+            _jumpStage++;
         }
         else if (isGrounded)
         {
@@ -135,7 +133,7 @@ public class RbMover : IMover
             {
                 verticalVel = 0f;
                 _isJumping = false;
-                _jumpStage = 0;     // <--- reset on landing!
+                _jumpStage = 0;
             }
         }
         else
@@ -145,12 +143,30 @@ public class RbMover : IMover
                 verticalVel *= 0.98f;
             verticalVel -= _gravity * deltaTime;
         }
+
         Vector3 finalVel = rbVel;
 
         if (isGrounded)
         {
-            // --- Ground: use root motion for X/Z ---
-            finalVel = new Vector3(rootMotionVelocity.x, verticalVel, rootMotionVelocity.z * _moveInput.x);
+            if (_moveInput.sqrMagnitude < 0.01f)
+            {
+                // --- IDLE: apply root motion in character's facing direction ---
+                if (_characterOrientator != null)
+                {
+                    Vector3 rootMotionLocal = new Vector3(rootMotionVelocity.x, 0f, rootMotionVelocity.z);
+                    Vector3 rootMotionWorld = _characterOrientator.TransformDirection(rootMotionLocal);
+                    finalVel = new Vector3(rootMotionWorld.x, verticalVel, rootMotionWorld.z);
+                }
+                else
+                {
+                    finalVel = new Vector3(rootMotionVelocity.x, verticalVel, rootMotionVelocity.z);
+                }
+            }
+            else
+            {
+                // --- WALK/RUN: use root motion modulated by input (customize if needed) ---
+                finalVel = new Vector3(rootMotionVelocity.x, verticalVel, rootMotionVelocity.z * _moveInput.x);
+            }
         }
         else
         {
@@ -214,4 +230,6 @@ public class RbMover : IMover
         // --- Reset root motion ---
         _rootMotionDelta = Vector3.zero;
     }
+
+
 }

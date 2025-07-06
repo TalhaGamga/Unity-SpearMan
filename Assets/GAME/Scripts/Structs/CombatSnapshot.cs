@@ -1,6 +1,6 @@
 ﻿public readonly struct CombatSnapshot
 {
-    public readonly CombatType State;         // E.g., Idle, InPrimaryAttack
+    public readonly CombatType CurrentState;         // E.g., Idle, InPrimaryAttack
     public readonly float Energy;             // Resource, if needed
     public readonly bool IsCancelable;        // For animation cancel
     public readonly int ComboStep;            // Which attack in the chain? (0=idle)
@@ -22,7 +22,7 @@
         bool resetParryTrigger = false
     )
     {
-        State = state;
+        CurrentState = state;
         Energy = energy;
         IsCancelable = isCancelable;
         ComboStep = comboStep;
@@ -33,6 +33,6 @@
     }
 
     public static CombatSnapshot Default => new CombatSnapshot(
-        CombatType.Idle, 0f, false, 0, false, false, false, false
+        CombatType.Idle, 0f, false, 0, false, true, false, false
     );
 }

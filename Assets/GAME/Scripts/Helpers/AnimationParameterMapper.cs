@@ -33,7 +33,7 @@ public static class AnimationParameterMapper
             yield return AnimatorParamUpdate.Trigger("Dash");
         }
 
-        if (snapshot.Movement.State == MovementType.Run)
+        if (snapshot.Movement.State == MovementType.Run || snapshot.Combat.CurrentState == CombatType.PrimaryAttack)
             yield return AnimatorParamUpdate.RootMotion(true);
         else
             yield return AnimatorParamUpdate.RootMotion(false);
@@ -45,9 +45,8 @@ public static class AnimationParameterMapper
         }
 
         // Primary attack
-        if (input.CurrentInputs.TryGetValue(PlayerAction.PrimaryAttack, out var attackInput) && attackInput.WasPresseedThisFrame)
+        if (snapshot.Combat.CurrentState == CombatType.PrimaryAttack)
         {
-            Debug.Log("Attack Anim");
             yield return AnimatorParamUpdate.Trigger("Attack");
             yield return new AnimatorParamUpdate
             {
@@ -77,9 +76,9 @@ public static class AnimationParameterMapper
             yield return AnimatorParamUpdate.Trigger("AttackCancel"); // We have to reset AttackCancel trigger next frame. 
         }
 
-        if (snapshot.Combat.State == CombatType.Idle)
+        if (snapshot.Combat.CurrentState == CombatType.Idle)
         {
-            yield return AnimatorParamUpdate.Trigger("AttackCancel");
+            yield return AnimatorParamUpdate.Trigger("Idle");
         }
 
         // Example: Land trigger (if you want to fire a land animation)

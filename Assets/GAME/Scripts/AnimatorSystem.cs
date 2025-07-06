@@ -20,44 +20,51 @@ public sealed class AnimatorSystem : MonoBehaviour
     private readonly Subject<RootMotionFrame> _rootMotionSubject = new();
     private readonly Subject<AnimationFrame> _animationFrameStream = new();
 
-    private HashSet<string> _triggersToResetNextFrame = new();
-    private HashSet<string> _triggersJustSet = new();
+    // KEY: trigger name, VALUE: frames left before reset
+    private Dictionary<string, float> _pendingTriggerResets = new();
+
+    // How many frames to delay trigger reset. 2 is a safe starting value.
+    private const float TRIGGER_RESET_TIME = 15;
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
+    [SerializeField] bool rootMotion;
     private void Start()
     {
         _anim.applyRootMotion = true;
     }
 
-    private void OnAnimatorMove() // Make here hybrid supporting
+    private void OnAnimatorMove()
     {
         if (_anim.applyRootMotion)
         {
             var deltaPos = _anim.deltaPosition;
             var deltaRot = _anim.deltaRotation;
-
             _rootMotionSubject.OnNext(new RootMotionFrame(deltaPos, deltaRot));
         }
+
+        rootMotion = _anim.applyRootMotion;
     }
 
     private void LateUpdate()
     {
-        // Actually reset triggers from the *previous* frame
-        foreach (var trigger in _triggersToResetNextFrame)
-            _anim.ResetTrigger(trigger);
-
-        _triggersToResetNextFrame.Clear();
-
-        // Move just-set triggers into the "reset next frame" set
-        var tmp = _triggersToResetNextFrame;
-        _triggersToResetNextFrame = _triggersJustSet;
-        _triggersJustSet = tmp;
+        // Safe: iterate over a copy
+        var keys = new List<string>(_pendingTriggerResets.Keys);
+        foreach (var trigger in keys)
+        {
+            _pendingTriggerResets[trigger] -= Time.deltaTime;
+            if (_pendingTriggerResets[trigger] <= 0f)
+            {
+                _anim.ResetTrigger(trigger);
+                _pendingTriggerResets.Remove(trigger);
+            }
+        }
     }
+
 
     public void OnAnimationEvent(string eventString)
     {
-        int layer = 0; // or parse from string as above!
+        int layer = 1;
         var frame = AnimationEventParser.ToAnimationFrame(eventString, _anim, layer);
         _animationFrameStream.OnNext(frame);
     }
@@ -83,7 +90,8 @@ public sealed class AnimatorSystem : MonoBehaviour
                     else
                     {
                         _anim.SetTrigger(update.ParamName);
-                        _triggersJustSet.Add(update.ParamName);
+                        // Start/reset countdown for this trigger
+                        _pendingTriggerResets[update.ParamName] = TRIGGER_RESET_TIME;
                     }
                     break;
                 case AnimatorParamUpdateType.RootMotion:

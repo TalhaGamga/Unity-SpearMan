@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class SwordCombat : ICombat
 {
-    public CombatType CombatType => _currentSnapshot.State;
+    public CombatType CombatType => _currentSnapshot.CurrentState;
 
     private readonly Sword _view;
     private readonly BehaviorSubject<CombatSnapshot> _stream;

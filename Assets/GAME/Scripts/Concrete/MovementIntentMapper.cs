@@ -27,6 +27,19 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
+        if (snapshot.IsAttacking && runInput.IsHeld)
+        {
+            Debug.Log("Canceled");
+            return new ActionIntent
+            {
+                Movement = new MovementAction
+                {
+                    Direction = runInput.Direction,
+                    ActionType = MovementType.Idle
+                }
+            };
+        }
+
         // 0. Handle Falling
         if (snapshot.Movement.State == MovementType.Fall)
         {
@@ -55,7 +68,7 @@ public class MovementIntentMapper : IIntentMapper
         }
 
         // 4. If run is held, move (stateful)
-        if (runInput.IsHeld && snapshot.Combat.State == CombatType.Idle)
+        if (runInput.IsHeld && snapshot.Combat.CurrentState == CombatType.Idle)
         {
             return new ActionIntent
             {
@@ -74,7 +87,7 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = Vector2.zero,
+                    Direction = runInput.Direction,
                     ActionType = MovementType.Idle
                 }
             };
