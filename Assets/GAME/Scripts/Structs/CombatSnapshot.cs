@@ -35,4 +35,8 @@
     public static CombatSnapshot Default => new CombatSnapshot(
         CombatType.Idle, 0f, false, 0, false, true, false, false
     );
+
+    public static CombatSnapshot Cancel => new CombatSnapshot(
+        CombatType.Idle, 0f, true, 0, false, true, false, false
+    );
 }

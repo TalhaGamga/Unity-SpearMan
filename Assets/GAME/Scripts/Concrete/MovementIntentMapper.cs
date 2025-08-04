@@ -29,7 +29,6 @@ public class MovementIntentMapper : IIntentMapper
 
         if (snapshot.IsAttacking && runInput.IsHeld)
         {
-            Debug.Log("Canceled");
             return new ActionIntent
             {
                 Movement = new MovementAction

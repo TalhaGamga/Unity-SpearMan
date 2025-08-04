@@ -44,6 +44,7 @@ public class RbMover : IMover
 
     private BehaviorSubject<MovementSnapshot> _stream;
     private Subject<MovementTransition> _transitionStream;
+    private bool _forceIdle;
 
     public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
     {
@@ -75,7 +76,14 @@ public class RbMover : IMover
             _moveInput = action.Direction;
 
         if (action.ActionType == MovementType.Idle)
+        {
             _moveInput = action.Direction;
+            _forceIdle = true;
+        }
+        else
+        {
+            _forceIdle = false;
+        }
 
         // Jump queue (let air jumps happen too!)
         if (action.ActionType == MovementType.Jump)
@@ -201,7 +209,7 @@ public class RbMover : IMover
         if (justLanded) state = MovementType.Land;
         else if (_isJumping && rbVel.y > .1f) state = MovementType.Jump;
         else if (_isFalling) state = MovementType.Fall;
-        else if (_moveInput.sqrMagnitude < 0.01f) state = MovementType.Idle;
+        else if (_moveInput.sqrMagnitude < 0.01f || _forceIdle) state = MovementType.Idle;
         else if (_moveInput.sqrMagnitude < 0.96f) state = MovementType.Walk;
         else state = MovementType.Run;
 

@@ -106,14 +106,6 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    private bool InputEquals(InputType a, InputType b)
-    {
-        return a.IsHeld == b.IsHeld &&
-               a.Value == b.Value &&
-               a.Direction == b.Direction &&
-               a.WasPresseedThisFrame == b.WasPresseedThisFrame;
-    }
-
     private bool InputSnapshotEquals(InputSnapshot a, InputSnapshot b)
     {
         if (a.CurrentInputs == null && b.CurrentInputs == null) return true;
@@ -128,5 +120,13 @@ public class PlayerInputHandler : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    private bool InputEquals(InputType a, InputType b)
+    {
+        return a.IsHeld == b.IsHeld &&
+               a.Value == b.Value &&
+               a.Direction == b.Direction &&
+               a.WasPresseedThisFrame == b.WasPresseedThisFrame;
     }
 }

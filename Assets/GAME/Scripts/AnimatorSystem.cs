@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using R3;
 using System.Collections.Generic;
+using System.Collections;
 
 public sealed class AnimatorSystem : MonoBehaviour
 {
@@ -24,7 +25,7 @@ public sealed class AnimatorSystem : MonoBehaviour
     private Dictionary<string, float> _pendingTriggerResets = new();
 
     // How many frames to delay trigger reset. 2 is a safe starting value.
-    private const float TRIGGER_RESET_TIME = 15;
+    private const float TRIGGER_RESET_TIME = 0.05f;
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
@@ -89,9 +90,10 @@ public sealed class AnimatorSystem : MonoBehaviour
                         _anim.ResetTrigger(update.ParamName);
                     else
                     {
-                        _anim.SetTrigger(update.ParamName);
+                        //_anim.SetTrigger(update.ParamName);
                         // Start/reset countdown for this trigger
-                        _pendingTriggerResets[update.ParamName] = TRIGGER_RESET_TIME;
+                        //_pendingTriggerResets[update.ParamName] = TRIGGER_RESET_TIME;
+                        StartCoroutine(IESetTrigger(update.ParamName));
                     }
                     break;
                 case AnimatorParamUpdateType.RootMotion:
@@ -107,4 +109,12 @@ public sealed class AnimatorSystem : MonoBehaviour
     }
 
     void OnDestroy() => _disposables.Dispose();
+
+    private IEnumerator IESetTrigger(string trigger)
+    {
+        _anim.SetTrigger(trigger);
+
+        yield return new WaitForSeconds(TRIGGER_RESET_TIME);
+        _anim.ResetTrigger(trigger);
+    }
 }
