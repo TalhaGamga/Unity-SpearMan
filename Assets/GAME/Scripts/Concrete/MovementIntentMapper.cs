@@ -49,7 +49,7 @@ public class MovementIntentMapper : IIntentMapper
         }
 
         // 2. If attacking, and jump was just pressed, allow jump-cancel (eventful, and only if jump available)
-        if (snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
+        if (snapshot.Combat.IsCancelable && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
         {
             return new ActionIntent
             {
@@ -58,7 +58,7 @@ public class MovementIntentMapper : IIntentMapper
         }
 
         // 3. Normal jump (eventful, only if jump available)
-        if (jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
+        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpStage < _maxJumpStage)
         {
             return new ActionIntent
             {
