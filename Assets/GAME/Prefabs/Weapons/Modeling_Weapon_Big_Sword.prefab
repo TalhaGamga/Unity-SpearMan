@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7758633256617929076}
   - component: {fileID: 4396926080142794961}
   - component: {fileID: 4406939285502937061}
+  - component: {fileID: 1540310618824532766}
   m_Layer: 0
   m_Name: Modeling_Weapon_Big_Sword
   m_TagString: Untagged
@@ -97,5 +98,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c48e6ae031b252644a944e427ff8fe63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _hitbox: {fileID: 1540310618824532766}
+--- !u!114 &1540310618824532766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 640710685337413099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ba67721a6ea48d499a02ce0b18e2b67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

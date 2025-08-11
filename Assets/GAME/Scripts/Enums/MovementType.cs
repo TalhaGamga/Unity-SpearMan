@@ -10,6 +10,7 @@
     Climb,
     SwimUp,
     Interact,
-    Parkour
+    Parkour,
+    None
     // Add more as needed
 }

@@ -54,7 +54,7 @@ public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputRe
     private void Update()
     {
         _currentMover?.UpdateMover(Time.deltaTime);
-        currentState = _currentMover.LastState;
+        currentState = _currentMover.CurrentState;
     }
 
     public void SetMover(IMover newMover)

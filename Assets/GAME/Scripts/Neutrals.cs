@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public interface IReactiveCapabilityProvider
 {
     Observable<(bool Allowed, string Reason)> ObserveCapability(Capability capability);
@@ -18,12 +17,6 @@ public interface IMovementInputReceiver
 public interface ICombatInputReceiver
 {
     void HandleInput(CombatAction combatAction);
-}
-
-public interface IMovementStateProvider
-{
-    bool IsGrounded { get; }
-    float CurrentSpeed { get; }
 }
 
 public interface IMovementManager
@@ -66,23 +59,30 @@ public interface IWeapon
 
 public interface IMover
 {
-    public MovementType LastState { get; }
+    public MovementType CurrentState { get; }
     void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
     void End();
     public void HandleAction(MovementAction action);
-    //void SetMoveInput(Vector2 move);
-
     void HandleRootMotion(Vector3 delta);
     public void UpdateMover(float deltaTime);
 }
 
+public interface IState
+{
+    public string State { get; }
+    void Enter();
+    void Update();
+    void Tick();
+    void Exit();
+}
 public enum StateType
 {
     Any,
     Idle,
     Move,
     Jump,
-    Fall
+    Fall,
+    None
 }
 
 public interface IHumanoidMovementPromptReceiver

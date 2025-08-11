@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class RbMover : IMover
 {
-    public MovementType LastState => _lastState;
+    public MovementType CurrentState => _currentState;
 
     private Rigidbody _rb;
     private Transform _characterOrientator;
@@ -37,7 +37,7 @@ public class RbMover : IMover
     private int _jumpStage = 0;          // Current jump count (0=ground, 1=first jump, etc.)
     private int _maxJumpStage = 2;       // 1=single, 2=double, 3=triple jump...
 
-    public MovementType _lastState = MovementType.Idle;
+    public MovementType _currentState = MovementType.Idle;
     private float _lastBlendSpeed = 0f;
     private float _smoothedBlendSpeed = 0f;
     private const float _speedLerpRate = 10f;
@@ -213,7 +213,7 @@ public class RbMover : IMover
         else if (_moveInput.sqrMagnitude < 0.96f) state = MovementType.Walk;
         else state = MovementType.Run;
 
-        bool stateChanged = (state != _lastState);
+        bool stateChanged = (state != _currentState);
         bool blendChanged = Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f;
         bool jumpStageChanged = jumpingThisFrame;
 
@@ -229,10 +229,10 @@ public class RbMover : IMover
         {
             if (state == MovementType.Fall)
             {
-                _transitionStream?.OnNext(new MovementTransition { From = _lastState, To = state });
+                _transitionStream?.OnNext(new MovementTransition { From = _currentState, To = state });
             }
 
-            _lastState = state;
+            _currentState = state;
         }
 
         // --- Reset root motion ---
