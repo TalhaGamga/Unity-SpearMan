@@ -59,7 +59,7 @@ public interface IWeapon
 
 public interface IMover
 {
-    public MovementType CurrentState { get; }
+    public MovementType CurrentType { get; }
     void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
     void End();
     public void HandleAction(MovementAction action);
@@ -75,6 +75,7 @@ public interface IState
     void Tick();
     void Exit();
 }
+
 public enum StateType
 {
     Any,

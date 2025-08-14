@@ -57,7 +57,7 @@ namespace Movement
         private void Update()
         {
             _currentMover?.UpdateMover(Time.deltaTime);
-            currentState = _currentMover.CurrentState;
+            currentState = _currentMover.CurrentType;
         }
 
         public void SetMover(IMover newMover)

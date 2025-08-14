@@ -1,3 +1,4 @@
+using DevVorpian;
 using R3;
 using UnityEngine;
 
@@ -7,31 +8,37 @@ namespace Movement
     {
         public class RBMoverMachine : IMover
         {
-            public MovementType CurrentState => throw new System.NotImplementedException();
+            public MovementType CurrentType => _currentType;
+
+            private MovementType _currentType;
+            private Context _context;
+
+            private StateMachine _stateMachine;
+
+            public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
+            {
+
+            }
 
             public void End()
             {
-                throw new System.NotImplementedException();
             }
 
             public void HandleAction(MovementAction action)
             {
-                throw new System.NotImplementedException();
             }
 
             public void HandleRootMotion(Vector3 delta)
             {
-                throw new System.NotImplementedException();
-            }
-
-            public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
-            {
-                throw new System.NotImplementedException();
             }
 
             public void UpdateMover(float deltaTime)
             {
-                throw new System.NotImplementedException();
+            }
+
+            public class Context
+            {
+                public Vector2 moveInput;
             }
         }
     }

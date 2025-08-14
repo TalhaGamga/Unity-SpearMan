@@ -7,7 +7,7 @@ namespace Movement
     {
         public class RbMover : IMover
         {
-            public MovementType CurrentState => _currentState;
+            public MovementType CurrentType => _currentState;
 
             private Rigidbody _rb;
             private Transform _characterOrientator;
@@ -46,14 +46,14 @@ namespace Movement
             private float _smoothedBlendSpeed = 0f;
             private const float _speedLerpRate = 10f;
 
-            private BehaviorSubject<MovementSnapshot> _stream;
+            private BehaviorSubject<MovementSnapshot> _snapshotStream;
             private Subject<MovementTransition> _transitionStream;
             private bool _forceIdle;
 
             public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
             {
                 _manager = movementManager;
-                _stream = SnapshotStream;
+                _snapshotStream = SnapshotStream;
                 _transitionStream = TransitionStream;
 
                 _characterTranslater = _manager.CharacterTranslater;
@@ -225,7 +225,7 @@ namespace Movement
                 if (stateChanged || blendChanged || jumpStageChanged)
                 {
                     _lastBlendSpeed = _smoothedBlendSpeed;
-                    _stream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed, _jumpStage));
+                    _snapshotStream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed, _jumpStage));
                 }
 
                 // --- 2. Then emit transition signal ONLY if state changed ---
