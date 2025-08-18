@@ -7,77 +7,56 @@ namespace DevVorpian
     [System.Serializable]
     public class StateMachine
     {
-        List<StateTransition> stateTransitions;
+        List<StateTransition> _stateTransitions;
 
-        IState currentState;
-        IState emptyState;
+        public IState _currentState;
+        private IState _emptyState;
 
-        public string currentStateType;
+        public string _currentStateType;
         private bool _isDropped = false;
-
-        public string type { get; set; }
 
         public StateMachine()
         {
-            stateTransitions = new List<StateTransition>();
+            _stateTransitions = new List<StateTransition>();
 
-            emptyState = new EmptyState();
-        }
-
-        public void SetState(IState newState)
-        {
-            if (_isDropped || newState.Equals(currentState))
-            {
-                return;
-            }
-
-            currentState?.Exit();
-            newState?.Enter();
-            currentState = newState;
-            currentStateType = currentState.State;
-        }
-
-        private void SetState(StateTransitionData transitionData)
-        {
-            if (_isDropped || transitionData.to.Equals(currentState))
-            {
-                return;
-            }
-
-            currentState?.Exit();
-            transitionData.onTransition?.Invoke();
-            transitionData.to?.Enter();
-            currentState = transitionData.to;
-            currentStateType = currentState.State;
+            _emptyState = new EmptyState();
         }
 
         public void Update()
         {
-            StateTransitionData transitionData = checkTransitions();
+            _currentState?.Update();
+        }
 
-            if (transitionData != null)
-            {
-                SetState(transitionData);
-            }
+        public void SetState(IState newState)
+        {
+            var transitionData = findTransition(newState, _currentState);
+            setState(transitionData);
+        }
 
-            currentState?.Update();
+        private void setState(StateTransitionData transitionData)
+        {
+            _currentState?.Exit();
+            transitionData?.onTransition();
+            _currentState = transitionData.to;
+            _currentState.Enter();
+            _currentStateType = _currentState.State;
         }
 
         public void AddNormalTransition(StateTransition stateTransition)
         {
-            stateTransitions.Add(stateTransition);
+            _stateTransitions.Add(stateTransition);
         }
 
         public void AddAnyTransition(StateTransition anyTransition)
         {
-            stateTransitions.Add(anyTransition);
+            _stateTransitions.Add(anyTransition);
         }
 
         public void AddAnyTransitionTrigger(ref Action action, StateTransition transition)
         {
             action += () =>
             {
-                if (transition.Condition() && !currentState.Equals(transition.To))
+                if (transition.Condition() && !_currentState.Equals(transition.To))
                 {
                     SetState(transition.To);
                     transition.OnTransition?.Invoke();
@@ -89,7 +68,7 @@ namespace DevVorpian
         {
             action += () =>
             {
-                if (transition.Condition() && currentState.Equals(transition.From) && !currentState.Equals(transition.To))
+                if (transition.Condition() && _currentState.Equals(transition.From) && !_currentState.Equals(transition.To))
                 {
                     SetState(transition.To);
                     transition.OnTransition?.Invoke();
@@ -101,7 +80,7 @@ namespace DevVorpian
         {
             if (isDropped)
             {
-                SetState(emptyState);
+                SetState(_emptyState);
             }
 
             _isDropped = isDropped;
@@ -109,11 +88,11 @@ namespace DevVorpian
 
         private StateTransitionData checkTransitions() // Fix here. if the state doesn't contain from, but not condition met, it's overriding the bottom.
         {
-            foreach (var transition in stateTransitions.OrderByDescending(t => t.Priority))
+            foreach (var transition in _stateTransitions.OrderByDescending(t => t.Priority))
             {
                 if (transition.From != null)
                 {
-                    if (transition.From.Equals(currentState))
+                    if (transition.From.Equals(_currentState))
                     {
                         if (transition.Condition.Invoke())
                         {
@@ -135,11 +114,22 @@ namespace DevVorpian
 
             return null;
         }
+
+        private StateTransitionData findTransition(IState to, IState from = null)
+        {
+            var transition = _stateTransitions.FirstOrDefault(
+                t => t.To.Equals(to) /*&& object.Equals(t.From, from)*/
+            );
+
+            return transition != null
+                ? new StateTransitionData(to, transition.OnTransition)
+                : null;
+        }
     }
 
     public class StateTransition
     {
-        private IState _from;
+        private IState _from = null;
         private IState _to;
         private Func<bool> _condition;
         private Action onTransition;

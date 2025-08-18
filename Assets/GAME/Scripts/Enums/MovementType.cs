@@ -2,7 +2,7 @@
 {
     Idle,
     Walk,
-    Run,
+    Move,
     Jump,
     Fall,
     Land,

@@ -40,7 +40,7 @@ public static class AnimationParameterMapper
             yield return AnimatorParamUpdate.Trigger("Dash");
 
         // Root Motion Toggle
-        yield return AnimatorParamUpdate.RootMotion(snapshot.Movement.State == MovementType.Run || snapshot.IsAttacking);
+        yield return AnimatorParamUpdate.RootMotion(snapshot.Movement.State == MovementType.Move || snapshot.IsAttacking);
 
         // Combat State Triggers
         switch (snapshot.Combat.CurrentState)

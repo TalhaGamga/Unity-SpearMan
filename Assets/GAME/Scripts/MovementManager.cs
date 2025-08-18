@@ -17,7 +17,7 @@ namespace Movement
         [SerializeField] private Transform[] _groundCheckPoints;
         [SerializeField] private LayerMask _groundLayer;
         [SerializeField] private float _groundCheckDistance = 0.1f;
-
+        [SerializeField] private RBMoverMachine _rbMoverMachine;
         [SerializeField] private MovementType currentState;
 
         private IMover _currentMover;
@@ -41,12 +41,11 @@ namespace Movement
                     Gizmos.DrawSphere(checkPoint.position, _groundCheckDistance);
                 }
             }
-
         }
 
         private void Awake()
         {
-            SetMover(new RbMover());
+            SetMover(_rbMoverMachine);
         }
 
         private void OnDestroy()
@@ -83,7 +82,6 @@ namespace Movement
         {
             _currentMover.HandleRootMotion(rootMotion.DeltaPosition);
         }
-
 
         public bool GetIsGrounded()
         {

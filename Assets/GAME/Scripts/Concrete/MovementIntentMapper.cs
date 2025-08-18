@@ -16,7 +16,7 @@ public class MovementIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     Direction = runInput.Direction,
-                    ActionType = MovementType.Run
+                    ActionType = MovementType.Move
                 },
                 Combat = new CombatAction
                 {
@@ -72,7 +72,7 @@ public class MovementIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     Direction = runInput.Direction,
-                    ActionType = MovementType.Run
+                    ActionType = MovementType.Move
                 }
             };
         }

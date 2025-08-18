@@ -76,7 +76,7 @@ namespace Movement
             public void HandleAction(MovementAction action)
             {
                 // Always update move input on run/fall for air control
-                if (action.ActionType == MovementType.Run || action.ActionType == MovementType.Fall)
+                if (action.ActionType == MovementType.Move || action.ActionType == MovementType.Fall)
                     _moveInput = action.Direction;
 
                 if (action.ActionType == MovementType.Idle)
@@ -215,7 +215,7 @@ namespace Movement
                 else if (_isFalling) state = MovementType.Fall;
                 else if (_moveInput.sqrMagnitude < 0.01f || _forceIdle) state = MovementType.Idle;
                 else if (_moveInput.sqrMagnitude < 0.96f) state = MovementType.Walk;
-                else state = MovementType.Run;
+                else state = MovementType.Move;
 
                 bool stateChanged = (state != _currentState);
                 bool blendChanged = Mathf.Abs(_smoothedBlendSpeed - _lastBlendSpeed) > 0.01f;
@@ -242,9 +242,6 @@ namespace Movement
                 // --- Reset root motion ---
                 _rootMotionDelta = Vector3.zero;
             }
-
-
         }
-
     }
 }

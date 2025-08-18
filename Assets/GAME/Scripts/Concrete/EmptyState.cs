@@ -1,6 +1,6 @@
 public class EmptyState : IState
 {
-    public string State => throw new System.NotImplementedException();
+    public string State => "Empty";
 
     public void Enter()
     {

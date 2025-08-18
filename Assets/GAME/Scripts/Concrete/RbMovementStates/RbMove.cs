@@ -6,7 +6,7 @@ namespace Movement
     {
         public class RbMove : IState
         {
-            public string State => "RbRun";
+            public string State => "RbMove";
 
             private RBMoverMachine.Context _context;
 
@@ -17,22 +17,18 @@ namespace Movement
 
             public void Enter()
             {
-                throw new System.NotImplementedException();
             }
 
             public void Exit()
             {
-                throw new System.NotImplementedException();
             }
 
             public void Tick()
             {
-                throw new System.NotImplementedException();
             }
 
             public void Update()
             {
-                throw new System.NotImplementedException();
             }
         }
     }
