@@ -18,7 +18,7 @@ namespace Movement
         [SerializeField] private LayerMask _groundLayer;
         [SerializeField] private float _groundCheckDistance = 0.1f;
         [SerializeField] private RBMoverMachine _rbMoverMachine;
-        [SerializeField] private MovementType currentState;
+        [HideInInspector] private MovementType currentState;
 
         private IMover _currentMover;
         private float _speedModifier = 1f;

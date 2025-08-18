@@ -1,25 +1,22 @@
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using UnityEngine;
 
 namespace DevVorpian
 {
     [System.Serializable]
-    public class StateMachine
+    public class StateMachine<StateType>
     {
-        List<StateTransition> _stateTransitions;
+        [SerializeField] private string _stateName;
 
-        public IState _currentState;
-        private IState _emptyState;
-
-        public string _currentStateType;
-        private bool _isDropped = false;
+        [SerializeField] public StateType _currentStateType;
+        private List<StateTransition<StateType>> _stateTransitions;
+        private IState _currentState;
 
         public StateMachine()
         {
-            _stateTransitions = new List<StateTransition>();
-
-            _emptyState = new EmptyState();
+            _stateTransitions = new List<StateTransition<StateType>>();
         }
 
         public void Update()
@@ -27,10 +24,11 @@ namespace DevVorpian
             _currentState?.Update();
         }
 
-        public void SetState(IState newState)
+        public void SetState(StateType newStateType)
         {
-            var transitionData = findTransition(newState, _currentState);
+            var transitionData = findTransition(newStateType);
             setState(transitionData);
+            _currentStateType = newStateType;
         }
 
         private void setState(StateTransitionData transitionData)
@@ -39,173 +37,56 @@ namespace DevVorpian
             transitionData?.onTransition();
             _currentState = transitionData.to;
             _currentState.Enter();
-            _currentStateType = _currentState.State;
+            _stateName = _currentState.State;
         }
 
-        public void AddNormalTransition(StateTransition stateTransition)
+        public void AddTransition(StateTransition<StateType> stateTransition)
         {
             _stateTransitions.Add(stateTransition);
         }
 
-        public void AddAnyTransition(StateTransition anyTransition)
+        private StateTransitionData findTransition(StateType to)
         {
-            _stateTransitions.Add(anyTransition);
+            var transition =
+                _stateTransitions.FirstOrDefault(s =>
+                    s.To.Equals(to) && s.From.Equals(_currentStateType))
+                ?? _stateTransitions.FirstOrDefault(s => s.To.Equals(to));
+
+            if (transition == null) return null;
+
+            return new StateTransitionData(transition.State, transition.OnTransition);
         }
 
-        public void AddAnyTransitionTrigger(ref Action action, StateTransition transition)
-        {
-            action += () =>
-            {
-                if (transition.Condition() && !_currentState.Equals(transition.To))
-                {
-                    SetState(transition.To);
-                    transition.OnTransition?.Invoke();
-                }
-            };
-        }
-
-        public void AddNormalTransitionTrigger(ref Action action, StateTransition transition)
-        {
-            action += () =>
-            {
-                if (transition.Condition() && _currentState.Equals(transition.From) && !_currentState.Equals(transition.To))
-                {
-                    SetState(transition.To);
-                    transition.OnTransition?.Invoke();
-                }
-            };
-        }
-
-        public void DropMachine(bool isDropped)
-        {
-            if (isDropped)
-            {
-                SetState(_emptyState);
-            }
-
-            _isDropped = isDropped;
-        }
-
-        private StateTransitionData checkTransitions() // Fix here. if the state doesn't contain from, but not condition met, it's overriding the bottom.
-        {
-            foreach (var transition in _stateTransitions.OrderByDescending(t => t.Priority))
-            {
-                if (transition.From != null)
-                {
-                    if (transition.From.Equals(_currentState))
-                    {
-                        if (transition.Condition.Invoke())
-                        {
-                            return new StateTransitionData(transition.To, transition.OnTransition);
-                        }
-
-                        return null;
-                    }
-                }
-
-                else
-                {
-                    if (transition.Condition.Invoke())
-                    {
-                        return new StateTransitionData(transition.To, transition.OnTransition);
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private StateTransitionData findTransition(IState to, IState from = null)
-        {
-            var transition = _stateTransitions.FirstOrDefault(
-                t => t.To.Equals(to) /*&& object.Equals(t.From, from)*/
-            );
-
-            return transition != null
-                ? new StateTransitionData(to, transition.OnTransition)
-                : null;
-        }
     }
 
-    public class StateTransition
+    public class StateTransition<StateType>
     {
-        private IState _from = null;
-        private IState _to;
+        private StateType _from;
+        private StateType _to;
+        private IState _state;
+
         private Func<bool> _condition;
-        private Action onTransition;
+        private Action _onTransition;
         private int _priority { get; set; }
 
-        public StateTransition(IState from, IState to, Func<bool> condition, int priority)
+        public StateTransition(StateType from, StateType to, IState state)
         {
             _from = from;
             _to = to;
-            _condition = condition;
-            _priority = priority;
+            _state = state;
         }
 
-        public IState From
-        {
-            get { return _from; }
-        }
+        public StateType From => _from;
+        public StateType To => _to;
+        public IState State => _state;
+        public Func<bool> Condition => _condition;
+        public Action OnTransition => _onTransition;
+        public int Priority => _priority;
 
-        public IState To
-        {
-            get { return _to; }
-        }
-
-        public Func<bool> Condition
-        {
-            get { return _condition; }
-        }
-
-        public Action OnTransition
-        {
-            get
-            {
-                return onTransition;
-            }
-        }
-        public int Priority
-        {
-            get
-            {
-                return _priority;
-            }
-        }
-        public StateTransition(IState from, IState to, Func<bool> condition)
-        {
-            _from = from;
-            _to = to;
-            _condition = condition;
-        }
-
-        public StateTransition(IState to, Func<bool> condition, int priority)
-        {
-            _to = to;
-            _condition = condition;
-            _priority = priority;
-        }
-
-        public StateTransition(IState to, Func<bool> condition)
-        {
-            _to = to;
-            _condition = condition;
-        }
-
-        public StateTransition(IState from, IState to)
-        {
-            _from = from;
-            _to = to;
-        }
-
-        public StateTransition(IState to)
-        {
-            _to = to;
-        }
 
         public void SetOnTransition(Action transitionAction)
         {
-            onTransition = transitionAction;
+            _onTransition = transitionAction;
         }
     }
 

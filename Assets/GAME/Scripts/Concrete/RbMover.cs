@@ -56,7 +56,6 @@ namespace Movement
                 _snapshotStream = SnapshotStream;
                 _transitionStream = TransitionStream;
 
-                _characterTranslater = _manager.CharacterTranslater;
                 _characterOrientator = _manager.CharacterOrientator;
 
                 _rb = (_manager as MonoBehaviour)?.GetComponent<Rigidbody>();
