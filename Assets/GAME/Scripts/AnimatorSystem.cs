@@ -62,7 +62,6 @@ public sealed class AnimatorSystem : MonoBehaviour
         }
     }
 
-
     public void OnAnimationEvent(string eventString)
     {
         int layer = 1;

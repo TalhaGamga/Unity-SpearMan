@@ -60,7 +60,7 @@ public interface IWeapon
 public interface IMover
 {
     public MovementType CurrentType { get; }
-    void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream);
+    void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream);
     void End();
     public void HandleAction(MovementAction action);
     void HandleRootMotion(Vector3 delta);

@@ -6,7 +6,7 @@ namespace Movement
 {
     public class MovementManager : MonoBehaviour, IMovementManager, IMovementInputReceiver, IReactiveCapabilityProvider
     {
-        public BehaviorSubject<MovementSnapshot> SnapshotStream { get; } = new(MovementSnapshot.Default);
+        public Subject<MovementSnapshot> SnapshotStream { get; } = new();
         public Subject<MovementTransition> TransitionStream { get; } = new();
 
         public Transform CharacterOrientator => _characterModelTransform;

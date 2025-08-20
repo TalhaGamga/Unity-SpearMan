@@ -46,11 +46,11 @@ namespace Movement
             private float _smoothedBlendSpeed = 0f;
             private const float _speedLerpRate = 10f;
 
-            private BehaviorSubject<MovementSnapshot> _snapshotStream;
+            private Subject<MovementSnapshot> _snapshotStream;
             private Subject<MovementTransition> _transitionStream;
             private bool _forceIdle;
 
-            public void Init(IMovementManager movementManager, BehaviorSubject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
+            public void Init(IMovementManager movementManager, Subject<MovementSnapshot> SnapshotStream, Subject<MovementTransition> TransitionStream)
             {
                 _manager = movementManager;
                 _snapshotStream = SnapshotStream;
