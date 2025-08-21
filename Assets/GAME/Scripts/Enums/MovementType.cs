@@ -1,5 +1,6 @@
 ﻿public enum MovementType
 {
+    None = 0,
     Idle,
     Walk,
     Move,
@@ -11,6 +12,7 @@
     SwimUp,
     Interact,
     Parkour,
-    None
+    Neutral,
+
     // Add more as needed
 }

@@ -6,33 +6,32 @@ using UnityEngine;
 namespace DevVorpian
 {
     [System.Serializable]
-    public class StateMachine<StateType>
+    public class StateMachine<StateType> where StateType : Enum
     {
-        public Action OnAutonomicTransition;
+        public Action OnTransitionedAutonomously;
         [SerializeField] private string _stateName;
 
         [SerializeField] public StateType _currentStateType;
-        private List<StateTransition<StateType>> _inputBasedTransitions;
+        private List<StateTransition<StateType>> _intentBasedTransition;
         private List<StateTransition<StateType>> _autonomicTransitions;
 
         private IState _currentState;
 
         public StateMachine()
         {
-            _inputBasedTransitions = new();
+            _intentBasedTransition = new();
             _autonomicTransitions = new();
         }
 
         public void Update()
         {
             _currentState?.Update();
-
             checkTransition();
         }
 
-        public void AddTransition(StateTransition<StateType> stateTransition)
+        public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)
         {
-            _inputBasedTransitions.Add(stateTransition);
+            _intentBasedTransition.Add(stateTransition);
         }
 
         public void AddAutonomicTransition(StateTransition<StateType> stateTransition)
@@ -43,67 +42,68 @@ namespace DevVorpian
         public void SetState(StateType newStateType)
         {
             var transitionData = findInputBasedTransition(newStateType);
-            if (transitionData == null || (_currentState != null && _currentState.Equals(transitionData.To)))
+            if (transitionData == null || (_currentState != null && _currentStateType.Equals(transitionData.TargetType)))
             {
                 return;
             }
 
             setState(transitionData);
-            _currentStateType = newStateType;
         }
 
-        private void setStateAutonomous(StateTransitionData transitionData)
+        private void setStateAutonomous(StateTransitionData<StateType> transitionData)
         {
             if (transitionData != null)
             {
                 setState(transitionData);
-                OnAutonomicTransition?.Invoke();
+                OnTransitionedAutonomously?.Invoke();
             }
         }
 
         private void checkTransition()
         {
-            StateTransitionData transitionData = findAutonomicTransition();
+            StateTransitionData<StateType> transitionData = findAutonomicTransition();
             setStateAutonomous(transitionData);
         }
 
-        private void setState(StateTransitionData transitionData)
+        private void setState(StateTransitionData<StateType> transitionData)
         {
             _currentState?.Exit();
             transitionData?.OnTransition();
-            _currentState = transitionData.To;
+            _currentState = transitionData.TargetState;
             _currentState.Enter();
+            _currentStateType = transitionData.TargetType;
+            Debug.Log(_currentStateType);
             _stateName = _currentState.State;
         }
 
 
-        private StateTransitionData findInputBasedTransition(StateType to)
+        private StateTransitionData<StateType> findInputBasedTransition(StateType to)
         {
             var transition =
-                _inputBasedTransitions.FirstOrDefault(s =>
+                _intentBasedTransition.FirstOrDefault(s =>
                     s.To.Equals(to) && s.From.Equals(_currentStateType))
-                ?? _inputBasedTransitions.FirstOrDefault(s => s.To.Equals(to));
+                ?? _intentBasedTransition.FirstOrDefault(s => s.To.Equals(to));
 
             if (transition == null) return null;
 
-            return new StateTransitionData(transition.TargetState, transition.OnTransition);
+            return new StateTransitionData<StateType>(transition.To, transition.TargetState, transition.OnTransition);
         }
 
-        private StateTransitionData findAutonomicTransition()
+        private StateTransitionData<StateType> findAutonomicTransition()
         {
             foreach (var transition in _autonomicTransitions)
             {
                 if (_currentStateType.Equals(transition.To))
-                    return null;
+                    continue;
 
-                if (transition.From.Equals(transition.From) && transition.Condition())
+                if (transition.From.Equals(_currentStateType) && transition.Condition())
                 {
-                    return new StateTransitionData(transition.TargetState, transition.OnTransition);
+                    return new StateTransitionData<StateType>(transition.To, transition.TargetState, transition.OnTransition);
                 }
 
-                if (transition.Condition())
+                if (transition.From.Equals(default(StateType)) && transition.Condition())
                 {
-                    return new StateTransitionData(transition.TargetState, transition.OnTransition);
+                    return new StateTransitionData<StateType>(transition.To, transition.TargetState, transition.OnTransition);
                 }
             }
 
@@ -146,15 +146,16 @@ namespace DevVorpian
         public int Priority => _priority;
     }
 
-    public class StateTransitionData
+    public class StateTransitionData<StateType>
     {
-        public IState To;
+        public IState TargetState;
         public Action OnTransition;
-
-        public StateTransitionData(IState to, Action onTransition)
+        public StateType TargetType;
+        public StateTransitionData(StateType stateType, IState state, Action onTransition)
         {
-            To = to;
+            TargetState = state;
             OnTransition = onTransition;
+            TargetType = stateType;
         }
     }
 }

@@ -26,38 +26,35 @@ namespace Movement
                 IState moveState = new RbMove(_context);
                 IState idleState = new RbIdle(_context);
                 IState fallState = new RbFall(_context);
+                IState neutralState = new RbNeutral(_context);
 
                 StateTransition<MovementType> toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
                 StateTransition<MovementType> toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-                StateTransition<MovementType> moveToIdle = new StateTransition<MovementType>(MovementType.Move, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle from Move"));
                 StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !_manager.GetIsGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
+                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => _manager.GetIsGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
 
-                _stateMachine.AddTransition(toMove);
-                _stateMachine.AddTransition(toIdle);
-                _stateMachine.AddTransition(moveToIdle);
+                _stateMachine.AddIntentBasedTransition(toMove);
+                _stateMachine.AddIntentBasedTransition(toIdle);
 
+                _stateMachine.AddAutonomicTransition(fallToNeutral);
                 _stateMachine.AddAutonomicTransition(toFall);
 
-                //_stateMachine.OnAutonomicTransition += () => transitionStream.OnNext(new MovementTransition());
+                _stateMachine.OnTransitionedAutonomously = () => _context.AutonomicTransitionStream.OnNext(_context.State);
 
-                var coalesced = _context.AnyRelevantChange
-                    .ThrottleFirstFrame(1)
-                    .Subscribe(_ =>
-                    {
-                        snapshotStream.OnNext(new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage));
-                    });
-                _disposables.Add(coalesced);
+                var sub = _context.AnyRelevantChange
+                    .Select(_ => new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage))
+                    .DistinctUntilChanged()
+                    .Subscribe(snapshotStream.OnNext)
+                    .AddTo(_disposables);
 
-                var stateChanged = _context.StateChanged
+
+                var autonomicTransition = _context.AutonomicTransitionStream
                     .Pairwise()
                     .Subscribe(pair =>
                     {
                         transitionStream.OnNext(new MovementTransition(pair.Previous, pair.Current));
                     }
-                    );
-                _disposables.Add(stateChanged);
-
-                snapshotStream.OnNext(new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage));
+                    ).AddTo(_disposables);
 
                 _stateMachine.SetState(MovementType.Idle);
             }
@@ -76,6 +73,7 @@ namespace Movement
 
             public void HandleRootMotion(Vector3 delta)
             {
+                Debug.Log(delta);
                 _context.RootMotionDelta = delta;
             }
 
@@ -87,22 +85,21 @@ namespace Movement
             [System.Serializable]
             public class Context
             {
+                public BehaviorSubject<MovementType> AutonomicTransitionStream = new(MovementType.Idle);
+
                 public Vector2 MoveInput;
                 public Vector3 RootMotionDelta;
                 public Rigidbody Rb;
 
                 private MovementType _state = MovementType.Idle;
-                private readonly BehaviorSubject<MovementType> _stateSubject = new(MovementType.Idle);
-                public Observable<MovementType> StateChanged => _stateSubject;
                 public MovementType State
                 {
                     get => _state;
-
                     set
                     {
                         if (_state == value) return;
                         _state = value;
-                        _stateSubject.OnNext(value);
+                        _changedSubject.OnNext(Unit.Default);
                     }
                 }
 

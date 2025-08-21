@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public class MovementIntentMapper : IIntentMapper
 {
     // Set this to match your RbMover's _maxJumpStage (or make it configurable)

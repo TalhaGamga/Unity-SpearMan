@@ -1,23 +1,24 @@
 using Movement.Mover;
+using UnityEngine;
 
 namespace Movement
 {
     namespace State
     {
-        public class RbFall : IState
+        public class RbNeutral : IState
         {
-            public string State => "Fall";
+            public string State => "Neutral";
 
             private RBMoverMachine.Context _context;
 
-            public RbFall(RBMoverMachine.Context context)
+            public RbNeutral(RBMoverMachine.Context context)
             {
                 _context = context;
             }
 
             public void Enter()
             {
-                _context.State = MovementType.Fall;
+                _context.State = MovementType.Neutral;
             }
 
             public void Exit()
