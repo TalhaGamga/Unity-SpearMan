@@ -47,7 +47,6 @@ namespace Movement
                     .Subscribe(snapshotStream.OnNext)
                     .AddTo(_disposables);
 
-
                 var autonomicTransition = _context.AutonomicTransitionStream
                     .Pairwise()
                     .Subscribe(pair =>
@@ -73,7 +72,6 @@ namespace Movement
 
             public void HandleRootMotion(Vector3 delta)
             {
-                Debug.Log(delta);
                 _context.RootMotionDelta = delta;
             }
 

@@ -19,7 +19,9 @@ namespace Movement
 
             public void Enter()
             {
-                Debug.Log("Rb Move Entered");
+                _context.State = MovementType.Move;
+                _context.Speed += 1;
+                _context.JumpStage += 1;
             }
 
             public void Exit()

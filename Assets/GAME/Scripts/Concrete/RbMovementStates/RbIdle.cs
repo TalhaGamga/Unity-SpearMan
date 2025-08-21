@@ -17,6 +17,9 @@ namespace Movement
 
             public void Enter()
             {
+                _context.State = MovementType.Idle;
+                _context.Speed += 1;
+                _context.JumpStage += 1;
             }
 
             public void Exit()

@@ -1,6 +1,6 @@
 using R3;
 using System.Collections.Generic;
-
+using UnityEngine;
 public class ActionSystem
 {
     public Subject<MovementAction> MovementIntentStream { get; } = new();
@@ -54,6 +54,7 @@ public class ActionSystem
 
     public void ProcessAnimator()
     {
+        Debug.Log("Processing Animator");
         var characterSnapshot = new CharacterSnapshot(
     _movementSnapshot, _combatSnapshot, _reactionSnapshot);
 

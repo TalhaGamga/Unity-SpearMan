@@ -64,7 +64,6 @@ namespace Movement
             _currentMover?.End();
             _currentMover = newMover;
             _currentMover?.Init(this, SnapshotStream, TransitionStream);
-
             _disposables.Clear();
 
             SnapshotStream.AddTo(_disposables);
