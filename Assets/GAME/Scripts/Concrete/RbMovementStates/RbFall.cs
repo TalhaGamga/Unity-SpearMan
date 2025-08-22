@@ -25,10 +25,6 @@ namespace Movement
             {
             }
 
-            public void Tick()
-            {
-            }
-
             public void Update()
             {
             }

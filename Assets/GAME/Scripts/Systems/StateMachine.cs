@@ -9,8 +9,8 @@ namespace DevVorpian
     public class StateMachine<StateType> where StateType : Enum
     {
         public Action OnTransitionedAutonomously;
-        [SerializeField] private string _stateName;
 
+        [SerializeField] private string _stateName;
         [SerializeField] public StateType _currentStateType;
         private List<StateTransition<StateType>> _intentBasedTransition;
         private List<StateTransition<StateType>> _autonomicTransitions;
@@ -62,7 +62,7 @@ namespace DevVorpian
         private void checkTransition()
         {
             StateTransitionData<StateType> transitionData = findAutonomicTransition();
-            setStateAutonomous(transitionData); 
+            setStateAutonomous(transitionData);
         }
 
         private void setState(StateTransitionData<StateType> transitionData)
@@ -75,7 +75,6 @@ namespace DevVorpian
             Debug.Log(_currentStateType);
             _stateName = _currentState.State;
         }
-
 
         private StateTransitionData<StateType> findInputBasedTransition(StateType to)
         {

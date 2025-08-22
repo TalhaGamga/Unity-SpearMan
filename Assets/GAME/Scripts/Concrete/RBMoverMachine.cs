@@ -48,13 +48,13 @@ namespace Movement
 
                 _stateMachine.OnTransitionedAutonomously = () => _context.AutonomicTransitionStream.OnNext(_context.State);
 
-                var sub = _context.AnyRelevantChange
+                _context.AnyRelevantChange
                     .Select(_ => new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage))
                     .DistinctUntilChanged()
                     .Subscribe(snapshotStream.OnNext)
                     .AddTo(_disposables);
 
-                var autonomicTransition = _context.AutonomicTransitionStream
+                _context.AutonomicTransitionStream
                     .Pairwise()
                     .Subscribe(pair =>
                     {
@@ -105,6 +105,8 @@ namespace Movement
                 public Vector2 MoveInput;
                 public Vector3 RootMotionDelta;
                 public Rigidbody Rb;
+                public float MaxMoveSpeed;
+                public float Acceleration;
 
                 private MovementType _state = MovementType.Idle;
                 public MovementType State
@@ -118,8 +120,6 @@ namespace Movement
                 }
 
                 private float _speed;
-                private readonly BehaviorSubject<float> _speedSubject = new(0f);
-                public Observable<float> SpeedChanged => _speedSubject;
                 public float Speed
                 {
                     get => _speed;
@@ -127,13 +127,10 @@ namespace Movement
                     {
                         if (Mathf.Approximately(_speed, value)) return;
                         _speed = value;
-                        _speedSubject.OnNext(value);
                     }
                 }
 
                 private int _jumpStage;
-                private readonly BehaviorSubject<int> _jumpStageSubject = new(0);
-                public Observable<int> JumpStageChanged => _jumpStageSubject;
                 public int JumpStage
                 {
                     get => _jumpStage;
@@ -141,7 +138,6 @@ namespace Movement
                     {
                         if (_jumpStage == value) return;
                         _jumpStage = value;
-                        _jumpStageSubject.OnNext(value);
                     }
                 }
 

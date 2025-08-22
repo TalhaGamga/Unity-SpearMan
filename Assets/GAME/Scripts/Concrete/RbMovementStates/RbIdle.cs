@@ -6,7 +6,7 @@ namespace Movement
     {
         public class RbIdle : IState
         {
-            public string State => "RbIdle";
+            public string State => "Idle";
 
             private RBMoverMachine.Context _context;
 
@@ -18,16 +18,10 @@ namespace Movement
             public void Enter()
             {
                 _context.State = MovementType.Idle;
-                _context.Speed -= 1;
-                _context.JumpStage -= 1;
                 _context.SubmitChange();
             }
 
             public void Exit()
-            {
-            }
-
-            public void Tick()
             {
             }
 

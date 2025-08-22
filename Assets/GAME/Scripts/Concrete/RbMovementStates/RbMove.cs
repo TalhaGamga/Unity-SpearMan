@@ -1,4 +1,5 @@
 using Movement.Mover;
+using Unity.Hierarchy;
 using UnityEngine;
 
 namespace Movement
@@ -7,10 +8,13 @@ namespace Movement
     {
         public class RbMove : IState
         {
-            public string State => "RbMove";
+            public string State => "Move";
 
             private RBMoverMachine.Context _context;
             private Rigidbody _rb;
+
+            private const float MinSqrDelta = 1e-8f;
+            private const float MinMaxSpeed = 0.01f;
             public RbMove(RBMoverMachine.Context context)
             {
                 _context = context;
@@ -20,8 +24,6 @@ namespace Movement
             public void Enter()
             {
                 _context.State = MovementType.Move;
-                _context.Speed += 1;
-                _context.JumpStage += 1;
                 _context.SubmitChange();
             }
 
@@ -29,18 +31,53 @@ namespace Movement
             {
             }
 
-            public void Tick()
-            {
-            }
-
             public void Update()
             {
-                float deltaTime = Time.deltaTime;
-                Vector3 rootMotionDelta = _context.RootMotionDelta;
-                float zRootSpeed = rootMotionDelta.z / deltaTime;
-                float xRootSpeed = rootMotionDelta.x / deltaTime;
-                Vector3 rootMotionVelocity = new Vector3(0, 0, _context.Speed * _context.MoveInput.x);
-                _rb.linearVelocity = rootMotionVelocity;
+                var deltaTime = Time.deltaTime;
+                if (deltaTime <= 0f) return;
+
+                bool changed = false;
+
+                changed |= updateAnimBlend(deltaTime);
+                changed |= applyRootMotionAsVelocity(deltaTime);
+
+                if (changed)
+                    _context.SubmitChange();
+            }
+            private bool updateAnimBlend(float dt)
+            {
+                float target = Mathf.Clamp01(_context.MoveInput.magnitude);
+                float step = _context.Acceleration * dt;
+
+                float blended = Mathf.MoveTowards(_context.Speed, target, step);
+                if (!Mathf.Approximately(blended, _context.Speed))
+                {
+                    _context.Speed = blended;
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool applyRootMotionAsVelocity(float deltaTime)
+            {
+                Vector3 delta = _context.RootMotionDelta;
+
+                if (delta.sqrMagnitude < MinSqrDelta)
+                    return false;
+
+                Vector2 horizontalVelocity = new Vector2(delta.x, delta.z) / deltaTime;
+
+                //float max = Mathf.Max(MinMaxSpeed, _context.MaxMoveSpeed);
+                //float mag = horizontalVelocity.magnitude;
+                //if (mag > max)
+                //    horizontalVelocity *= (max / mag);
+
+                Vector3 current = _rb.linearVelocity;
+                _rb.linearVelocity = new Vector3(horizontalVelocity.x, current.y, horizontalVelocity.y);
+
+                _context.RootMotionDelta = Vector3.zero;
+                return true;
             }
         }
     }

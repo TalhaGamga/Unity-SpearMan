@@ -24,7 +24,7 @@ public interface IMovementManager
     public Transform CharacterOrientator { get; }
     public LayerMask GroundLayer { get; }
     public float GroundCheckDistance { get; }
-    public Transform[] GroundCheckPoints {  get; }  
+    public Transform[] GroundCheckPoints { get; }
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     void SetMover(IMover newMover);
@@ -73,7 +73,6 @@ public interface IState
     public string State { get; }
     void Enter();
     void Update();
-    void Tick();
     void Exit();
 }
 

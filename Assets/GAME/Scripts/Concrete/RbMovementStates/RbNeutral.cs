@@ -1,5 +1,4 @@
 using Movement.Mover;
-using UnityEngine;
 
 namespace Movement
 {
@@ -23,10 +22,6 @@ namespace Movement
             }
 
             public void Exit()
-            {
-            }
-
-            public void Tick()
             {
             }
 
