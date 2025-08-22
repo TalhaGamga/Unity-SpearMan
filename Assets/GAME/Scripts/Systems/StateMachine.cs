@@ -62,7 +62,7 @@ namespace DevVorpian
         private void checkTransition()
         {
             StateTransitionData<StateType> transitionData = findAutonomicTransition();
-            setStateAutonomous(transitionData);
+            setStateAutonomous(transitionData); 
         }
 
         private void setState(StateTransitionData<StateType> transitionData)

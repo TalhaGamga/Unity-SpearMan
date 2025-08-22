@@ -22,11 +22,11 @@ public interface ICombatInputReceiver
 public interface IMovementManager
 {
     public Transform CharacterOrientator { get; }
-    public Transform CharacterTranslater { get; }
-
+    public LayerMask GroundLayer { get; }
+    public float GroundCheckDistance { get; }
+    public Transform[] GroundCheckPoints {  get; }  
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
-    bool GetIsGrounded();
     void SetMover(IMover newMover);
 }
 
@@ -65,6 +65,7 @@ public interface IMover
     public void HandleAction(MovementAction action);
     void HandleRootMotion(Vector3 delta);
     public void UpdateMover(float deltaTime);
+    public bool IsGrounded();
 }
 
 public interface IState

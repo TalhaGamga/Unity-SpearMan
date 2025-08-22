@@ -114,7 +114,7 @@ namespace Movement
                 }
 
                 Vector3 rbVel = _rb.linearVelocity;
-                bool isGrounded = _manager.GetIsGrounded();
+                bool isGrounded = IsGrounded();
 
                 // --- Coyote time logic ---
                 if (isGrounded) _coyoteTimer = _coyoteTime;
@@ -240,6 +240,11 @@ namespace Movement
 
                 // --- Reset root motion ---
                 _rootMotionDelta = Vector3.zero;
+            }
+
+            public bool IsGrounded()
+            {
+                return true;
             }
         }
     }

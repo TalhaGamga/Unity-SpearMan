@@ -13,15 +13,22 @@ namespace Movement
             public MovementType CurrentType => MovementType.None;
 
             [SerializeField] private Context _context;
-
             [SerializeField] private StateMachine<MovementType> _stateMachine;
+
             private CompositeDisposable _disposables = new();
             private IMovementManager _manager;
+
+            private Transform[] _groundCheckPoints;
+            private float _groundCheckDistance;
+            private LayerMask _groundLayer;
 
             public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
             {
                 _stateMachine = new StateMachine<MovementType>();
                 _manager = movementManager;
+                _groundCheckPoints = _manager.GroundCheckPoints;
+                _groundCheckDistance = _manager.GroundCheckDistance;
+                _groundLayer = _manager.GroundLayer;
 
                 IState moveState = new RbMove(_context);
                 IState idleState = new RbIdle(_context);
@@ -30,8 +37,8 @@ namespace Movement
 
                 StateTransition<MovementType> toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
                 StateTransition<MovementType> toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-                StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !_manager.GetIsGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
-                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => _manager.GetIsGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
+                StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !IsGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
+                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => IsGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
 
                 _stateMachine.AddIntentBasedTransition(toMove);
                 _stateMachine.AddIntentBasedTransition(toIdle);
@@ -80,6 +87,16 @@ namespace Movement
                 _stateMachine.Update();
             }
 
+            public bool IsGrounded()
+            {
+                foreach (var checkPoint in _groundCheckPoints)
+                {
+                    return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _groundLayer).Length > 0;
+                }
+
+                return false;
+            }
+
             [System.Serializable]
             public class Context
             {
@@ -97,7 +114,6 @@ namespace Movement
                     {
                         if (_state == value) return;
                         _state = value;
-                        _changedSubject.OnNext(Unit.Default);
                     }
                 }
 
@@ -112,7 +128,6 @@ namespace Movement
                         if (Mathf.Approximately(_speed, value)) return;
                         _speed = value;
                         _speedSubject.OnNext(value);
-                        _changedSubject.OnNext(Unit.Default);
                     }
                 }
 
@@ -127,8 +142,12 @@ namespace Movement
                         if (_jumpStage == value) return;
                         _jumpStage = value;
                         _jumpStageSubject.OnNext(value);
-                        _changedSubject.OnNext(Unit.Default);
                     }
+                }
+
+                public void SubmitChange()
+                {
+                    _changedSubject.OnNext(Unit.Default);
                 }
 
                 private readonly Subject<Unit> _changedSubject = new();

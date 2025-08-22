@@ -22,6 +22,7 @@ namespace Movement
                 _context.State = MovementType.Move;
                 _context.Speed += 1;
                 _context.JumpStage += 1;
+                _context.SubmitChange();
             }
 
             public void Exit()

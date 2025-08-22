@@ -19,6 +19,7 @@ namespace Movement
             public void Enter()
             {
                 _context.State = MovementType.Neutral;
+                _context.SubmitChange();
             }
 
             public void Exit()

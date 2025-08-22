@@ -11,6 +11,9 @@ namespace Movement
 
         public Transform CharacterOrientator => _characterModelTransform;
         public Transform CharacterTranslater => _characterTransform;
+        public Transform[] GroundCheckPoints => _groundCheckPoints;
+        public float GroundCheckDistance => _groundCheckDistance;
+        public LayerMask GroundLayer => _groundLayer;
 
         [SerializeField] private Transform _characterModelTransform;
         [SerializeField] private Transform _characterTransform;
