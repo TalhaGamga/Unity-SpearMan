@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace DevVorpian
 {
     [System.Serializable]
     public class StateMachine<StateType> where StateType : Enum
     {
-        public Action OnTransitionedAutonomously;
+        public UnityEvent OnTransitionedAutonomously = new();
 
         [SerializeField] private string _stateName;
         [SerializeField] public StateType _currentStateType;

@@ -2,6 +2,7 @@ using R3;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public interface IReactiveCapabilityProvider
 {
@@ -65,11 +66,13 @@ public interface IMover
     public void HandleAction(MovementAction action);
     void HandleRootMotion(RootMotionFrame rootMotion);
     public void UpdateMover(float deltaTime);
-    public bool IsGrounded();
 }
 
 public interface IState
 {
+    public UnityEvent OnEnter { get; set; }
+    public UnityEvent OnExit { get; set; }
+    public UnityEvent OnUpdate { get; set; }
     public string State { get; }
     void Enter();
     void Update();

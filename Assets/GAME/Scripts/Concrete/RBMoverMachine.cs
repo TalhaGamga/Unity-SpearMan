@@ -2,7 +2,10 @@ using DevVorpian;
 using Movement.State;
 using R3;
 using System;
+using System.Collections.Generic;
+using UnityEditor.Rendering;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Movement
 {
@@ -23,8 +26,10 @@ namespace Movement
             private float _groundCheckDistance;
             private LayerMask _groundLayer;
             private Transform _characterorientator;
+            private Subject<Unit> _submitSnapshotStream = new();
+            private BehaviorSubject<MovementType> _submitTransitionStream = new(MovementType.Idle);
 
-            [SerializeField] private float _orientationSpeed = 10f;
+            private const float MinSqrDelta = 1e-8f;
             public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
             {
                 _stateMachine = new StateMachine<MovementType>();
@@ -34,37 +39,76 @@ namespace Movement
                 _groundLayer = _manager.GroundLayer;
                 _characterorientator = _manager.CharacterOrientator;
 
-                IState moveState = new RbMove(_context);
-                IState idleState = new RbIdle(_context);
-                IState fallState = new RbFall(_context);
-                IState neutralState = new RbNeutral(_context);
+                _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
-                StateTransition<MovementType> toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
-                StateTransition<MovementType> toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-                StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !IsGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
-                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => IsGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
-
-                _stateMachine.AddIntentBasedTransition(toMove);
-                _stateMachine.AddIntentBasedTransition(toIdle);
-
-                _stateMachine.AddAutonomicTransition(fallToNeutral);
-                _stateMachine.AddAutonomicTransition(toFall);
-
-                _stateMachine.OnTransitionedAutonomously = () => _context.AutonomicTransitionStream.OnNext(_context.State);
-
-                _context.AnyRelevantChange
-                    .Select(_ => new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage))
+                _submitSnapshotStream.
+                    Select(_ => new MovementSnapshot(_context.State, _context.Speed, _context.JumpStage))
                     .DistinctUntilChanged()
                     .Subscribe(snapshotStream.OnNext)
                     .AddTo(_disposables);
 
-                _context.AutonomicTransitionStream
+                _submitTransitionStream
                     .Pairwise()
                     .Subscribe(pair =>
                     {
                         transitionStream.OnNext(new MovementTransition(pair.Previous, pair.Current));
                     }
                     ).AddTo(_disposables);
+
+                IState moveState = new ConcreteState();
+                IState idleState = new ConcreteState();
+                IState fallState = new ConcreteState();
+                IState neutralState = new ConcreteState();
+
+                moveState.OnEnter.AddListener(() =>
+                {
+                    setContextState(MovementType.Move);
+                    submitSnapshot();
+                });
+
+                idleState.OnEnter.AddListener(() =>
+                {
+                    setContextState(MovementType.Idle);
+                    submitSnapshot();
+                });
+
+                fallState.OnEnter.AddListener(() =>
+                {
+                    setContextState(MovementType.Fall);
+                    submitSnapshot();
+                });
+
+                neutralState.OnEnter.AddListener(() =>
+                {
+                    setContextState(MovementType.Neutral);
+                    submitSnapshot();
+                });
+
+
+                moveState.OnUpdate.AddListener(() =>
+                {
+                    blendSpeed();
+                    applyRootMotionAsVelocity();
+                    submitSnapshot();
+                });
+
+                idleState.OnUpdate.AddListener(() =>
+                {
+                    blendSpeed();
+                    applyRootMotionAsVelocity();
+                    submitSnapshot();
+                });
+
+                StateTransition<MovementType> toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
+                StateTransition<MovementType> toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
+                StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !isGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
+                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => isGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
+
+                _stateMachine.AddIntentBasedTransition(toMove);
+                _stateMachine.AddIntentBasedTransition(toIdle);
+
+                _stateMachine.AddAutonomicTransition(fallToNeutral);
+                _stateMachine.AddAutonomicTransition(toFall);
 
                 _stateMachine.SetState(MovementType.Idle);
             }
@@ -97,7 +141,7 @@ namespace Movement
                 _stateMachine.Update();
             }
 
-            public bool IsGrounded()
+            private bool isGrounded()
             {
                 foreach (var checkPoint in _groundCheckPoints)
                 {
@@ -107,11 +151,42 @@ namespace Movement
                 return false;
             }
 
+            private void setContextState(MovementType movementType)
+            {
+                _context.State = movementType;
+            }
+
+            private void submitSnapshot()
+            {
+                _submitSnapshotStream.OnNext(Unit.Default);
+            }
+
+            private void submitAutonomicStateTransition()
+            {
+                _submitTransitionStream.OnNext(_context.State);
+            }
+
+            private void blendSpeed()
+            {
+                float desiredSpeed = _context.MoveInput.magnitude;
+                _context.Speed = Mathf.MoveTowards(_context.Speed, desiredSpeed, _context.Acceleration * Time.deltaTime);
+            }
+
+            private void applyRootMotionAsVelocity()
+            {
+                Vector3 delta = _context.RootMotionDeltaPosition;
+
+                Vector2 horizontalVelocity = new Vector2(delta.x, delta.z) / Time.deltaTime;
+
+                Vector3 current = _context.Rb.linearVelocity;
+                _context.Rb.linearVelocity = new Vector3(horizontalVelocity.x, current.y, horizontalVelocity.y);
+
+                _context.RootMotionDeltaPosition = Vector3.zero;
+            }
+
             [System.Serializable]
             public class Context
             {
-                public BehaviorSubject<MovementType> AutonomicTransitionStream = new(MovementType.Idle);
-
                 public Vector2 MoveInput;
                 public Vector2 FacingDirection;
                 public Vector3 RootMotionDeltaPosition;
@@ -121,48 +196,9 @@ namespace Movement
                 public float Acceleration;
                 public float JumpHeight;
                 public float JumpTimeToPeak;
-
-
-                private MovementType _state = MovementType.Idle;
-                public MovementType State
-                {
-                    get => _state;
-                    set
-                    {
-                        if (_state == value) return;
-                        _state = value;
-                    }
-                }
-
-                private float _speed;
-                public float Speed
-                {
-                    get => _speed;
-                    set
-                    {
-                        if (Mathf.Approximately(_speed, value)) return;
-                        _speed = value;
-                    }
-                }
-
-                private int _jumpStage;
-                public int JumpStage
-                {
-                    get => _jumpStage;
-                    set
-                    {
-                        if (_jumpStage == value) return;
-                        _jumpStage = value;
-                    }
-                }
-
-                public void SubmitChange()
-                {
-                    _changedSubject.OnNext(Unit.Default);
-                }
-
-                private readonly Subject<Unit> _changedSubject = new();
-                public Observable<Unit> AnyRelevantChange => _changedSubject;
+                public MovementType State;
+                public float Speed;
+                public int JumpStage;
             }
         }
     }
