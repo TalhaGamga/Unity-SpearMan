@@ -99,10 +99,10 @@ namespace Movement
                     submitSnapshot();
                 });
 
-                StateTransition<MovementType> toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
-                StateTransition<MovementType> toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-                StateTransition<MovementType> toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !isGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
-                StateTransition<MovementType> fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => isGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
+                var toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
+                var toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
+                var toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, () => !isGrounded(), fallState, () => Debug.Log("Transitioning to Fall"));
+                var fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, () => isGrounded(), neutralState, () => Debug.Log("Transitioning to Neutral"));
 
                 _stateMachine.AddIntentBasedTransition(toMove);
                 _stateMachine.AddIntentBasedTransition(toIdle);
@@ -188,17 +188,11 @@ namespace Movement
             public class Context
             {
                 public Vector2 MoveInput;
-                public Vector2 FacingDirection;
                 public Vector3 RootMotionDeltaPosition;
-                public Quaternion LogicalFacing;
                 public Rigidbody Rb;
-                public float MaxMoveSpeed;
                 public float Acceleration;
-                public float JumpHeight;
-                public float JumpTimeToPeak;
                 public MovementType State;
                 public float Speed;
-                public int JumpStage;
             }
         }
     }
