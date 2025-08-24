@@ -1,6 +1,7 @@
 using DevVorpian;
 using Movement.State;
 using R3;
+using System;
 using UnityEngine;
 
 namespace Movement
@@ -21,7 +22,9 @@ namespace Movement
             private Transform[] _groundCheckPoints;
             private float _groundCheckDistance;
             private LayerMask _groundLayer;
+            private Transform _characterorientator;
 
+            [SerializeField] private float _orientationSpeed = 10f;
             public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
             {
                 _stateMachine = new StateMachine<MovementType>();
@@ -29,6 +32,7 @@ namespace Movement
                 _groundCheckPoints = _manager.GroundCheckPoints;
                 _groundCheckDistance = _manager.GroundCheckDistance;
                 _groundLayer = _manager.GroundLayer;
+                _characterorientator = _manager.CharacterOrientator;
 
                 IState moveState = new RbMove(_context);
                 IState idleState = new RbIdle(_context);
@@ -75,11 +79,17 @@ namespace Movement
             {
                 _context.MoveInput = action.Direction;
                 _stateMachine.SetState(action.ActionType);
+
+                if (Mathf.Approximately(action.Direction.magnitude, 1))
+                {
+                    var original = _characterorientator.localScale;
+                    _characterorientator.localScale = new Vector3(original.x, original.y, action.Direction.x);
+                }
             }
 
-            public void HandleRootMotion(Vector3 delta)
+            public void HandleRootMotion(RootMotionFrame rootMotion)
             {
-                _context.RootMotionDelta = delta;
+                _context.RootMotionDeltaPosition = rootMotion.DeltaPosition;
             }
 
             public void UpdateMover(float deltaTime)
@@ -103,10 +113,15 @@ namespace Movement
                 public BehaviorSubject<MovementType> AutonomicTransitionStream = new(MovementType.Idle);
 
                 public Vector2 MoveInput;
-                public Vector3 RootMotionDelta;
+                public Vector2 FacingDirection;
+                public Vector3 RootMotionDeltaPosition;
+                public Quaternion LogicalFacing;
                 public Rigidbody Rb;
                 public float MaxMoveSpeed;
                 public float Acceleration;
+                public float JumpHeight;
+                public float JumpTimeToPeak;
+
 
                 private MovementType _state = MovementType.Idle;
                 public MovementType State

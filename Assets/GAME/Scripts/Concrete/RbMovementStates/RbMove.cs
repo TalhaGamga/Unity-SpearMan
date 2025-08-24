@@ -28,8 +28,8 @@ namespace Movement
             }
 
             public void Exit()
-            {
-            }
+            {   
+            }   
 
             public void Update()
             {
@@ -61,22 +61,17 @@ namespace Movement
 
             private bool applyRootMotionAsVelocity(float deltaTime)
             {
-                Vector3 delta = _context.RootMotionDelta;
+                Vector3 delta = _context.RootMotionDeltaPosition;
 
                 if (delta.sqrMagnitude < MinSqrDelta)
                     return false;
 
                 Vector2 horizontalVelocity = new Vector2(delta.x, delta.z) / deltaTime;
 
-                //float max = Mathf.Max(MinMaxSpeed, _context.MaxMoveSpeed);
-                //float mag = horizontalVelocity.magnitude;
-                //if (mag > max)
-                //    horizontalVelocity *= (max / mag);
-
                 Vector3 current = _rb.linearVelocity;
                 _rb.linearVelocity = new Vector3(horizontalVelocity.x, current.y, horizontalVelocity.y);
 
-                _context.RootMotionDelta = Vector3.zero;
+                _context.RootMotionDeltaPosition = Vector3.zero;
                 return true;
             }
         }

@@ -82,7 +82,7 @@ namespace Movement
 
         public void HandleRootMotion(RootMotionFrame rootMotion)
         {
-            _currentMover.HandleRootMotion(rootMotion.DeltaPosition);
+            _currentMover.HandleRootMotion(rootMotion);
         }
 
         public bool GetIsGrounded()

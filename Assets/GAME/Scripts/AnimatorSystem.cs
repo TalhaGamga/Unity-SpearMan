@@ -29,7 +29,6 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
-    [SerializeField] bool rootMotion;
     private void Start()
     {
         _anim.applyRootMotion = true;
@@ -43,8 +42,6 @@ public sealed class AnimatorSystem : MonoBehaviour
             var deltaRot = _anim.deltaRotation;
             _rootMotionSubject.OnNext(new RootMotionFrame(deltaPos, deltaRot));
         }
-
-        rootMotion = _anim.applyRootMotion;
     }
 
     private void LateUpdate()

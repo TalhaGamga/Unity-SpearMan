@@ -63,7 +63,7 @@ public interface IMover
     void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream);
     void End();
     public void HandleAction(MovementAction action);
-    void HandleRootMotion(Vector3 delta);
+    void HandleRootMotion(RootMotionFrame rootMotion);
     public void UpdateMover(float deltaTime);
     public bool IsGrounded();
 }

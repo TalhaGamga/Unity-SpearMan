@@ -58,7 +58,7 @@ public class ActionSystem
         var characterSnapshot = new CharacterSnapshot(
     _movementSnapshot, _combatSnapshot, _reactionSnapshot);
 
-        var updates = AnimationParameterMapper.AnimatorMapper(_currentInputSnapshot, characterSnapshot);
+        var updates = AnimationParameterMapper.AnimatorMapper(characterSnapshot);
         AnimatorUpdates.OnNext(updates);
     }
 

@@ -1,4 +1,5 @@
 using Movement.Mover;
+using UnityEngine;
 
 namespace Movement
 {
@@ -18,6 +19,8 @@ namespace Movement
             public void Enter()
             {
                 _context.State = MovementType.Idle;
+                _context.Speed = 0;
+                _context.Rb.linearVelocity = Vector3.zero;
                 _context.SubmitChange();
             }
 

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 public static class AnimationParameterMapper
 {
-    public static IEnumerable<AnimatorParamUpdate> AnimatorMapper(InputSnapshot input, CharacterSnapshot snapshot)
+    public static IEnumerable<AnimatorParamUpdate> AnimatorMapper(CharacterSnapshot snapshot)
     {
         yield return new AnimatorParamUpdate
         {

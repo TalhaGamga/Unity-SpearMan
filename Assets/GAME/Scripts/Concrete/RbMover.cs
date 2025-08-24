@@ -70,7 +70,7 @@ namespace Movement
 
             public void End() => _moveInput = Vector2.zero;
 
-            public void HandleRootMotion(Vector3 delta) => _rootMotionDelta = delta;
+            public void HandleRootMotion(RootMotionFrame rootMotion) { }
 
             public void HandleAction(MovementAction action)
             {
