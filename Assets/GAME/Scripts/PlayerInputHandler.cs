@@ -17,7 +17,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         _input.Move += direction =>
         {
-            HandleInput(PlayerAction.Run, direction.magnitude > 0, direction);
+            HandleInput(PlayerAction.Move, direction.magnitude > 0, direction);
         };
 
         _input.Jump += isPressed =>

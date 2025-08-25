@@ -129,7 +129,7 @@ namespace DevVorpian
             _onTransition = onTransition;
         }
 
-        public StateTransition(StateType from, StateType to, Func<bool> condition, IState state, Action onTransition = null)
+        public StateTransition(StateType from, StateType to,  IState state, Func<bool> condition, Action onTransition = null)
         {
             _from = from;
             _to = to;

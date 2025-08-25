@@ -5,7 +5,7 @@ public class SwordIntentMapper : IIntentMapper
     public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
     {
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.PrimaryAttack, out var attackInput);
-        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Run, out var runInput);
+        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Move, out var runInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
         // 1. Combo-aware Standard Attack (eventful)
