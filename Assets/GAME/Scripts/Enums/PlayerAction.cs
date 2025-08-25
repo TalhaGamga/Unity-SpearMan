@@ -7,6 +7,7 @@ public enum PlayerAction
     Parry,
     Dash,
     Jump,
+    DoubeJump,
     Interact
     // Extend as needed
 }

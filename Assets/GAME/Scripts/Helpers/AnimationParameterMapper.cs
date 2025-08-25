@@ -19,10 +19,10 @@ public static class AnimationParameterMapper
         };
 
         // Jump Triggers
-        if (snapshot.Movement.JumpStage == 1 && snapshot.Movement.State == MovementType.Jump)
+        if (snapshot.Movement.JumpRight == 1 && snapshot.Movement.State == MovementType.Jump)
             yield return AnimatorParamUpdate.Trigger("Jump");
 
-        else if (snapshot.Movement.JumpStage == 2 && snapshot.Movement.State == MovementType.Jump)
+        else if (snapshot.Movement.JumpRight == 2 && snapshot.Movement.State == MovementType.Jump)
             yield return AnimatorParamUpdate.Trigger("DoubleJump");
 
         // Land Trigger

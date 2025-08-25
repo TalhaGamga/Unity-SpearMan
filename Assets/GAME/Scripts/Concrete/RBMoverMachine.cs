@@ -38,7 +38,7 @@ namespace Movement
                 _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
                 _submitSnapshotStream.
-                    Select(_ => new MovementSnapshot(_context.State, _context.MovementBlend, _context.JumpStage))
+                    Select(_ => new MovementSnapshot(_context.State, _context.MovementBlend, _context.JumpRight))
                     .DistinctUntilChanged()
                     .Subscribe(snapshotStream.OnNext)
                     .AddTo(_disposables);
@@ -56,6 +56,7 @@ namespace Movement
                 IState fallState = new ConcreteState();
                 IState neutralState = new ConcreteState();
                 IState jumpState = new ConcreteState();
+                IState doubleJumpState = new ConcreteState();
 
                 moveState.OnEnter.AddListener(() =>
                 {
@@ -134,12 +135,14 @@ namespace Movement
                 var toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
                 var toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, fallState, () => !isGrounded() && !_context.State.Equals(MovementType.Jump), () => Debug.Log("Transitioning to Fall"));
                 var toJump = new StateTransition<MovementType>(MovementType.None, MovementType.Jump, jumpState, () => Debug.Log("Transitioning To Jump"));
+                var toDoubleJump = new StateTransition<MovementType>(MovementType.None, MovementType.DoubleJump, doubleJumpState, () => !isGrounded() && _context.JumpRight > 0, () => Debug.Log("Transitioning to Double Jump"));
                 var jumpToFall = new StateTransition<MovementType>(MovementType.Jump, MovementType.Fall, fallState, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
                 var fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, neutralState, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
 
                 _stateMachine.AddIntentBasedTransition(toMove);
                 _stateMachine.AddIntentBasedTransition(toIdle);
                 _stateMachine.AddIntentBasedTransition(toJump);
+                _stateMachine.AddIntentBasedTransition(toDoubleJump);
 
                 _stateMachine.AddAutonomicTransition(fallToNeutral);
                 _stateMachine.AddAutonomicTransition(toFall);
@@ -249,6 +252,10 @@ namespace Movement
                 }
             }
 
+            private void setJumpStage(int stage)
+            {
+                _context.JumpRight= stage;
+            }
 
             [System.Serializable]
             public class Context
@@ -259,7 +266,7 @@ namespace Movement
                 public Rigidbody Rb;
                 public float BlendAcceleration;
                 public float MovementBlend;
-                public int JumpStage;
+                public int JumpRight;
                 public float JumpHeight;
                 public float AirborneMovementSpeed;
                 public float JumpTimeToPeak;

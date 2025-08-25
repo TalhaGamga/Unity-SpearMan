@@ -73,7 +73,6 @@ namespace DevVorpian
             _currentState = transitionData.TargetState;
             _currentState.Enter();
             _currentStateType = transitionData.TargetType;
-            Debug.Log(_currentStateType);
             _stateName = _currentState.State;
         }
 

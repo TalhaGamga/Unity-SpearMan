@@ -5,6 +5,7 @@
     Walk,
     Move,
     Jump,
+    DoubleJump,
     Fall,
     Land,
     Dash,

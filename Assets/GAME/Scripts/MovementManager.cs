@@ -77,7 +77,6 @@ namespace Movement
 
         public void HandleInput(MovementAction action)
         {
-            Debug.Log(action.Direction);
             _currentMover.HandleAction(action);
         }
 
