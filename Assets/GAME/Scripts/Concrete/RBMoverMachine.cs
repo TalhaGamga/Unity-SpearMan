@@ -99,6 +99,10 @@ namespace Movement
                     submitSnapshot();
                 });
 
+                idleState.OnUpdate.AddListener(() =>
+                {
+                    setCharacterOrientator();
+                });
 
                 moveState.OnUpdate.AddListener(() =>
                 {
@@ -142,7 +146,6 @@ namespace Movement
                 _stateMachine.AddIntentBasedTransition(toMove);
                 _stateMachine.AddIntentBasedTransition(toIdle);
                 _stateMachine.AddIntentBasedTransition(toJump);
-                _stateMachine.AddIntentBasedTransition(toDoubleJump);
 
                 _stateMachine.AddAutonomicTransition(fallToNeutral);
                 _stateMachine.AddAutonomicTransition(toFall);
@@ -224,8 +227,8 @@ namespace Movement
             private void constraintRbAxisY(bool isAllowed)
             {
                 _context.Rb.constraints = isAllowed
-                    ? RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY   // lock Y + all rotations
-                    : RigidbodyConstraints.FreezeRotation;
+                    ? RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY   // lock Y + all rotations
+                    : RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX;
             }
 
             private void jump()
@@ -245,16 +248,31 @@ namespace Movement
 
             private void setCharacterOrientator()
             {
-                if (Mathf.Approximately(_context.MoveInput.magnitude, 1))
+                float x = _context.MoveInput.x;
+
+                if (Mathf.Abs(x) > _context.FaceDeadzone)
                 {
-                    var original = _characterorientator.localScale;
-                    _characterorientator.localScale = new Vector3(original.x, original.y, _context.MoveInput.x);
+                    float sign = Mathf.Sign(x);           
+                    if (sign != 0f) _context.LastFaceX = (int)sign;    
                 }
+
+                float target = _context.LastFaceX;
+
+                Quaternion targetLocalRot = (target > 0f)
+                    ? Quaternion.Euler(0f, 0f, 0f)        
+                    : Quaternion.Euler(0f, 180f, 0f);     
+
+                _characterorientator.localRotation =
+                    Quaternion.RotateTowards(
+                        _characterorientator.localRotation,
+                        targetLocalRot,
+                        _context.FaceTurnSpeedInDegree * Time.deltaTime
+                    );
             }
 
             private void setJumpStage(int stage)
             {
-                _context.JumpRight= stage;
+                _context.JumpRight = stage;
             }
 
             [System.Serializable]
@@ -270,8 +288,14 @@ namespace Movement
                 public float JumpHeight;
                 public float AirborneMovementSpeed;
                 public float JumpTimeToPeak;
+
+                public float FaceTurnSpeedInDegree = 720;
+                public float FaceDeadzone = 0.05f;
+                public int LastFaceX = 1;
+
                 [HideInInspector] public float Gravity;
                 [HideInInspector] public float VerticalVelocity;
+
             }
         }
     }
