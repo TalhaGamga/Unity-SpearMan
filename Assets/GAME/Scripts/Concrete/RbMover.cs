@@ -246,6 +246,11 @@ namespace Movement
             {
                 return true;
             }
+
+            public void OnAnimationFrame(MovementAnimationFrame animationFrame)
+            {
+                throw new System.NotImplementedException();
+            }
         }
     }
 }

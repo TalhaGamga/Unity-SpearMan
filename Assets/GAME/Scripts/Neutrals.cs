@@ -29,6 +29,7 @@ public interface IMovementManager
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     void SetMover(IMover newMover);
+    void OnAnimationFrame(MovementAnimationFrame animationFrame);
 }
 
 public interface ICombatManager
@@ -48,7 +49,7 @@ public interface ICombat
     void Init(ICombatManager combatManager);
     void Update(float deltaTime);
     void HandleInput(CombatAction action);
-    void OnAnimationFrame(AnimationFrame frame);
+    void OnAnimationFrame(CombatAnimationFrame frame);
     void OnWeaponCollision(Collider other);
     void End();
 }
@@ -64,7 +65,9 @@ public interface IMover
     void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream);
     void End();
     public void HandleAction(MovementAction action);
-    void HandleRootMotion(RootMotionFrame rootMotion);
+    public void HandleRootMotion(RootMotionFrame rootMotion);
+    public void OnAnimationFrame(MovementAnimationFrame animationFrame);
+
     public void UpdateMover(float deltaTime);
 }
 

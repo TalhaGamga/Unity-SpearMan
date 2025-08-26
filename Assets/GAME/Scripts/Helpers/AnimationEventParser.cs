@@ -19,39 +19,34 @@ public static class AnimationEventParser
         return dict;
     }
 
-    public static AnimationFrame ToAnimationFrame(string eventString, Animator anim, int layer)
+    public static CombatAnimationFrame ToCombatAnimationFrame(Dictionary<string, string> parsed)
     {
-        var dict = Parse(eventString);
-
-        string action = dict.TryGetValue("Action", out var a) ? a : "";
-        string eventKey = dict.TryGetValue("EventKey", out var e) ? e : "";
-        int stage = dict.TryGetValue("Stage", out var s) && int.TryParse(s, out var st) ? st : 0;
-        int comboStep = dict.TryGetValue("ComboStep", out var cs) && int.TryParse(cs, out var csInt) ? csInt : 0;
-        string comboType = dict.TryGetValue("ComboType", out var ct) ? ct : "";
-        bool isCancelable = dict.TryGetValue("Cancelable", out var c) && bool.TryParse(c, out var b) && b;
-
+        string action = parsed.TryGetValue("Action", out var a) ? a : "";
+        string eventKey = parsed.TryGetValue("EventKey", out var e) ? e : "";
+        int stage = parsed.TryGetValue("Stage", out var s) && int.TryParse(s, out var st) ? st : 0;
+        int comboStep = parsed.TryGetValue("ComboStep", out var cs) && int.TryParse(cs, out var csInt) ? csInt : 0;
+        string comboType = parsed.TryGetValue("ComboType", out var ct) ? ct : "";
+        bool isCancelable = parsed.TryGetValue("Cancelable", out var c) && bool.TryParse(c, out var b) && b;
         string stateName = "";
-        float normalizedTime = 0f;
-        if (anim != null)
-        {
-            var stateInfo = anim.GetCurrentAnimatorStateInfo(layer);
-            stateName = stateInfo.IsName("") ? "" : stateInfo.shortNameHash.ToString();
-            normalizedTime = stateInfo.normalizedTime;
-        }
 
         // Pass comboStep and comboType to AnimationFrame constructor as needed
 
-        return new AnimationFrame(
+        return new CombatAnimationFrame(
             action,
             eventKey,
             stage,
             isCancelable,
             stateName,
-            normalizedTime,
-            layer,
-            anim,
             comboStep,
             comboType
         );
+    }
+
+    public static MovementAnimationFrame ToMovementAnimationFrame(Dictionary<string, string> parsed)
+    {
+        string action = parsed.TryGetValue("Action", out var a) ? a : "";
+        string eventKey = parsed.TryGetValue("EventKey", out var e) ? e : "";
+
+        return new MovementAnimationFrame(action, eventKey);
     }
 }

@@ -16,10 +16,12 @@ public sealed class AnimatorSystem : MonoBehaviour
     private readonly CompositeDisposable _disposables = new();
 
     public Observable<RootMotionFrame> RootMotionStream => _rootMotionSubject;
-    public Observable<AnimationFrame> AnimationFrameStream => _animationFrameStream;
+    public Observable<CombatAnimationFrame> CombatAnimationFrameStream => _combatAnimationStream;
+    public Observable<MovementAnimationFrame> MovementAnimationFrameStream => _movementAnimationStream;
 
     private readonly Subject<RootMotionFrame> _rootMotionSubject = new();
-    private readonly Subject<AnimationFrame> _animationFrameStream = new();
+    private readonly Subject<CombatAnimationFrame> _combatAnimationStream = new();
+    private readonly Subject<MovementAnimationFrame> _movementAnimationStream = new();
 
     // KEY: trigger name, VALUE: frames left before reset
     private Dictionary<string, float> _pendingTriggerResets = new();
@@ -61,9 +63,27 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     public void OnAnimationEvent(string eventString)
     {
-        int layer = 1;
-        var frame = AnimationEventParser.ToAnimationFrame(eventString, _anim, layer);
-        _animationFrameStream.OnNext(frame);
+        var parsed = AnimationEventParser.Parse(eventString);
+        string system = parsed.TryGetValue("System", out var s) ? s : "";
+
+        if (!string.IsNullOrEmpty(system))
+        {
+            switch (system)
+            {
+                case "MovementSystem":
+                    Debug.Log("Movement Animation Frame");
+                    var movementFrame = AnimationEventParser.ToMovementAnimationFrame(parsed);
+                    _movementAnimationStream.OnNext(movementFrame);
+                    break;
+                case "CombatSystem":
+                    Debug.Log("Combat Animation Frame");
+                    var combatFrame = AnimationEventParser.ToCombatAnimationFrame(parsed);
+                    _combatAnimationStream.OnNext(combatFrame);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     public void HandleAnimatorUpdates(IEnumerable<AnimatorParamUpdate> updates)

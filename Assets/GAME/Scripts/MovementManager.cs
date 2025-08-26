@@ -104,6 +104,11 @@ namespace Movement
                 _ => Observable.Return((true, ""))
             };
         }
+
+        public void OnAnimationFrame(MovementAnimationFrame animationFrame)
+        {
+            _currentMover.OnAnimationFrame(animationFrame);
+        }
     }
 
 }

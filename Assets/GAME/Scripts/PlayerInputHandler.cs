@@ -30,6 +30,11 @@ public class PlayerInputHandler : MonoBehaviour
             HandleInput(PlayerAction.PrimaryAttack, isPressed);
         };
 
+        _input.Dash += isPressed =>
+        {
+            HandleInput(PlayerAction.Dash, isPressed);
+        };
+
         _input.Enable();
     }
 

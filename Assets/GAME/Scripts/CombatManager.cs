@@ -42,7 +42,7 @@ public class CombatManager : MonoBehaviour, ICombatManager, ICombatInputReceiver
         _currentCombat?.HandleInput(action);
     }
 
-    public void OnAnimationFrame(AnimationFrame frame)
+    public void OnAnimationFrame(CombatAnimationFrame frame)
     {
         _currentCombat?.OnAnimationFrame(frame);
     }

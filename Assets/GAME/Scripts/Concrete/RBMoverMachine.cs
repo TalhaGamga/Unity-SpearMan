@@ -24,6 +24,7 @@ namespace Movement
             private Transform _characterorientator;
             private Subject<Unit> _submitSnapshotStream = new();
             private BehaviorSubject<MovementType> _submitTransitionStream = new(MovementType.Idle);
+            private bool isDashFinished = false;
 
             private const float MinSqrDelta = 1e-8f;
             public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
@@ -57,6 +58,7 @@ namespace Movement
                 IState neutralState = new ConcreteState();
                 IState jumpState = new ConcreteState();
                 IState doubleJumpState = new ConcreteState();
+                IState dashState = new ConcreteState();
 
                 moveState.OnEnter.AddListener(() =>
                 {
@@ -77,15 +79,6 @@ namespace Movement
                     submitSnapshot();
                 });
 
-
-                moveState.OnExit.AddListener(() =>
-                {
-                    constraintRbAxisY(false);
-                });
-
-                fallState.OnExit.AddListener(() => _context.VerticalVelocity = 0);
-
-
                 neutralState.OnEnter.AddListener(() =>
                 {
                     setContextState(MovementType.Neutral);
@@ -98,6 +91,26 @@ namespace Movement
                     jump();
                     submitSnapshot();
                 });
+
+                dashState.OnEnter.AddListener(() =>
+                {
+                    setContextState(MovementType.Dash);
+                    constraintRbAxisY(true);
+                    dash();
+                    submitSnapshot();
+                });
+
+                dashState.OnExit.AddListener(() =>
+                {
+                    constraintRbAxisY(false);
+                });
+
+                moveState.OnExit.AddListener(() =>
+                {
+                    constraintRbAxisY(false);
+                });
+
+                fallState.OnExit.AddListener(() => _context.VerticalVelocity = 0);
 
                 idleState.OnUpdate.AddListener(() =>
                 {
@@ -137,24 +150,27 @@ namespace Movement
 
                 var toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
                 var toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-                var toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, fallState, () => !isGrounded() && !_context.State.Equals(MovementType.Jump), () => Debug.Log("Transitioning to Fall"));
+                var toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, fallState, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Dash), () => Debug.Log("Transitioning to Fall"));
                 var toJump = new StateTransition<MovementType>(MovementType.None, MovementType.Jump, jumpState, () => Debug.Log("Transitioning To Jump"));
                 var toDoubleJump = new StateTransition<MovementType>(MovementType.None, MovementType.DoubleJump, doubleJumpState, () => !isGrounded() && _context.JumpRight > 0, () => Debug.Log("Transitioning to Double Jump"));
                 var jumpToFall = new StateTransition<MovementType>(MovementType.Jump, MovementType.Fall, fallState, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
                 var fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, neutralState, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
+                var toDash = new StateTransition<MovementType>(MovementType.None, MovementType.Dash, dashState, () => { Debug.Log("Transitioning To Dash"); isDashFinished = false; });
+                var dashToNeutral = new StateTransition<MovementType>(MovementType.Dash, MovementType.Neutral, neutralState, () => isDashFinished, () => Debug.Log("Transitioning to Neutral"));
 
                 _stateMachine.AddIntentBasedTransition(toMove);
                 _stateMachine.AddIntentBasedTransition(toIdle);
                 _stateMachine.AddIntentBasedTransition(toJump);
+                _stateMachine.AddIntentBasedTransition(toDash);
 
                 _stateMachine.AddAutonomicTransition(fallToNeutral);
                 _stateMachine.AddAutonomicTransition(toFall);
                 _stateMachine.AddAutonomicTransition(jumpToFall);
+                _stateMachine.AddAutonomicTransition(dashToNeutral);
 
                 _stateMachine.SetState(MovementType.Idle);
 
                 _context.Gravity = (2f * _context.JumpHeight) / (Mathf.Pow(_context.JumpTimeToPeak, 2));
-
             }
 
             public void End()
@@ -216,7 +232,6 @@ namespace Movement
             private void applyRootMotionAsVelocity()
             {
                 Vector3 delta = _context.RootMotionDeltaPosition;
-
                 Vector3 velocity = new Vector3(delta.x, delta.y, delta.z) / Time.deltaTime;
 
                 _context.Rb.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
@@ -236,6 +251,12 @@ namespace Movement
                 _context.VerticalVelocity = _context.Gravity * _context.JumpTimeToPeak;
             }
 
+            private void dash()
+            {
+                _context.Rb.linearVelocity = new Vector3(0, 0, _context.DashSpeed * _context.LastFaceX);
+                _context.VerticalVelocity = 0;
+            }
+
             private void handleAirborneMovement()
             {
                 _context.Rb.linearVelocity = new Vector3(0, _context.VerticalVelocity, _context.MoveInput.x * _context.AirborneMovementSpeed);
@@ -252,15 +273,15 @@ namespace Movement
 
                 if (Mathf.Abs(x) > _context.FaceDeadzone)
                 {
-                    float sign = Mathf.Sign(x);           
-                    if (sign != 0f) _context.LastFaceX = (int)sign;    
+                    float sign = Mathf.Sign(x);
+                    if (sign != 0f) _context.LastFaceX = (int)sign;
                 }
 
                 float target = _context.LastFaceX;
 
                 Quaternion targetLocalRot = (target > 0f)
-                    ? Quaternion.Euler(0f, 0f, 0f)        
-                    : Quaternion.Euler(0f, 180f, 0f);     
+                    ? Quaternion.Euler(0f, 0f, 0f)
+                    : Quaternion.Euler(0f, 180f, 0f);
 
                 _characterorientator.localRotation =
                     Quaternion.RotateTowards(
@@ -273,6 +294,17 @@ namespace Movement
             private void setJumpStage(int stage)
             {
                 _context.JumpRight = stage;
+            }
+
+            public void OnAnimationFrame(MovementAnimationFrame animationFrame)
+            {
+                if (animationFrame.Action == "Dash")
+                {
+                    if (animationFrame.EventKey == "DashEnded")
+                    {
+                        isDashFinished = true;
+                    }
+                }
             }
 
             [System.Serializable]
@@ -292,6 +324,8 @@ namespace Movement
                 public float FaceTurnSpeedInDegree = 720;
                 public float FaceDeadzone = 0.05f;
                 public int LastFaceX = 1;
+
+                public float DashSpeed = 10f;
 
                 [HideInInspector] public float Gravity;
                 [HideInInspector] public float VerticalVelocity;

@@ -75,7 +75,7 @@ public class SwordCombat : ICombat
         }
     }
 
-    public void OnAnimationFrame(AnimationFrame frame)
+    public void OnAnimationFrame(CombatAnimationFrame frame)
     {
         // Damage windows
         if (frame.EventKey == "HitWindowStart")

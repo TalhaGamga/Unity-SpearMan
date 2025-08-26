@@ -8,6 +8,7 @@ public class MovementIntentMapper : IIntentMapper
     {
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Move, out var moveInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
+        inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Dash, out var dashInput);
 
         // 1. If attacking, and attack is cancelable, and RUN is held, allow run-cancel
         if (snapshot.IsAttacking && snapshot.Combat.IsCancelable && moveInput.IsHeld)
@@ -38,7 +39,19 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 0. Handle Falling
+        if (!snapshot.IsAttacking && dashInput.WasPresseedThisFrame)
+        {
+            return new ActionIntent
+            {
+                Movement = new MovementAction
+                {
+                    Direction = moveInput.Direction,
+                    ActionType = MovementType.Dash
+                }
+            };
+        }
+
+
         if (snapshot.Movement.State == MovementType.Fall)
         {
             return new ActionIntent
@@ -47,7 +60,6 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 2. If attacking, and jump was just pressed, allow jump-cancel (eventful, and only if jump available)
         if (snapshot.Combat.IsCancelable && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage)
         {
             return new ActionIntent
@@ -56,7 +68,6 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 3. Normal jump (eventful, only if jump available)
         if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage)
         {
             return new ActionIntent
@@ -65,8 +76,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 4. If run is held, move (stateful)
-        if (moveInput.IsHeld && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.CurrentState == CombatType.Idle)
+        if (moveInput.IsHeld && snapshot.Movement.State != MovementType.Dash && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.CurrentState == CombatType.Idle)
         {
             return new ActionIntent
             {
@@ -78,8 +88,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        // 5. Idle fallback (no run/jump held)
-        if (!moveInput.IsHeld && !snapshot.Movement.State.Equals(MovementType.Jump))
+        if (!moveInput.IsHeld && !snapshot.Movement.State.Equals(MovementType.Jump) && !snapshot.Movement.State.Equals(MovementType.Dash))
         {
             return new ActionIntent
             {
@@ -91,7 +100,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if ( snapshot.Movement.JumpRight > 0 && snapshot.Movement.State.Equals(MovementType.Jump) || snapshot.Movement.State.Equals(MovementType.Fall))
+        if (snapshot.Movement.JumpRight > 0 && snapshot.Movement.State.Equals(MovementType.Jump) || snapshot.Movement.State.Equals(MovementType.Fall))
         {
             return new ActionIntent
             {
