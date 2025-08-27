@@ -68,7 +68,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage)
+        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage && !snapshot.Movement.State.Equals(MovementType.Dash))
         {
             return new ActionIntent
             {
