@@ -39,7 +39,7 @@ namespace Movement
                 _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
                 _submitSnapshotStream.
-                    Select(_ => new MovementSnapshot(_context.State, _context.MovementBlend, _context.JumpRight))
+                    Select(_ => new MovementSnapshot(_context.State, _context.MovementBlend, _context.JumpRight, isGrounded()))
                     .DistinctUntilChanged()
                     .Subscribe(snapshotStream.OnNext)
                     .AddTo(_disposables);

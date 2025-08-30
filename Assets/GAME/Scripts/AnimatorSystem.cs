@@ -27,7 +27,7 @@ public sealed class AnimatorSystem : MonoBehaviour
     private Dictionary<string, float> _pendingTriggerResets = new();
 
     // How many frames to delay trigger reset. 2 is a safe starting value.
-    private const float TRIGGER_RESET_TIME = 0.05f;
+    private const float TRIGGER_RESET_TIME = 0.1f;
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
@@ -122,6 +122,11 @@ public sealed class AnimatorSystem : MonoBehaviour
     void ApplyReaction(in ReactionSnapshot s)
     {
         _anim.SetBool(isHitParam, s.State == ReactionType.Hit);
+    }
+
+    public void ShakeCamera()
+    {
+        CameraManager.Shake();
     }
 
     void OnDestroy() => _disposables.Dispose();

@@ -10,7 +10,8 @@ public class SwordIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Parry, out var parryInput);
         // 1. Combo-aware Standard Attack (eventful)
         // (Let SwordCombat decide if this should start or continue a combo)
-        if (attackInput.WasPresseedThisFrame && snapshot.Movement.State != MovementType.Move)
+
+        if (attackInput.WasPresseedThisFrame /*&& snapshot.Movement.State != MovementType.Move*/ && !snapshot.Movement.State.Equals(MovementType.Dash) && snapshot.Movement.IsGrounded)
         {
             // Optionally: You could block combos in air if needed
             if (snapshot.Movement.State == MovementType.Jump || snapshot.Movement.State == MovementType.Fall)
@@ -28,16 +29,16 @@ public class SwordIntentMapper : IIntentMapper
             };
         }
 
-        // 2. Running Attack (eventful)
-        // (Usually handled above, but you can special-case if running state matters)
-        if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Move)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction { Direction = runInput.Direction, ActionType = MovementType.Idle },
-                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
-            };
-        }
+        //// 2. Running Attack (eventful)
+        //// (Usually handled above, but you can special-case if running state matters)
+        //if (attackInput.WasPresseedThisFrame && runInput.IsHeld && snapshot.Movement.State == MovementType.Move && snapshot.Movement.IsGrounded)
+        //{
+        //    return new ActionIntent
+        //    {
+        //        Movement = new MovementAction { Direction = runInput.Direction, ActionType = MovementType.Idle },
+        //        Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
+        //    };
+        //}
 
         // 3. Parry (eventful)
         if (parryInput.WasPresseedThisFrame)

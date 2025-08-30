@@ -130,10 +130,10 @@ AnimatorStateMachine:
     m_Position: {x: -20, y: -270, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions:
+  - {fileID: 8047592348666201133}
   - {fileID: 4602265082755682793}
   - {fileID: 4506753288756664220}
   - {fileID: -82526025475810110}
-  - {fileID: 8047592348666201133}
   - {fileID: -6665426062529317210}
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
@@ -163,11 +163,11 @@ AnimatorStateTransition:
   m_TransitionDuration: 0.1
   m_TransitionOffset: 0
   m_ExitTime: 1
-  m_HasExitTime: 1
+  m_HasExitTime: 0
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
   m_OrderedInterruption: 1
-  m_CanTransitionToSelf: 1
+  m_CanTransitionToSelf: 0
 --- !u!1102 &-6541807205206145637
 AnimatorState:
   serializedVersion: 6
@@ -307,13 +307,13 @@ AnimatorStateMachine:
   m_ChildStates:
   - serializedVersion: 1
     m_State: {fileID: 4570435672791985324}
-    m_Position: {x: -460, y: 10, z: 0}
+    m_Position: {x: -460, y: 40, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -6541807205206145637}
     m_Position: {x: -570, y: 150, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7378185577378062168}
-    m_Position: {x: -200, y: 30, z: 0}
+    m_Position: {x: -190, y: 30, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 8154089727775811744}
     m_Position: {x: 60, y: 20, z: 0}
@@ -589,7 +589,7 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.1
+  m_TransitionDuration: 0.35198247
   m_TransitionOffset: 0
   m_ExitTime: 1
   m_HasExitTime: 0
@@ -728,9 +728,9 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: Dash
-    m_EventTreshold: 0
+  - m_ConditionMode: 6
+    m_ConditionEvent: MoveState
+    m_EventTreshold: 8
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 9123738735099772003}
   m_Solo: 0
@@ -744,7 +744,7 @@ AnimatorStateTransition:
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
   m_OrderedInterruption: 1
-  m_CanTransitionToSelf: 1
+  m_CanTransitionToSelf: 0
 --- !u!1102 &8154089727775811744
 AnimatorState:
   serializedVersion: 6

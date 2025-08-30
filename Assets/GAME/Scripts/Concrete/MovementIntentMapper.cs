@@ -1,4 +1,3 @@
-using UnityEngine;
 public class MovementIntentMapper : IIntentMapper
 {
     // Set this to match your RbMover's _maxJumpStage (or make it configurable)
@@ -39,7 +38,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!snapshot.IsAttacking && dashInput.WasPresseedThisFrame)
+        if (!snapshot.IsAttacking && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
         {
             return new ActionIntent
             {
@@ -76,7 +75,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (moveInput.IsHeld && snapshot.Movement.State != MovementType.Dash && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.CurrentState == CombatType.Idle)
+        if (moveInput.IsHeld && snapshot.Movement.IsGrounded && snapshot.Movement.State != MovementType.Dash && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.CurrentState == CombatType.Idle)
         {
             return new ActionIntent
             {
@@ -88,7 +87,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!moveInput.IsHeld && !snapshot.Movement.State.Equals(MovementType.Jump) && !snapshot.Movement.State.Equals(MovementType.Dash))
+        if (!moveInput.IsHeld && snapshot.Movement.IsGrounded && !snapshot.Movement.State.Equals(MovementType.Jump) && !snapshot.Movement.State.Equals(MovementType.Dash))
         {
             return new ActionIntent
             {
