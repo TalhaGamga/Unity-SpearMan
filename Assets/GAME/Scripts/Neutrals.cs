@@ -46,7 +46,6 @@ public interface ICombatManager
 public interface ICombat
 {
     public CombatType CombatType { get; }
-    void Init(ICombatManager combatManager);
     void Update(float deltaTime);
     void HandleInput(CombatAction action);
     void OnAnimationFrame(CombatAnimationFrame frame);
@@ -56,7 +55,7 @@ public interface ICombat
 
 public interface IWeapon
 {
-    ICombat CreateCombat(ICombatManager combatManager, BehaviorSubject<CombatSnapshot> snapshotStream, BehaviorSubject<CombatTransition> transitionStream);
+    ICombat CreateCombat(ICombatManager combatManager, Subject<CombatSnapshot> snapshotStream, Subject<CombatTransition> transitionStream);
 }
 
 public interface IMover

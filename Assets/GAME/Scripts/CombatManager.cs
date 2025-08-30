@@ -1,10 +1,10 @@
 using R3;
 using UnityEngine;
 
-public class CombatManager : MonoBehaviour, ICombatManager, ICombatInputReceiver
+public class CombatManager : MonoBehaviour, ICombatManager
 {
-    public BehaviorSubject<CombatSnapshot> SnapshotStream { get; } = new(CombatSnapshot.Default);
-    public BehaviorSubject<CombatTransition> TransitionStream { get; } = new(new CombatTransition { From = CombatType.Idle, To = CombatType.Idle });
+    public Subject<CombatSnapshot> SnapshotStream { get; } = new();
+    public Subject<CombatTransition> TransitionStream { get; } = new();
 
     private IWeapon _currentWeapon;
     private ICombat _currentCombat;

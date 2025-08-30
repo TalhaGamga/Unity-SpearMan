@@ -6,31 +6,27 @@ public class SwordCombat : ICombat
     public CombatType CombatType => _currentSnapshot.CurrentState;
 
     private readonly Sword _view;
-    private readonly BehaviorSubject<CombatSnapshot> _stream;
-    private readonly BehaviorSubject<CombatTransition> _transitionStream;
+    private readonly Subject<CombatSnapshot> _stream = new();
+    private readonly Subject<CombatTransition> _transitionStream = new();
 
     private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
 
-    // Combo logic
     private int _currentComboStep = 0;       // 0 = not attacking, 1+ = current step
     private bool _canCombo = false;
     private bool _comboQueued = false;
     private readonly int _maxCombo = 3;
 
-    // Damage window
     private bool _canDealDamage = false;
 
     public SwordCombat(
         Sword view,
-        BehaviorSubject<CombatSnapshot> stream,
-        BehaviorSubject<CombatTransition> transitionStream)
+        Subject<CombatSnapshot> stream,
+        Subject<CombatTransition> transitionStream)
     {
         _view = view;
         _stream = stream;
         _transitionStream = transitionStream;
     }
-
-    public void Init(ICombatManager combatManager) { /* ... */ }
 
     public void HandleInput(CombatAction action)
     {
