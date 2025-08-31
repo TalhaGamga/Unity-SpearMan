@@ -1,7 +1,6 @@
 ﻿public readonly struct CombatSnapshot
 {
     public readonly CombatType CurrentState;         // E.g., Idle, InPrimaryAttack
-    public readonly float Energy;             // Resource, if needed
     public readonly bool IsCancelable;        // For animation cancel
     public readonly int ComboStep;            // Which attack in the chain? (0=idle)
     public readonly bool TriggerAttack;       // Should Animator fire attack trigger this frame?
@@ -13,7 +12,6 @@
 
     public CombatSnapshot(
         CombatType state,
-        float energy,
         bool isCancelable,
         int comboStep = 0,
         bool triggerAttack = false,
@@ -23,7 +21,6 @@
     )
     {
         CurrentState = state;
-        Energy = energy;
         IsCancelable = isCancelable;
         ComboStep = comboStep;
         TriggerAttack = triggerAttack;
@@ -33,10 +30,10 @@
     }
 
     public static CombatSnapshot Default => new CombatSnapshot(
-        CombatType.Idle, 0f, false, 0, false, true, false, false
+        CombatType.Idle, false, 0, false, true, false, false
     );
 
     public static CombatSnapshot Cancel => new CombatSnapshot(
-        CombatType.Idle, 0f, true, 0, false, true, false, false
+        CombatType.Idle, true, 0, false, true, false, false
     );
 }

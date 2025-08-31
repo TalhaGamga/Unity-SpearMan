@@ -45,7 +45,7 @@ public static class AnimationParameterMapper
         // Combat State Triggers
         switch (snapshot.Combat.CurrentState)
         {
-            case CombatType.PrimaryAttack:
+            case CombatType.GroundedPrimaryAttack:
                 yield return AnimatorParamUpdate.Trigger("Attack");
                 yield return new AnimatorParamUpdate
                 {
@@ -55,9 +55,9 @@ public static class AnimationParameterMapper
                 };
                 break;
 
-            case CombatType.Parry:
-                yield return AnimatorParamUpdate.Trigger("Parry");
-                break;
+            //case CombatType.Parry:
+            //    yield return AnimatorParamUpdate.Trigger("Parry");
+            //    break;
 
             case CombatType.Idle:
                 yield return AnimatorParamUpdate.Trigger("AttackCancel");

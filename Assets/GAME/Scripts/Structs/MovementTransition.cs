@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public struct MovementTransition
 {
     public MovementType From;  // Previous movement state

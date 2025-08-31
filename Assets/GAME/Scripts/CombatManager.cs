@@ -34,7 +34,8 @@ public class CombatManager : MonoBehaviour, ICombatManager
         _currentCombat?.End();
 
         _currentWeapon = newWeapon;
-        _currentCombat = newWeapon.CreateCombat(this, SnapshotStream, TransitionStream);
+        _currentCombat = newWeapon.CreateCombat(this);
+        _currentCombat.Init(this,SnapshotStream,TransitionStream);
     }
 
     public void HandleInput(CombatAction action)

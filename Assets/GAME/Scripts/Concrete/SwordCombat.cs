@@ -1,4 +1,5 @@
 using R3;
+using System;
 using UnityEngine;
 
 public class SwordCombat : ICombat
@@ -19,26 +20,21 @@ public class SwordCombat : ICombat
     private bool _canDealDamage = false;
 
     public SwordCombat(
-        Sword view,
-        Subject<CombatSnapshot> stream,
-        Subject<CombatTransition> transitionStream)
+        Sword view)
     {
         _view = view;
-        _stream = stream;
-        _transitionStream = transitionStream;
     }
 
     public void HandleInput(CombatAction action)
     {
-        if (action.ActionType == CombatType.PrimaryAttack)
+        if (action.ActionType == CombatType.GroundedPrimaryAttack)
         {
             // If not in combo, start from step 1
             if (_currentComboStep == 0)
             {
                 _currentComboStep = 1;
                 _currentSnapshot = new CombatSnapshot(
-                    state: CombatType.PrimaryAttack,
-                    energy: 1f,
+                    state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
                     comboStep: _currentComboStep,
                     triggerAttack: true
@@ -50,8 +46,7 @@ public class SwordCombat : ICombat
                 // Combo window open, advance to next step
                 _currentComboStep++;
                 _currentSnapshot = new CombatSnapshot(
-                    state: CombatType.PrimaryAttack,
-                    energy: 1f,
+                    state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
                     comboStep: _currentComboStep,
                     triggerAttack: true
@@ -93,8 +88,7 @@ public class SwordCombat : ICombat
                 _currentComboStep++;
                 // Issue next step snapshot; will trigger animator update for the next attack
                 _currentSnapshot = new CombatSnapshot(
-                    state: CombatType.PrimaryAttack,
-                    energy: 1f,
+                    state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
                     comboStep: _currentComboStep,
                     triggerAttack: true
@@ -113,14 +107,13 @@ public class SwordCombat : ICombat
         {
             _currentSnapshot = new CombatSnapshot(
                 state: CombatType.InPrimaryAttack,
-                energy: 1f,
                 isCancelable: frame.IsCancelable,
                 comboStep: _currentComboStep
             );
             _stream.OnNext(_currentSnapshot);
             _transitionStream.OnNext(new CombatTransition
             {
-                From = CombatType.PrimaryAttack,
+                From = CombatType.GroundedPrimaryAttack,
                 To = CombatType.InPrimaryAttack
             });
         }
@@ -155,5 +148,10 @@ public class SwordCombat : ICombat
         _comboQueued = false;
         _currentSnapshot = CombatSnapshot.Default;
         _stream.OnNext(_currentSnapshot);
+    }
+
+    public void Init(ICombatManager combatManager, Subject<CombatSnapshot> stream, Subject<CombatTransition> transitionStream)
+    {
+
     }
 }

@@ -25,7 +25,7 @@ public class SwordIntentMapper : IIntentMapper
             {
                 // If running, movement type could be set to Run, but typically you go Idle when slashing
                 Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
-                Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
+                Combat = new CombatAction { ActionType = CombatType.GroundedPrimaryAttack }
             };
         }
 
@@ -39,15 +39,6 @@ public class SwordIntentMapper : IIntentMapper
         //        Combat = new CombatAction { ActionType = CombatType.PrimaryAttack }
         //    };
         //}
-
-        // 3. Parry (eventful)
-        if (parryInput.WasPresseedThisFrame)
-        {
-            return new ActionIntent
-            {
-                Combat = new CombatAction { ActionType = CombatType.Parry }
-            };
-        }
 
         // No actionable intent
         return null;

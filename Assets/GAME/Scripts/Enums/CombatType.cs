@@ -1,11 +1,8 @@
 public enum CombatType
 {
     None,
-    PrimaryAttack,
+    GroundedPrimaryAttack,
     Cancel,
     InPrimaryAttack,
-    Idle,
-    SecondaryAttack,
-    Parry,
-    Reload,
+    Idle
 }
