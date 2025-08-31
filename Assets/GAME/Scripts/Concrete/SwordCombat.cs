@@ -7,8 +7,8 @@ public class SwordCombat : ICombat
     public CombatType CombatType => _currentSnapshot.CurrentState;
 
     private readonly Sword _view;
-    private readonly Subject<CombatSnapshot> _stream = new();
-    private readonly Subject<CombatTransition> _transitionStream = new();
+    private Subject<CombatSnapshot> _stream = new();
+    private Subject<CombatTransition> _transitionStream = new();
 
     private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
 
@@ -152,6 +152,7 @@ public class SwordCombat : ICombat
 
     public void Init(ICombatManager combatManager, Subject<CombatSnapshot> stream, Subject<CombatTransition> transitionStream)
     {
-
+        _stream = stream;
+        _transitionStream = transitionStream;
     }
 }

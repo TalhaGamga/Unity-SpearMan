@@ -43,7 +43,7 @@ namespace DevVorpian
         public void SetState(StateType newStateType)
         {
             var transitionData = findInputBasedTransition(newStateType);
-            if (transitionData == null || (_currentState != null && _currentStateType.Equals(transitionData.TargetType)))
+            if (transitionData == null || (_currentState != null && _currentState.Equals(transitionData.TargetState)))
             {
                 return;
             }
@@ -128,7 +128,7 @@ namespace DevVorpian
             _onTransition = onTransition;
         }
 
-        public StateTransition(StateType from, StateType to,  IState state, Func<bool> condition, Action onTransition = null)
+        public StateTransition(StateType from, StateType to, IState state, Func<bool> condition, Action onTransition = null)
         {
             _from = from;
             _to = to;

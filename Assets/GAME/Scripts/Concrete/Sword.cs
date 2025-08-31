@@ -8,7 +8,7 @@ public class Sword : MonoBehaviour, IWeapon
 
     public ICombat CreateCombat(ICombatManager combatManager)
     {
-        var logic = new SwordCombatMachine(this);
+        var logic = new SwordCombat(this);
         _hitbox.OnHit += logic.OnWeaponCollision;
 
         return logic;

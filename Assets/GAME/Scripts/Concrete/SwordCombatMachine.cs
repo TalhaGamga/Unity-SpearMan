@@ -43,8 +43,14 @@ namespace Combat
                 })
                 .AddTo(_disposables);
 
-            IState attackState = new ConcreteState();
             IState idleState = new ConcreteState();
+            IState grPrimaryAttackCS1 = new ConcreteState();
+            IState grPrimaryAttackCS2 = new ConcreteState();
+            IState grPrimaryAttackCS3 = new ConcreteState();
+
+            var idleToGrPrimaryAttackCS1 = new StateTransition<CombatType>(CombatType.Idle, CombatType.GroundedPrimaryAttack, grPrimaryAttackCS1, () => Debug.Log("Transitioning grPrimaryAttack from Idle"));
+            var toGrPrimaryAttackCS2 = new StateTransition<CombatType>(CombatType.GroundedPrimaryAttack, CombatType.GroundedPrimaryAttack, grPrimaryAttackCS2, () => Debug.Log("Transitioning grPrimaryAttackCS2 from GRPCS1"));
+            //var toGrPrimaryAttackCS3 = new StateTransition<CombatType>(CombatType.)
         }
 
         public void HandleInput(CombatAction action)
