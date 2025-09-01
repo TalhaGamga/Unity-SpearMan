@@ -45,10 +45,10 @@ namespace Combat
 
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
-            IState idleState = new ConcreteState();
-            IState grPrimaryAttackCS1 = new ConcreteState();
-            IState grPrimaryAttackCS2 = new ConcreteState();
-            IState grPrimaryAttackCS3 = new ConcreteState();
+            var idleState = new ConcreteState();
+            var grPrimaryAttackCS1 = new ConcreteState();
+            var grPrimaryAttackCS2 = new ConcreteState();
+            var grPrimaryAttackCS3 = new ConcreteState();
 
             idleState.OnEnter.AddListener(() =>
             {
@@ -78,12 +78,12 @@ namespace Combat
                 submitSnapshot();
             });
 
-            var initialIdle = new StateTransition<CombatType>(CombatType.None, CombatType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-            var idleToGrPrimaryAttackCS1 = new StateTransition<CombatType>(CombatType.Idle, CombatType.GroundedPrimaryAttack, grPrimaryAttackCS1, () => Debug.Log("Transitioning GrPrimaryAttack from Idle"));
-            var toGrPrimaryAttackCS2 = new StateTransition<CombatType>(CombatType.GroundedPrimaryAttack, CombatType.GroundedPrimaryAttack, grPrimaryAttackCS2, () => Debug.Log("Transitioning GrPrimaryAttackCS2 from GrPCS1"));
-            var toGrPrimaryAttackCS3 = new StateTransition<CombatType>(CombatType.GroundedPrimaryAttack, CombatType.GroundedPrimaryAttack, grPrimaryAttackCS3, () => Debug.Log("Transitioning GrPrimaryAttackCS3 from GrPC2"));
+            var initialIdle = new StateTransition<CombatType>(null, idleState, CombatType.Idle, onTransition: () => Debug.Log("Transitioning to Idle"));
+            var idleToGrPrimaryAttackCS1 = new StateTransition<CombatType>(idleState, grPrimaryAttackCS1, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttack from Idle"));
+            var toGrPrimaryAttackCS2 = new StateTransition<CombatType>(grPrimaryAttackCS1, grPrimaryAttackCS2, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttackCS2 from GrPCS1"));
+            var toGrPrimaryAttackCS3 = new StateTransition<CombatType>(grPrimaryAttackCS2, grPrimaryAttackCS3, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttackCS3 from GrPC2"));
 
-            var attackToIdle = new StateTransition<CombatType>(CombatType.None, CombatType.Idle, idleState, () => !_context.IsAttacking, () => Debug.Log("Transitioning to Idle On Attack End"));
+            var attackToIdle = new StateTransition<CombatType>(null, idleState, CombatType.Idle, () => !_context.IsAttacking, () => Debug.Log("Transitioning to Idle On Attack End"));
 
             _stateMachine.AddIntentBasedTransition(initialIdle);
             _stateMachine.AddIntentBasedTransition(idleToGrPrimaryAttackCS1);

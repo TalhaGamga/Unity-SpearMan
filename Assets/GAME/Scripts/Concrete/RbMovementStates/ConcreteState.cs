@@ -11,7 +11,7 @@ namespace Movement
             public UnityEvent OnEnter { get; set; } = new UnityEvent();
             public UnityEvent OnExit { get; set; } = new UnityEvent();
             public UnityEvent OnUpdate { get; set; } = new UnityEvent();
-
+            
             public void Enter()
             {
                 OnEnter?.Invoke();

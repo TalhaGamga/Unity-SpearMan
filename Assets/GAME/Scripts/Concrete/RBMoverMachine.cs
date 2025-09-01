@@ -148,15 +148,14 @@ namespace Movement.Mover
                 handleAirborneMovement();
             });
 
-            var toMove = new StateTransition<MovementType>(MovementType.None, MovementType.Move, moveState, () => Debug.Log("Transitioning to Move"));
-            var toIdle = new StateTransition<MovementType>(MovementType.None, MovementType.Idle, idleState, () => Debug.Log("Transitioning to Idle"));
-            var toFall = new StateTransition<MovementType>(MovementType.None, MovementType.Fall, fallState, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Dash), () => Debug.Log("Transitioning to Fall"));
-            var toJump = new StateTransition<MovementType>(MovementType.None, MovementType.Jump, jumpState, () => Debug.Log("Transitioning To Jump"));
-            var toDoubleJump = new StateTransition<MovementType>(MovementType.None, MovementType.DoubleJump, doubleJumpState, () => !isGrounded() && _context.JumpRight > 0, () => Debug.Log("Transitioning to Double Jump"));
-            var jumpToFall = new StateTransition<MovementType>(MovementType.Jump, MovementType.Fall, fallState, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
-            var fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, neutralState, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
-            var toDash = new StateTransition<MovementType>(MovementType.None, MovementType.Dash, dashState, () => { Debug.Log("Transitioning To Dash"); _context.IsDashEnded = false; });
-            var dashToNeutral = new StateTransition<MovementType>(MovementType.Dash, MovementType.Neutral, neutralState, () => _context.IsDashEnded, () => Debug.Log("Transitioning to Neutral"));
+            var toIdle = new StateTransition<MovementType>(null, idleState, MovementType.Idle, onTransition: () => Debug.Log("Transitioning to Idle"));
+            var toMove = new StateTransition<MovementType>(null, moveState, MovementType.Move, onTransition: () => Debug.Log("Transitioning to Move"));
+            var toFall = new StateTransition<MovementType>(null, fallState, MovementType.Fall, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Dash), () => Debug.Log("Transitioning to Fall"));
+            var toJump = new StateTransition<MovementType>(null, jumpState, MovementType.Jump, onTransition: () => Debug.Log("Transitioning To Jump"));
+            var jumpToFall = new StateTransition<MovementType>(jumpState, fallState, MovementType.Fall, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
+            var fallToNeutral = new StateTransition<MovementType>(fallState, neutralState, MovementType.Neutral, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
+            var toDash = new StateTransition<MovementType>(null, dashState, MovementType.Dash, onTransition: () => { Debug.Log("Transitioning To Dash"); _context.IsDashEnded = false; });
+            var dashToNeutral = new StateTransition<MovementType>(dashState, neutralState, MovementType.Neutral, () => _context.IsDashEnded, () => Debug.Log("Transitioning to Neutral"));
 
             _stateMachine.AddIntentBasedTransition(toIdle);
             _stateMachine.AddIntentBasedTransition(toMove);
