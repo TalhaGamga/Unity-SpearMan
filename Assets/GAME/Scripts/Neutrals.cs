@@ -48,7 +48,7 @@ public interface ICombat
     public CombatType CombatType { get; }
     void Init(ICombatManager combatManager, Subject<CombatSnapshot> stream, Subject<CombatTransition> transitionStream);
     void Update(float deltaTime);
-    void HandleInput(CombatAction action);
+    void HandleAction(CombatAction action);
     void OnAnimationFrame(CombatAnimationFrame frame);
     void OnWeaponCollision(Collider other);
     void End();

@@ -71,12 +71,12 @@ public sealed class AnimatorSystem : MonoBehaviour
             switch (system)
             {
                 case "MovementSystem":
-                    Debug.Log("Movement Animation Frame");
+                    //Debug.Log("Movement Animation Frame");
                     var movementFrame = AnimationEventParser.ToMovementAnimationFrame(parsed);
                     _movementAnimationStream.OnNext(movementFrame);
                     break;
                 case "CombatSystem":
-                    Debug.Log("Combat Animation Frame");
+                    //Debug.Log("Combat Animation Frame");
                     var combatFrame = AnimationEventParser.ToCombatAnimationFrame(parsed);
                     _combatAnimationStream.OnNext(combatFrame);
                     break;

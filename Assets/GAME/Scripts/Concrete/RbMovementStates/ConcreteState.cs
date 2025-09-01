@@ -6,7 +6,7 @@ namespace Movement
     {
         public class ConcreteState : IState
         {
-            public string State => "MoverState";
+            public string State => "Concrete State";
 
             public UnityEvent OnEnter { get; set; } = new UnityEvent();
             public UnityEvent OnExit { get; set; } = new UnityEvent();

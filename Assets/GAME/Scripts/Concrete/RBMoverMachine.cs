@@ -19,20 +19,21 @@ namespace Movement.Mover
 
         private Transform[] _groundCheckPoints;
         private float _groundCheckDistance;
-        private LayerMask _groundLayer;
+
         private Transform _characterorientator;
         private Subject<Unit> _snapshotStreamer = new();
         private BehaviorSubject<MovementType> _transitionStreamer = new(MovementType.Idle);
-        private bool isDashFinished = false;
+
 
         private const float MinSqrDelta = 1e-8f;
         public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
         {
             _stateMachine = new StateMachine<MovementType>();
             _manager = movementManager;
+            _manager = movementManager;
             _groundCheckPoints = _manager.GroundCheckPoints;
             _groundCheckDistance = _manager.GroundCheckDistance;
-            _groundLayer = _manager.GroundLayer;
+            _context.GroundLayer = _manager.GroundLayer;
             _characterorientator = _manager.CharacterOrientator;
 
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
@@ -154,11 +155,11 @@ namespace Movement.Mover
             var toDoubleJump = new StateTransition<MovementType>(MovementType.None, MovementType.DoubleJump, doubleJumpState, () => !isGrounded() && _context.JumpRight > 0, () => Debug.Log("Transitioning to Double Jump"));
             var jumpToFall = new StateTransition<MovementType>(MovementType.Jump, MovementType.Fall, fallState, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
             var fallToNeutral = new StateTransition<MovementType>(MovementType.Fall, MovementType.Neutral, neutralState, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
-            var toDash = new StateTransition<MovementType>(MovementType.None, MovementType.Dash, dashState, () => { Debug.Log("Transitioning To Dash"); isDashFinished = false; });
-            var dashToNeutral = new StateTransition<MovementType>(MovementType.Dash, MovementType.Neutral, neutralState, () => isDashFinished, () => Debug.Log("Transitioning to Neutral"));
+            var toDash = new StateTransition<MovementType>(MovementType.None, MovementType.Dash, dashState, () => { Debug.Log("Transitioning To Dash"); _context.IsDashEnded = false; });
+            var dashToNeutral = new StateTransition<MovementType>(MovementType.Dash, MovementType.Neutral, neutralState, () => _context.IsDashEnded, () => Debug.Log("Transitioning to Neutral"));
 
-            _stateMachine.AddIntentBasedTransition(toMove);
             _stateMachine.AddIntentBasedTransition(toIdle);
+            _stateMachine.AddIntentBasedTransition(toMove);
             _stateMachine.AddIntentBasedTransition(toJump);
             _stateMachine.AddIntentBasedTransition(toDash);
 
@@ -169,7 +170,7 @@ namespace Movement.Mover
 
             _stateMachine.SetState(MovementType.Idle);
 
-            _context.Gravity = (2f * _context.JumpHeight) / (Mathf.Pow(_context.JumpTimeToPeak, 2));
+            setContextGravity();
         }
 
         public void End()
@@ -197,11 +198,22 @@ namespace Movement.Mover
             _stateMachine.Update();
         }
 
+        public void OnAnimationFrame(MovementAnimationFrame animationFrame)
+        {
+            if (animationFrame.Action == "Dash")
+            {
+                if (animationFrame.EventKey == "DashEnded")
+                {
+                    _context.IsDashEnded = true;
+                }
+            }
+        }
+
         private bool isGrounded()
         {
             foreach (var checkPoint in _groundCheckPoints)
             {
-                return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _groundLayer).Length > 0;
+                return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _context.GroundLayer).Length > 0;
             }
 
             return false;
@@ -295,21 +307,19 @@ namespace Movement.Mover
             _context.JumpRight = stage;
         }
 
-        public void OnAnimationFrame(MovementAnimationFrame animationFrame)
+        private void setContextGravity()
         {
-            if (animationFrame.Action == "Dash")
-            {
-                if (animationFrame.EventKey == "DashEnded")
-                {
-                    isDashFinished = true;
-                }
-            }
+            _context.Gravity = (2f * _context.JumpHeight) / (Mathf.Pow(_context.JumpTimeToPeak, 2));
         }
+
+
 
         [System.Serializable]
         public class Context
         {
             public MovementType State;
+
+            public LayerMask GroundLayer;
             public Vector2 MoveInput;
             public Vector3 RootMotionDeltaPosition;
             public Rigidbody Rb;
@@ -325,6 +335,7 @@ namespace Movement.Mover
             public int LastFaceX = 1;
 
             public float DashSpeed = 10f;
+            public bool IsDashEnded = false;
 
             [HideInInspector] public float Gravity;
             [HideInInspector] public float VerticalVelocity;

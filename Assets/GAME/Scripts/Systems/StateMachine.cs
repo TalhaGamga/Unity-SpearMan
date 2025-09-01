@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using Movement.State;
 
 namespace DevVorpian
 {
@@ -11,17 +12,18 @@ namespace DevVorpian
     {
         public UnityEvent OnTransitionedAutonomously = new();
 
-        [SerializeField] private string _stateName;
-        [SerializeField] public StateType _currentStateType;
-        private List<StateTransition<StateType>> _intentBasedTransition;
+        [SerializeField] private StateType _currentStateType;
+        private List<StateTransition<StateType>> _intentBasedTransitions;
         private List<StateTransition<StateType>> _autonomicTransitions;
 
         private IState _currentState;
+        [HideInInspector] private string _stateName;
 
         public StateMachine()
         {
-            _intentBasedTransition = new();
+            _intentBasedTransitions = new();
             _autonomicTransitions = new();
+            _currentState = new ConcreteState();
         }
 
         public void Update()
@@ -32,7 +34,7 @@ namespace DevVorpian
 
         public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)
         {
-            _intentBasedTransition.Add(stateTransition);
+            _intentBasedTransitions.Add(stateTransition);
         }
 
         public void AddAutonomicTransition(StateTransition<StateType> stateTransition)
@@ -79,9 +81,9 @@ namespace DevVorpian
         private StateTransitionData<StateType> findInputBasedTransition(StateType to)
         {
             var transition =
-                _intentBasedTransition.FirstOrDefault(s =>
-                    s.To.Equals(to) && s.From.Equals(_currentStateType))
-                ?? _intentBasedTransition.FirstOrDefault(s => s.To.Equals(to));
+                _intentBasedTransitions.FirstOrDefault(t =>
+                    t.To.Equals(to) && t.From.Equals(_currentStateType) && !_currentState.Equals(t.TargetState))
+                ?? _intentBasedTransitions.FirstOrDefault(t => t.To.Equals(to) && !_currentState.Equals(t.TargetState));
 
             if (transition == null) return null;
 
@@ -92,7 +94,7 @@ namespace DevVorpian
         {
             foreach (var transition in _autonomicTransitions)
             {
-                if (_currentStateType.Equals(transition.To))
+                if (_currentState.Equals(transition.TargetState))
                     continue;
 
                 if (transition.From.Equals(_currentStateType) && transition.Condition())

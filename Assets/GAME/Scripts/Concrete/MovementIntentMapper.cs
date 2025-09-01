@@ -75,7 +75,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (moveInput.IsHeld && snapshot.Movement.IsGrounded && snapshot.Movement.State != MovementType.Dash && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.CurrentState == CombatType.Idle)
+        if (moveInput.IsHeld && snapshot.Movement.IsGrounded && snapshot.Movement.State != MovementType.Dash && !snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Combat.State == CombatType.Idle)
         {
             return new ActionIntent
             {

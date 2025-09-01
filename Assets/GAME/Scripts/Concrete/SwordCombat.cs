@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SwordCombat : ICombat
 {
-    public CombatType CombatType => _currentSnapshot.CurrentState;
+    public CombatType CombatType => _currentSnapshot.State;
 
     private readonly Sword _view;
     private Subject<CombatSnapshot> _stream = new();
@@ -25,7 +25,7 @@ public class SwordCombat : ICombat
         _view = view;
     }
 
-    public void HandleInput(CombatAction action)
+    public void HandleAction(CombatAction action)
     {
         if (action.ActionType == CombatType.GroundedPrimaryAttack)
         {
@@ -36,8 +36,7 @@ public class SwordCombat : ICombat
                 _currentSnapshot = new CombatSnapshot(
                     state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
-                    comboStep: _currentComboStep,
-                    triggerAttack: true
+                    comboStep: _currentComboStep
                 );
                 _stream.OnNext(_currentSnapshot);
             }
@@ -48,8 +47,7 @@ public class SwordCombat : ICombat
                 _currentSnapshot = new CombatSnapshot(
                     state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
-                    comboStep: _currentComboStep,
-                    triggerAttack: true
+                    comboStep: _currentComboStep
                 );
                 _canCombo = false;
                 _stream.OnNext(_currentSnapshot);
@@ -90,8 +88,7 @@ public class SwordCombat : ICombat
                 _currentSnapshot = new CombatSnapshot(
                     state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
-                    comboStep: _currentComboStep,
-                    triggerAttack: true
+                    comboStep: _currentComboStep
                 );
                 _canCombo = false;
                 _stream.OnNext(_currentSnapshot);
