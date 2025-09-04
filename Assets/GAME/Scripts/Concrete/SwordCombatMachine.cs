@@ -49,7 +49,9 @@ namespace Combat
             var grPrimaryAttackCS1 = new ConcreteState();
             var grPrimaryAttackCS2 = new ConcreteState();
             var grPrimaryAttackCS3 = new ConcreteState();
+            var dashingAttack = new ConcreteState();
 
+            #region OnEnter
             idleState.OnEnter.AddListener(() =>
             {
                 setContextState(CombatType.Idle);
@@ -78,17 +80,54 @@ namespace Combat
                 submitSnapshot();
             });
 
+            dashingAttack.OnEnter.AddListener(() =>
+            {
+                setContextState(CombatType.DashingAttack);
+                setAttackSequence(true, 0);
+                submitSnapshot();
+            });
+            #endregion
+
+
+            #region OnExit
+            grPrimaryAttackCS1.OnExit.AddListener(() =>
+            {
+                setAttackSequence(false);
+                submitSnapshot();
+            });
+
+            grPrimaryAttackCS2.OnExit.AddListener(() =>
+            {
+                setAttackSequence(false);
+                submitSnapshot();
+            });
+
+            grPrimaryAttackCS3.OnExit.AddListener(() =>
+            {
+                setAttackSequence(false);
+                submitSnapshot();
+            });
+
+            dashingAttack.OnExit.AddListener(() =>
+            {
+                setAttackSequence(false);
+                submitSnapshot();
+            });
+            #endregion
+
+
             var initialIdle = new StateTransition<CombatType>(null, idleState, CombatType.Idle, onTransition: () => Debug.Log("Transitioning to Idle"));
             var idleToGrPrimaryAttackCS1 = new StateTransition<CombatType>(idleState, grPrimaryAttackCS1, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttack from Idle"));
             var toGrPrimaryAttackCS2 = new StateTransition<CombatType>(grPrimaryAttackCS1, grPrimaryAttackCS2, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttackCS2 from GrPCS1"));
             var toGrPrimaryAttackCS3 = new StateTransition<CombatType>(grPrimaryAttackCS2, grPrimaryAttackCS3, CombatType.GroundedPrimaryAttack, onTransition: () => Debug.Log("Transitioning GrPrimaryAttackCS3 from GrPC2"));
-
             var attackToIdle = new StateTransition<CombatType>(null, idleState, CombatType.Idle, () => !_context.IsAttacking, () => Debug.Log("Transitioning to Idle On Attack End"));
+            var toDashingAttackV1 = new StateTransition<CombatType>(null, dashingAttack, CombatType.DashingAttack, onTransition: () => Debug.Log("Transitioning to Dashing Attack"));
 
             _stateMachine.AddIntentBasedTransition(initialIdle);
             _stateMachine.AddIntentBasedTransition(idleToGrPrimaryAttackCS1);
             _stateMachine.AddIntentBasedTransition(toGrPrimaryAttackCS2);
             _stateMachine.AddIntentBasedTransition(toGrPrimaryAttackCS3);
+            _stateMachine.AddIntentBasedTransition(toDashingAttackV1);
 
             _stateMachine.AddAutonomicTransition(attackToIdle);
 
@@ -104,7 +143,7 @@ namespace Combat
         {
             if (string.Equals(frame.EventKey, "SlashEnd"))
             {
-                _context.IsAttacking = false;
+                setAttackSequence(false);
                 Debug.Log("Slash End");
             }
         }
@@ -138,7 +177,7 @@ namespace Combat
             _transitionStreamer.OnNext(_context.State);
         }
 
-        private void setAttackSequence(bool isAttacking, int comboStep)
+        private void setAttackSequence(bool isAttacking, int comboStep = 0)
         {
             _context.IsAttacking = isAttacking;
             _context.ComboStep = comboStep;

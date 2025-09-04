@@ -1,4 +1,3 @@
-using UnityEngine;
 
 public class SwordIntentMapper : IIntentMapper
 {
@@ -11,15 +10,25 @@ public class SwordIntentMapper : IIntentMapper
         // 1. Combo-aware Standard Attack (eventful)
         // (Let SwordCombat decide if this should start or continue a combo)
 
-        if (attackInput.WasPresseedThisFrame /*&& snapshot.Movement.State != MovementType.Move*/ && !snapshot.Movement.State.Equals(MovementType.Dash) && snapshot.Movement.IsGrounded)
+        if (attackInput.WasPresseedThisFrame /*&& snapshot.Movement.State != MovementType.Move*/ /*&& !snapshot.Movement.State.Equals(MovementType.Dash)*/ && snapshot.Movement.IsGrounded)
         {
             // Optionally: You could block combos in air if needed
-            if (snapshot.Movement.State == MovementType.Jump || snapshot.Movement.State == MovementType.Fall)
+            if (snapshot.Movement.State.Equals(MovementType.Jump) || snapshot.Movement.State.Equals(MovementType.Fall))
                 return null;
 
             // Optionally: Only allow if not attacking or in a combo window
             // if (!snapshot.Combat.IsAttacking && snapshot.Combat.ComboStep == 0)
             //    return ... // only new attack
+
+            if (snapshot.Movement.State.Equals(MovementType.Dash))
+            {
+                return new ActionIntent
+                {
+                    // If running, movement type could be set to Run, but typically you go Idle when slashing
+                    Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
+                    Combat = new CombatAction { ActionType = CombatType.DashingAttack }
+                };
+            }
 
             return new ActionIntent
             {

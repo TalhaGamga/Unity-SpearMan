@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public struct CharacterSnapshot
 {
     public readonly MovementSnapshot Movement;
