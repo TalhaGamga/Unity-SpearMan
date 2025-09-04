@@ -13,6 +13,7 @@ namespace Movement.Mover
 
         [SerializeField] private Context _context;
         [SerializeField] private StateMachine<MovementType> _stateMachine;
+        [SerializeField] private MovementComboSpec[] _comboSpecs;
 
         private CompositeDisposable _disposables = new();
         private IMovementManager _manager;
@@ -318,6 +319,7 @@ namespace Movement.Mover
         {
             public MovementType State;
 
+            public MovementComboType ComboType;
             public LayerMask GroundLayer;
             public Vector2 MoveInput;
             public Vector3 RootMotionDeltaPosition;
