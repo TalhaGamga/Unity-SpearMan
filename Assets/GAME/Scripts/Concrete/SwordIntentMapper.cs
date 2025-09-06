@@ -1,3 +1,4 @@
+using UnityEngine;
 
 public class SwordIntentMapper : IIntentMapper
 {
@@ -13,7 +14,7 @@ public class SwordIntentMapper : IIntentMapper
         if (attackInput.WasPresseedThisFrame /*&& snapshot.Movement.State != MovementType.Move*/ /*&& !snapshot.Movement.State.Equals(MovementType.Dash)*/ && snapshot.Movement.IsGrounded)
         {
             // Optionally: You could block combos in air if needed
-            if (snapshot.Movement.State.Equals(MovementType.Jump) || snapshot.Movement.State.Equals(MovementType.Fall))
+            if (snapshot.Movement.State.Equals(MovementType.Fall))
                 return null;
 
             // Optionally: Only allow if not attacking or in a combo window
@@ -26,10 +27,31 @@ public class SwordIntentMapper : IIntentMapper
                 {
                     // If running, movement type could be set to Run, but typically you go Idle when slashing
                     Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
-                    Combat = new CombatAction { ActionType = CombatType.DashingAttack }
+                    Combat = new CombatAction
+                    {
+                        ActionType = CombatType.DashingAttack,
+                        Version = 1
+                    }
                 };
             }
 
+            if (snapshot.Movement.State.Equals(MovementType.Jump) && snapshot.Movement.ComboType.Equals(MovementComboType.DashingJump))
+            {
+                return new ActionIntent
+                {
+                    Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Stab },
+                    Combat = new CombatAction
+                    {
+                        ActionType = CombatType.DashingAttack,
+                        Version = 2
+                    }
+                };
+            }
+
+            if (snapshot.Movement.State == MovementType.Jump)
+            {
+                return null;
+            }
             return new ActionIntent
             {
                 // If running, movement type could be set to Run, but typically you go Idle when slashing

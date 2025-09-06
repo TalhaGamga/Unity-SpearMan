@@ -1,5 +1,5 @@
 public enum MovementComboType
 {
     None,
-    InstantDashAfterJump
+    DashingJump
 }

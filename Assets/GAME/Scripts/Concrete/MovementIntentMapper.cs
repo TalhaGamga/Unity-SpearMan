@@ -21,7 +21,7 @@ public class MovementIntentMapper : IIntentMapper
                 },
                 Combat = new CombatAction
                 {
-                    ActionType = CombatType.Cancel
+                    ActionType = CombatType.Idle
                 },
             };
         }
@@ -38,7 +38,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!snapshot.IsAttacking && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
+        if (!(snapshot.IsAttacking || snapshot.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
         {
             return new ActionIntent
             {
@@ -67,7 +67,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage && !snapshot.Movement.State.Equals(MovementType.Dash))
+        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage && snapshot.Movement.IsGrounded)
         {
             return new ActionIntent
             {

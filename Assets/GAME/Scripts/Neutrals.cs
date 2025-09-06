@@ -73,10 +73,10 @@ public interface IMover
 
 public interface IState
 {
+    public string StateName { get; }
     public UnityEvent OnEnter { get; set; }
     public UnityEvent OnExit { get; set; }
     public UnityEvent OnUpdate { get; set; }
-    public string State { get; }
     void Enter();
     void Update();
     void Exit();

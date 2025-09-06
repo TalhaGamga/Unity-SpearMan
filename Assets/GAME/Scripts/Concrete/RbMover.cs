@@ -224,7 +224,7 @@ namespace Movement
                 if (stateChanged || blendChanged || jumpStageChanged)
                 {
                     _lastBlendSpeed = _smoothedBlendSpeed;
-                    _snapshotStream.OnNext(new MovementSnapshot(state, _smoothedBlendSpeed, _jumpStage,isGrounded));
+                    _snapshotStream.OnNext(new MovementSnapshot(state, 0, _smoothedBlendSpeed, _jumpStage, isGrounded));
                 }
 
                 // --- 2. Then emit transition signal ONLY if state changed ---

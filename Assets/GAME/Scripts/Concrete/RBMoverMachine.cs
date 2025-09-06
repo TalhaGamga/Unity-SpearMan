@@ -1,4 +1,5 @@
 using DevVorpian;
+using DG.Tweening;
 using Movement.State;
 using R3;
 using UnityEngine;
@@ -13,7 +14,6 @@ namespace Movement.Mover
 
         [SerializeField] private Context _context;
         [SerializeField] private StateMachine<MovementType> _stateMachine;
-        [SerializeField] private MovementComboSpec[] _comboSpecs;
 
         private CompositeDisposable _disposables = new();
         private IMovementManager _manager;
@@ -24,7 +24,6 @@ namespace Movement.Mover
         private Transform _characterorientator;
         private Subject<Unit> _snapshotStreamer = new();
         private BehaviorSubject<MovementType> _transitionStreamer = new(MovementType.Idle);
-
 
         private const float MinSqrDelta = 1e-8f;
         public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
@@ -40,7 +39,7 @@ namespace Movement.Mover
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
             _snapshotStreamer
-                .Select(_ => new MovementSnapshot(_context.State, _context.MovementBlend, _context.JumpRight, isGrounded()))
+                .Select(_ => new MovementSnapshot(_context.State, _context.ComboType, _context.MovementBlend, _context.JumpRight, isGrounded()))
                 .DistinctUntilChanged()
                 .Subscribe(snapshotStream.OnNext)
                 .AddTo(_disposables);
@@ -60,7 +59,9 @@ namespace Movement.Mover
             IState jumpState = new ConcreteState();
             IState doubleJumpState = new ConcreteState();
             IState dashState = new ConcreteState();
+            IState stabState = new ConcreteState();
 
+            #region OnEnter
             moveState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Move);
@@ -77,6 +78,8 @@ namespace Movement.Mover
             fallState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Fall);
+                constraintRbAxisY(false);
+                setHorizontalSpeed(_context.AirborneMovementSpeed);
                 submitSnapshot();
             });
 
@@ -89,7 +92,7 @@ namespace Movement.Mover
             jumpState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Jump);
-                jump();
+
                 submitSnapshot();
             });
 
@@ -101,6 +104,16 @@ namespace Movement.Mover
                 submitSnapshot();
             });
 
+            stabState.OnEnter.AddListener(() =>
+            {
+                setContextState(MovementType.Stab);
+                constraintRbAxisY(true);
+                _context.Rb.linearVelocity = Vector3.zero;
+                submitSnapshot();
+            });
+            #endregion
+
+            #region OnExit
             dashState.OnExit.AddListener(() =>
             {
                 constraintRbAxisY(false);
@@ -111,8 +124,18 @@ namespace Movement.Mover
                 constraintRbAxisY(false);
             });
 
-            fallState.OnExit.AddListener(() => _context.VerticalVelocity = 0);
+            jumpState.OnExit.AddListener(() =>
+            {
+                setComboType(MovementComboType.None);
+            });
 
+            fallState.OnExit.AddListener(() =>
+            {
+                _context.VerticalVelocity = 0;
+            });
+            #endregion
+
+            #region OnUpdate
             idleState.OnUpdate.AddListener(() =>
             {
                 setCharacterOrientator();
@@ -149,21 +172,62 @@ namespace Movement.Mover
                 handleAirborneMovement();
             });
 
+            stabState.OnUpdate.AddListener(() =>
+            {
+                if (_context.IsStabbing && !_context.IsStabStarted)
+                {
+                    stab();
+                    _context.IsStabEnded = true;
+                }
+            });
+            #endregion
+
+            #region OnExit
+            stabState.OnExit.AddListener(() =>
+            {
+                _context.IsStabStarted = false;
+                _context.IsStabbing = false;
+            });
+            #endregion
+
             var toIdle = new StateTransition<MovementType>(null, idleState, MovementType.Idle, onTransition: () => Debug.Log("Transitioning to Idle"));
             var toMove = new StateTransition<MovementType>(null, moveState, MovementType.Move, onTransition: () => Debug.Log("Transitioning to Move"));
-            var toFall = new StateTransition<MovementType>(null, fallState, MovementType.Fall, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Dash), () => Debug.Log("Transitioning to Fall"));
-            var toJump = new StateTransition<MovementType>(null, jumpState, MovementType.Jump, onTransition: () => Debug.Log("Transitioning To Jump"));
+            var toFall = new StateTransition<MovementType>(null, fallState, MovementType.Fall, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Dash) && !_context.State.Equals(MovementType.Stab), () => Debug.Log("Transitioning to Fall"));
+            var toJump = new StateTransition<MovementType>(null, jumpState, MovementType.Jump, onTransition: () =>
+            {
+                Debug.Log("Transitioning To Jump");
+                setVerticalVelocity(calculateJumpVelocity());
+                setHorizontalSpeed(_context.AirborneMovementSpeed);
+            });
+
             var jumpToFall = new StateTransition<MovementType>(jumpState, fallState, MovementType.Fall, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
             var fallToNeutral = new StateTransition<MovementType>(fallState, neutralState, MovementType.Neutral, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
+            var dashToJump = new StateTransition<MovementType>(dashState, jumpState, MovementType.Jump, onTransition: () =>
+            {
+                Debug.Log("Transitioning to Jump from dash");
+                setComboType(MovementComboType.DashingJump);
+                setVerticalVelocity(calculateJumpVelocity() / 1.5f);
+                setHorizontalSpeed(_context.DashSpeed);
+            });
+
             var toDash = new StateTransition<MovementType>(null, dashState, MovementType.Dash, onTransition: () => { Debug.Log("Transitioning To Dash"); _context.IsDashEnded = false; });
             var dashToNeutral = new StateTransition<MovementType>(dashState, neutralState, MovementType.Neutral, () => _context.IsDashEnded, () => Debug.Log("Transitioning to Neutral"));
+            var toStab = new StateTransition<MovementType>(null, stabState, MovementType.Stab, onTransition: () =>
+            {
+                Debug.Log("Transitioning to Stab");
+                _context.IsStabEnded = false;
+            });
+            var stabToNeutral = new StateTransition<MovementType>(stabState, neutralState, MovementType.Neutral, condition: () => _context.IsStabEnded, onTransition: () => Debug.Log("Transitioning to Neutral from Stab"));
 
             _stateMachine.AddIntentBasedTransition(toIdle);
             _stateMachine.AddIntentBasedTransition(toMove);
             _stateMachine.AddIntentBasedTransition(toJump);
+            _stateMachine.AddIntentBasedTransition(dashToJump);
             _stateMachine.AddIntentBasedTransition(toDash);
+            _stateMachine.AddIntentBasedTransition(toStab);
 
             _stateMachine.AddAutonomicTransition(fallToNeutral);
+            _stateMachine.AddAutonomicTransition(stabToNeutral);
             _stateMachine.AddAutonomicTransition(toFall);
             _stateMachine.AddAutonomicTransition(jumpToFall);
             _stateMachine.AddAutonomicTransition(dashToNeutral);
@@ -206,6 +270,16 @@ namespace Movement.Mover
                 {
                     _context.IsDashEnded = true;
                 }
+            }
+
+            if (animationFrame.EventKey == "StabEnded")
+            {
+                _context.IsStabEnded = true;
+            }
+
+            if (animationFrame.EventKey == "StabStarted")
+            {
+                _context.IsStabbing = true;
             }
         }
 
@@ -250,18 +324,17 @@ namespace Movement.Mover
             _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
+        private void stab()
+        {
+            _context.MoverTransform.DOMove(_context.StabPoint.position, _context.StabDuration).SetEase(_context.StabEase);
+        }
+
         private void constraintRbAxisY(bool isAllowed)
         {
             _context.Rb.constraints = isAllowed
                 ? RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY   // lock Y + all rotations
                 : RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX;
         }
-
-        private void jump()
-        {
-            _context.VerticalVelocity = _context.Gravity * _context.JumpTimeToPeak;
-        }
-
         private void dash()
         {
             _context.Rb.linearVelocity = new Vector3(0, 0, _context.DashSpeed * _context.LastFaceX);
@@ -270,12 +343,27 @@ namespace Movement.Mover
 
         private void handleAirborneMovement()
         {
-            _context.Rb.linearVelocity = new Vector3(0, _context.VerticalVelocity, _context.MoveInput.x * _context.AirborneMovementSpeed);
+            _context.Rb.linearVelocity = new Vector3(0, _context.VerticalVelocity, _context.HorizontalVelocity);
         }
 
         private void handleGravity()
         {
             _context.VerticalVelocity -= _context.Gravity * Time.deltaTime;
+        }
+
+        private void setHorizontalSpeed(float speed)
+        {
+            _context.HorizontalSpeed = speed;
+        }
+
+        private void setVerticalVelocity(float velocity)
+        {
+            _context.VerticalVelocity = velocity;
+        }
+
+        private float calculateJumpVelocity()
+        {
+            return _context.Gravity * _context.JumpTimeToPeak;
         }
 
         private void setCharacterOrientator()
@@ -312,24 +400,33 @@ namespace Movement.Mover
             _context.Gravity = (2f * _context.JumpHeight) / (Mathf.Pow(_context.JumpTimeToPeak, 2));
         }
 
-
+        private void setComboType(MovementComboType comboType)
+        {
+            _context.ComboType = comboType;
+        }
 
         [System.Serializable]
         public class Context
         {
             public MovementType State;
-
             public MovementComboType ComboType;
+            public Transform StabPoint;
+
             public LayerMask GroundLayer;
             public Vector2 MoveInput;
             public Vector3 RootMotionDeltaPosition;
             public Rigidbody Rb;
+            public Transform MoverTransform;
             public float BlendAcceleration;
             public float MovementBlend;
             public int JumpRight;
             public float JumpHeight;
             public float AirborneMovementSpeed;
             public float JumpTimeToPeak;
+            public float StabDuration;
+            public bool IsStabStarted;
+            public bool IsStabbing;
+            public Ease StabEase;
 
             public float FaceTurnSpeedInDegree = 720;
             public float FaceDeadzone = 0.05f;
@@ -337,10 +434,12 @@ namespace Movement.Mover
 
             public float DashSpeed = 10f;
             public bool IsDashEnded = false;
+            public bool IsStabEnded = false;
 
             [HideInInspector] public float Gravity;
             [HideInInspector] public float VerticalVelocity;
-
+            [HideInInspector] public float HorizontalVelocity => MoveInput.x * HorizontalSpeed;
+            [HideInInspector] public float HorizontalSpeed;
         }
     }
 }

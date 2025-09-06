@@ -31,5 +31,12 @@ public static class AnimationParameterMapper
             ParamType = AnimatorParamUpdateType.Int,
             Value = snapshot.Combat.ComboStep
         };
+
+        yield return new AnimatorParamUpdate
+        {
+            ParamName = "Version",
+            ParamType = AnimatorParamUpdateType.Int,
+            Value = snapshot.Combat.Version
+        };
     }
 }

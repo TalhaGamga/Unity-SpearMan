@@ -9,6 +9,7 @@
     DoubleJump,
     Land,
     Dash,
+    Stab,
     Climb,
     SwimUp,
     Interact,

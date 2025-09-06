@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using Movement.State;
-using Unity.VisualScripting;
 
 namespace DevVorpian
 {
@@ -12,7 +10,7 @@ namespace DevVorpian
     public class StateMachine<StateType>
     {
         public UnityEvent OnTransitionedAutonomously = new();
-        [SerializeField] private string _stateName;
+        public string CurrentStateName => _currentState.StateName;
 
         private List<StateTransition<StateType>> _intentBasedTransitions;
         private List<StateTransition<StateType>> _autonomicTransitions;
@@ -74,7 +72,6 @@ namespace DevVorpian
             transitionData?.OnTransition();
             _currentState = transitionData.TargetState;
             _currentState.Enter();
-            _stateName = _currentState.State;
         }
 
         private StateTransitionData findInputBasedTransition(StateType targetStateType)
@@ -89,7 +86,7 @@ namespace DevVorpian
             foreach (var t in _intentBasedTransitions)
             {
                 if (!t.TargetStateType.Equals(targetStateType)) continue;
-                if (!_currentState.Equals(t.To))
+                if (t.From == null && !_currentState.Equals(t.To) && t.Condition())
                     return new StateTransitionData(t.To, t.OnTransition);
             }
 
