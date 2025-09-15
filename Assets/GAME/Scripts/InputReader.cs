@@ -82,7 +82,7 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
     public void OnMouseDelta(InputAction.CallbackContext context)
     {
         var delta = context.ReadValue<Vector2>();
-        Debug.Log(delta);
+        MouseDelta?.Invoke(delta);
     }
 
     public void OnCrouch(InputAction.CallbackContext context)
