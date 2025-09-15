@@ -3,7 +3,7 @@ public enum CombatType
     None,
     GroundedPrimaryAttack,
     GroundedSecondaryAttack,
-    DashingAttack,
+    Stab,
     AirborneDashingAttack,
     AirbornePrimaryAttack,
     AirborneSecondaryAttack,

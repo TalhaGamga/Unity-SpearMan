@@ -177,7 +177,7 @@ namespace Movement.Mover
                 if (_context.IsStabbing && !_context.IsStabStarted)
                 {
                     stab();
-                    _context.IsStabEnded = true;
+                    _context.IsStabStarted = true;
                 }
             });
             #endregion

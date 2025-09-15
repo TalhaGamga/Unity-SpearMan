@@ -29,7 +29,7 @@ public class SwordIntentMapper : IIntentMapper
                     Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
                     Combat = new CombatAction
                     {
-                        ActionType = CombatType.DashingAttack,
+                        ActionType = CombatType.Stab,
                         Version = 1
                     }
                 };
@@ -42,7 +42,7 @@ public class SwordIntentMapper : IIntentMapper
                     Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Stab },
                     Combat = new CombatAction
                     {
-                        ActionType = CombatType.DashingAttack,
+                        ActionType = CombatType.Stab,
                         Version = 2
                     }
                 };

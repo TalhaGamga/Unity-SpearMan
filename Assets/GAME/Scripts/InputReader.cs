@@ -15,7 +15,8 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
     public event UnityAction<Vector2> Move = delegate { };
     public event UnityAction<bool> Jump = delegate { };
     public event UnityAction<bool> Attack = delegate { };
-    public event UnityAction<bool> Dash= delegate { };
+    public event UnityAction<bool> Dash = delegate { };
+    public event UnityAction<Vector2> MouseDelta = delegate { };
 
     public Vector2 Direction => _inputActions.Player.Move.ReadValue<Vector2>();
     public bool IsJumpKeyPressed => _inputActions.Player.Jump.IsPressed();
@@ -78,6 +79,12 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
         }
     }
 
+    public void OnMouseDelta(InputAction.CallbackContext context)
+    {
+        var delta = context.ReadValue<Vector2>();
+        Debug.Log(delta);
+    }
+
     public void OnCrouch(InputAction.CallbackContext context)
     {
     }
@@ -103,5 +110,5 @@ public class InputReader : ScriptableObject, IPlayerActions, IInputReader
     {
     }
 
- 
+
 }

@@ -33,8 +33,4 @@ public struct CharacterSnapshot
         //Position = position;
         //Rotation = rotation;
     }
-
-    public bool IsJumping => Movement.State == MovementType.Jump;
-    public bool IsAttacking => Combat.State == CombatType.GroundedPrimaryAttack || Combat.State == CombatType.InPrimaryAttack;
-    public bool IsRecoiling => Reaction.State == ReactionType.Hit;
 }

@@ -1,6 +1,5 @@
 public class MovementIntentMapper : IIntentMapper
 {
-    // Set this to match your RbMover's _maxJumpStage (or make it configurable)
     private readonly int _maxJumpStage = 2;
 
     public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
@@ -9,8 +8,7 @@ public class MovementIntentMapper : IIntentMapper
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Jump, out var jumpInput);
         inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Dash, out var dashInput);
 
-        // 1. If attacking, and attack is cancelable, and RUN is held, allow run-cancel
-        if (snapshot.IsAttacking && snapshot.Combat.IsCancelable && moveInput.IsHeld)
+        if (snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable && moveInput.IsHeld)
         {
             return new ActionIntent
             {
@@ -26,19 +24,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (snapshot.IsAttacking && moveInput.IsHeld)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction
-                {
-                    Direction = moveInput.Direction,
-                    ActionType = MovementType.Idle
-                }
-            };
-        }
-
-        if (!(snapshot.IsAttacking || snapshot.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
+        if (!(snapshot.Combat.IsAttacking || snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
         {
             return new ActionIntent
             {
@@ -67,7 +53,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!snapshot.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage && snapshot.Movement.IsGrounded)
+        if (!snapshot.Combat.IsAttacking && jumpInput.WasPresseedThisFrame && snapshot.Movement.JumpRight < _maxJumpStage && snapshot.Movement.IsGrounded)
         {
             return new ActionIntent
             {

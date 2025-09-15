@@ -49,7 +49,7 @@ namespace Combat
             var grPA_S1 = new ConcreteState("GrPA_S1");
             var grPA_S2 = new ConcreteState("GrPA_S2");
             var grPA_S3 = new ConcreteState("GrPA_S3");
-            var dashingAttack = new ConcreteState("DashingAttack");
+            var stab = new ConcreteState("Stab");
 
             #region OnEnter
             idleState.OnEnter.AddListener(() =>
@@ -92,9 +92,9 @@ namespace Combat
                 submitSnapshot();
             });
 
-            dashingAttack.OnEnter.AddListener(() =>
+            stab.OnEnter.AddListener(() =>
             {
-                setContextState(CombatType.DashingAttack);
+                setContextState(CombatType.Stab);
                 setAttackSequence(true, 0);
                 setCanCombo(false);
                 setCancelable(false);
@@ -132,7 +132,7 @@ namespace Combat
                 submitSnapshot();
             });
 
-            dashingAttack.OnExit.AddListener(() =>
+            stab.OnExit.AddListener(() =>
             {
                 setAttackSequence(false);
                 setCanCombo(false);
@@ -150,12 +150,12 @@ namespace Combat
             var grPA_S3ToS1 = new StateTransition<CombatType>(grPA_S3, grPA_S1, CombatType.GroundedPrimaryAttack, condition: () => _context.CanCombo, onTransition: () => Debug.Log("Transitioning GrPrimaryAttackCS1 from GrPC3"));
             var attackToIdle = new StateTransition<CombatType>(null, idleState, CombatType.Idle, () => !_context.IsAttacking, () => Debug.Log("Transitioning to Idle On Attack End"));
 
-            var toDashingAttack = new StateTransition<CombatType>(null, dashingAttack, CombatType.DashingAttack, onTransition: () =>
+            var toDashingAttack = new StateTransition<CombatType>(null, stab, CombatType.Stab, onTransition: () =>
             {
                 Debug.Log("Transitioning to Dashing Attack");
             });
 
-            var dashingAttackToGrPA_S1 = new StateTransition<CombatType>(dashingAttack, grPA_S1, CombatType.GroundedPrimaryAttack, condition: () => _context.CanCombo, onTransition: () => Debug.Log("Transitioning to GrPrimaryAttack from dashingAttack"));
+            var dashingAttackToGrPA_S1 = new StateTransition<CombatType>(stab, grPA_S1, CombatType.GroundedPrimaryAttack, condition: () => _context.CanCombo, onTransition: () => Debug.Log("Transitioning to GrPrimaryAttack from dashingAttack"));
 
             _stateMachine.AddIntentBasedTransition(initialIdle);
             _stateMachine.AddIntentBasedTransition(idleToGrPA_S1);
@@ -253,6 +253,12 @@ namespace Combat
         private void resetVersion()
         {
             _context.Version = 0;
+        }
+
+        private Vector3 findPointToStab()
+        {
+
+            return Vector3.zero;
         }
 
         [System.Serializable]
