@@ -1,6 +1,5 @@
 using Movement;
 using R3;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CharacterHub : MonoBehaviour
@@ -9,8 +8,6 @@ public class CharacterHub : MonoBehaviour
     [SerializeField] private AnimatorSystem _animatorSystem;
     [SerializeField] private MovementManager _movementManager;
     [SerializeField] private CombatManager _combatManager;
-
-    private List<Component> _modules;
 
     public ActionSystem _actionSystem;
     private Subject<ReactionSnapshot> _dummyReactionSnapshotStream = new();
@@ -33,7 +30,7 @@ public class CharacterHub : MonoBehaviour
         });
 
         _combatManager.TransitionStream
-.Subscribe(transition =>
+        .Subscribe(transition =>
         {
             _actionSystem.ProcessIntent();
         });
@@ -69,13 +66,6 @@ public class CharacterHub : MonoBehaviour
         _animatorSystem.MovementAnimationFrameStream
             .Subscribe(_movementManager.OnAnimationFrame)
             .AddTo(_disposables);
-
-        _modules = new List<Component>()
-        {
-            _animatorSystem,
-            _movementManager,
-            _combatManager
-        };
     }
 
     private void OnDestroy()

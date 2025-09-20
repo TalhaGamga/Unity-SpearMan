@@ -118,7 +118,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""MouseDelta"",
+                    ""name"": ""MouseDrag"",
                     ""type"": ""Value"",
                     ""id"": ""ba56a605-9cce-49c8-9a4c-8f6987f57990"",
                     ""expectedControlType"": ""Delta"",
@@ -527,11 +527,11 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""7c7e6c5e-12b7-4631-b036-0138fc442faa"",
-                    ""path"": ""<Mouse>/delta"",
+                    ""path"": ""<Mouse>/position"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""MouseDelta"",
+                    ""action"": ""MouseDrag"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1129,7 +1129,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Previous = m_Player.FindAction("Previous", throwIfNotFound: true);
         m_Player_Next = m_Player.FindAction("Next", throwIfNotFound: true);
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
-        m_Player_MouseDelta = m_Player.FindAction("MouseDelta", throwIfNotFound: true);
+        m_Player_MouseDrag = m_Player.FindAction("MouseDrag", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1219,7 +1219,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Previous;
     private readonly InputAction m_Player_Next;
     private readonly InputAction m_Player_Sprint;
-    private readonly InputAction m_Player_MouseDelta;
+    private readonly InputAction m_Player_MouseDrag;
     public struct PlayerActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -1234,7 +1234,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         public InputAction @Previous => m_Wrapper.m_Player_Previous;
         public InputAction @Next => m_Wrapper.m_Player_Next;
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
-        public InputAction @MouseDelta => m_Wrapper.m_Player_MouseDelta;
+        public InputAction @MouseDrag => m_Wrapper.m_Player_MouseDrag;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1274,9 +1274,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Sprint.started += instance.OnSprint;
             @Sprint.performed += instance.OnSprint;
             @Sprint.canceled += instance.OnSprint;
-            @MouseDelta.started += instance.OnMouseDelta;
-            @MouseDelta.performed += instance.OnMouseDelta;
-            @MouseDelta.canceled += instance.OnMouseDelta;
+            @MouseDrag.started += instance.OnMouseDrag;
+            @MouseDrag.performed += instance.OnMouseDrag;
+            @MouseDrag.canceled += instance.OnMouseDrag;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -1311,9 +1311,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Sprint.started -= instance.OnSprint;
             @Sprint.performed -= instance.OnSprint;
             @Sprint.canceled -= instance.OnSprint;
-            @MouseDelta.started -= instance.OnMouseDelta;
-            @MouseDelta.performed -= instance.OnMouseDelta;
-            @MouseDelta.canceled -= instance.OnMouseDelta;
+            @MouseDrag.started -= instance.OnMouseDrag;
+            @MouseDrag.performed -= instance.OnMouseDrag;
+            @MouseDrag.canceled -= instance.OnMouseDrag;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -1506,7 +1506,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         void OnPrevious(InputAction.CallbackContext context);
         void OnNext(InputAction.CallbackContext context);
         void OnSprint(InputAction.CallbackContext context);
-        void OnMouseDelta(InputAction.CallbackContext context);
+        void OnMouseDrag(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

@@ -8,6 +8,7 @@ public enum PlayerAction
     Dash,
     Jump,
     DoubeJump,
+    MouseDelta,
     Interact
     // Extend as needed
 }

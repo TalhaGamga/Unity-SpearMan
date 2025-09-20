@@ -35,10 +35,15 @@ public class PlayerInputHandler : MonoBehaviour
             HandleInput(PlayerAction.Dash, isPressed);
         };
 
+        _input.MouseDrag += position =>
+        {
+            HandleInput(PlayerAction.MouseDelta, (position.magnitude > 0), position);
+        };
+
         _input.Enable();
     }
 
-    private void HandleInput(PlayerAction action, bool isHeld, Vector2 direction = default)
+    private void HandleInput(PlayerAction action, bool isHeld, object value = default)
     {
         var behavior = InputBehaviorMap.Behavior.TryGetValue(action, out var b) ? b : InputBehavior.Eventful;
 
@@ -48,8 +53,8 @@ public class PlayerInputHandler : MonoBehaviour
         {
             Action = action,
             IsHeld = isHeld,
-            Direction = direction,
-            Value = 0f, // Fill as needed
+            //Direction = direction,
+            Value = value, // Fill as needed
             WasPresseedThisFrame = false
         };
 
@@ -131,7 +136,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         return a.IsHeld == b.IsHeld &&
                a.Value == b.Value &&
-               a.Direction == b.Direction &&
+               //a.Direction == b.Direction &&
                a.WasPresseedThisFrame == b.WasPresseedThisFrame;
     }
 }

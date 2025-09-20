@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public class MovementIntentMapper : IIntentMapper
 {
     private readonly int _maxJumpStage = 2;
@@ -14,7 +16,7 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = moveInput.Direction,
+                    Direction = (Vector2)moveInput.Value,
                     ActionType = MovementType.Move
                 },
                 Combat = new CombatAction
@@ -30,18 +32,17 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = moveInput.Direction,
+                    Direction = (Vector2)moveInput.Value,
                     ActionType = MovementType.Dash
                 }
             };
         }
 
-
         if (snapshot.Movement.State == MovementType.Fall)
         {
             return new ActionIntent
             {
-                Movement = new MovementAction { ActionType = MovementType.Fall, Direction = moveInput.Direction }
+                Movement = new MovementAction { ActionType = MovementType.Fall, Direction = (Vector2)moveInput.Value }
             };
         }
 
@@ -57,7 +58,7 @@ public class MovementIntentMapper : IIntentMapper
         {
             return new ActionIntent
             {
-                Movement = new MovementAction { ActionType = MovementType.Jump, Direction = moveInput.Direction }
+                Movement = new MovementAction { ActionType = MovementType.Jump, Direction = (Vector2)moveInput.Value }
             };
         }
 
@@ -67,7 +68,7 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = moveInput.Direction,
+                    Direction = (Vector2)moveInput.Value,
                     ActionType = MovementType.Move
                 }
             };
@@ -79,7 +80,7 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = moveInput.Direction,
+                    Direction = (Vector2)moveInput.Value,
                     ActionType = MovementType.Idle
                 }
             };
@@ -91,7 +92,7 @@ public class MovementIntentMapper : IIntentMapper
             {
                 Movement = new MovementAction
                 {
-                    Direction = moveInput.Direction,
+                    Direction = (Vector2)moveInput.Value,
                     ActionType = MovementType.DoubleJump
                 }
             };
@@ -101,7 +102,7 @@ public class MovementIntentMapper : IIntentMapper
         {
             Movement = new MovementAction
             {
-                Direction = moveInput.Direction
+                Direction = (Vector2)moveInput.Value
             }
         };
 

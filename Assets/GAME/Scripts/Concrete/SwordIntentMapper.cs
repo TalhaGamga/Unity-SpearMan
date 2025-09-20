@@ -17,7 +17,7 @@ public class SwordIntentMapper : IIntentMapper
             if (snapshot.Movement.State.Equals(MovementType.Fall))
                 return null;
 
-            // Optionally: Only allow if not attacking or in a combo window
+            // Optionally: Only allow if not attacking or in a combo window 
             // if (!snapshot.Combat.IsAttacking && snapshot.Combat.ComboStep == 0)
             //    return ... // only new attack
 
@@ -26,7 +26,7 @@ public class SwordIntentMapper : IIntentMapper
                 return new ActionIntent
                 {
                     // If running, movement type could be set to Run, but typically you go Idle when slashing
-                    Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
+                    Movement = new MovementAction { Direction = (Vector2)runInput.Value, ActionType = MovementType.Idle },
                     Combat = new CombatAction
                     {
                         ActionType = CombatType.Stab,
@@ -39,7 +39,7 @@ public class SwordIntentMapper : IIntentMapper
             {
                 return new ActionIntent
                 {
-                    Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Stab },
+                    Movement = new MovementAction { Direction = (Vector2)runInput.Value, ActionType = MovementType.Stab },
                     Combat = new CombatAction
                     {
                         ActionType = CombatType.Stab,
@@ -55,7 +55,7 @@ public class SwordIntentMapper : IIntentMapper
             return new ActionIntent
             {
                 // If running, movement type could be set to Run, but typically you go Idle when slashing
-                Movement = new MovementAction { Direction = attackInput.Direction, ActionType = MovementType.Idle },
+                Movement = new MovementAction { Direction = (Vector2)runInput.Value, ActionType = MovementType.Idle },
                 Combat = new CombatAction { ActionType = CombatType.GroundedPrimaryAttack }
             };
         }
