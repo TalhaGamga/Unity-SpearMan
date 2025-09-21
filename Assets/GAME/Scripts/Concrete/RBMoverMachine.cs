@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace Movement.Mover
 {
-
     [System.Serializable]
     public class RBMoverMachine : IMover
     {
@@ -21,7 +20,7 @@ namespace Movement.Mover
         private Transform[] _groundCheckPoints;
         private float _groundCheckDistance;
 
-        private Transform _characterorientator;
+        private Transform _characterOrientator;
         private Subject<Unit> _snapshotStreamer = new();
         private BehaviorSubject<MovementType> _transitionStreamer = new(MovementType.Idle);
 
@@ -33,8 +32,8 @@ namespace Movement.Mover
             _manager = movementManager;
             _groundCheckPoints = _manager.GroundCheckPoints;
             _groundCheckDistance = _manager.GroundCheckDistance;
-            _context.GroundLayer = _manager.GroundLayer;
-            _characterorientator = _manager.CharacterOrientator;
+            _context.PlatformLayer = _manager.GroundLayer;
+            _characterOrientator = _manager.CharacterOrientator;
 
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
@@ -174,10 +173,21 @@ namespace Movement.Mover
 
             stabState.OnUpdate.AddListener(() =>
             {
+                if (!_context.IsStabStarted)
+                {
+                    setCharacterOrientator();
+                }
+
+                Vector3 stabDir = findStabDirection();
+
                 if (_context.IsStabbing && !_context.IsStabStarted)
                 {
-                    stab();
                     _context.IsStabStarted = true;
+
+                    Vector3 targetDirection = stabDir;
+                    Vector3 targetPoint = findStabPoint(targetDirection);
+                    stab(targetPoint);
+                    setRotationInStabbing(targetPoint);
                 }
             });
             #endregion
@@ -287,7 +297,7 @@ namespace Movement.Mover
         {
             foreach (var checkPoint in _groundCheckPoints)
             {
-                return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _context.GroundLayer).Length > 0;
+                return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _context.PlatformLayer).Length > 0;
             }
 
             return false;
@@ -324,9 +334,61 @@ namespace Movement.Mover
             _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
-        private void stab()
+        private void stab(Vector3 stabPoint)
         {
-            _context.MoverTransform.DOMove(_context.StabPoint.position, _context.StabDuration).SetEase(_context.StabEase);
+            _context.MoverTransform.DOMove(stabPoint, _context.StabDuration).SetEase(_context.StabEase);
+        }
+
+        private Vector3 findStabDirection()
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, _context.CharacterMouseSensor))
+            {
+                Vector3 baseDir = -_characterOrientator.up;
+                Vector3 dir = (hit.point - _characterOrientator.position).normalized;
+
+                float angle = Vector3.SignedAngle(baseDir, dir, _characterOrientator.right);
+
+                if (angle > 0)
+                    angle = Mathf.Clamp(angle, _context.StabMinAngle, _context.StabMaxAngle);
+                else
+                    angle = Mathf.Clamp(angle, -_context.StabMaxAngle, -_context.StabMinAngle);
+
+                Quaternion rot = Quaternion.AngleAxis(angle, _characterOrientator.right);
+                Vector3 clampedDir = rot * baseDir;
+
+                Debug.DrawLine(_characterOrientator.position, hit.point, Color.yellow);     // raw mouse ray hit
+                Debug.DrawRay(_characterOrientator.position, baseDir * 2f, Color.blue);     // base direction
+                Debug.DrawRay(_characterOrientator.position, dir * 2f, Color.red);          // original dir
+                Debug.DrawRay(_characterOrientator.position, clampedDir * 2f, Color.green); // clamped dir
+
+                return clampedDir.normalized;
+            }
+            return Vector3.zero;
+        }
+
+        private Vector3 findStabPoint(Vector3 direction)
+        {
+            Ray ray = new Ray(_context.MoverTransform.position, direction.normalized);
+            if (Physics.Raycast(ray, out RaycastHit hit, _context.StabRange, _context.PlatformLayer))
+                return hit.point;
+
+            return ray.origin + ray.direction * _context.StabRange;
+        }
+
+        private void setRotationInStabbing(Vector3 stabPoint)
+        {
+            float deltaZ = stabPoint.z - _context.MoverTransform.position.z;
+
+            Vector3 targetEuler = (deltaZ > 0f)
+                ? new Vector3(0f, 0f, 0f)
+                : new Vector3(0f, 180f, 0f);
+
+            _characterOrientator.DOLocalRotate(
+                targetEuler,
+                1f / _context.FaceTurnSpeedInDegree,  // adjust duration according to your speed variable
+                RotateMode.Fast
+            );
         }
 
         private void constraintRbAxisY(bool isAllowed)
@@ -335,6 +397,7 @@ namespace Movement.Mover
                 ? RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY   // lock Y + all rotations
                 : RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX;
         }
+
         private void dash()
         {
             _context.Rb.linearVelocity = new Vector3(0, 0, _context.DashSpeed * _context.LastFaceX);
@@ -382,9 +445,9 @@ namespace Movement.Mover
                 ? Quaternion.Euler(0f, 0f, 0f)
                 : Quaternion.Euler(0f, 180f, 0f);
 
-            _characterorientator.localRotation =
+            _characterOrientator.localRotation =
                 Quaternion.RotateTowards(
-                    _characterorientator.localRotation,
+                    _characterOrientator.localRotation,
                     targetLocalRot,
                     _context.FaceTurnSpeedInDegree * Time.deltaTime
                 );
@@ -412,7 +475,7 @@ namespace Movement.Mover
             public MovementComboType ComboType;
             public Transform StabPoint;
 
-            public LayerMask GroundLayer;
+            public LayerMask PlatformLayer;
             public Vector2 MoveInput;
             public Vector3 RootMotionDeltaPosition;
             public Rigidbody Rb;
@@ -435,7 +498,11 @@ namespace Movement.Mover
             public float DashSpeed = 10f;
             public bool IsDashEnded = false;
             public bool IsStabEnded = false;
+            public float StabRange = 10f;
 
+            public float StabMinAngle = 30;
+            public float StabMaxAngle = 80;
+            public LayerMask CharacterMouseSensor;
             [HideInInspector] public float Gravity;
             [HideInInspector] public float VerticalVelocity;
             [HideInInspector] public float HorizontalVelocity => MoveInput.x * HorizontalSpeed;
