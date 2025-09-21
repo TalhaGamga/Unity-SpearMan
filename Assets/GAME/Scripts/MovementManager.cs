@@ -75,7 +75,7 @@ namespace Movement
         public void SetSpeedModifier(float newModifier) => _speedModifier = newModifier;
         public void SetJumpModifier(float newModifier) => _jumpModifier = newModifier;
 
-        public void HandleInput(MovementAction action)
+        public void HandleAction(MovementAction action)
         {
             _currentMover.HandleAction(action);
         }

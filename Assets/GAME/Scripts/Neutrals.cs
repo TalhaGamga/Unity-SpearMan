@@ -11,7 +11,7 @@ public interface IReactiveCapabilityProvider
 
 public interface IMovementInputReceiver
 {
-    void HandleInput(MovementAction action);
+    void HandleAction(MovementAction action);
     //void SetMoveInput(Vector2 move);
 }
 

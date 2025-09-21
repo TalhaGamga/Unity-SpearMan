@@ -4,16 +4,15 @@ public class ActionSystem
 {
     public Subject<MovementAction> MovementIntentStream { get; } = new();
     public Subject<CombatAction> CombatIntentStream { get; } = new();
-    public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorUpdates { get; } = new();
+    public Subject<IEnumerable<AnimatorParamUpdate>> AnimatorUpdateStream { get; } = new();
 
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
     private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
     private ReactionSnapshot _reactionSnapshot = ReactionSnapshot.Default;
+    private VFXSignal _vfxSnapshot = VFXSignal.Default;
+    private InputSnapshot _currentInputSnapshot = InputSnapshot.Empty;
 
     private readonly CompositeIntentMapper _intentMapper;
-
-    // The latest full input snapshot (provided by PlayerInputHandler)
-    private InputSnapshot _currentInputSnapshot = InputSnapshot.Empty;
 
     public ActionSystem(
         Observable<InputSnapshot> inputSnapshotStream,
@@ -25,7 +24,7 @@ public class ActionSystem
     {
         _intentMapper = intentMapper;
 
-        inputSnapshotStream.Subscribe(OnInputSnapshot);
+        inputSnapshotStream.Subscribe(onInputSnapshot);
 
         movementSnapshotStream.Subscribe(snapshot =>
         {
@@ -37,15 +36,11 @@ public class ActionSystem
             _combatSnapshot = snapshot;
         });
 
-        reactionSnapshotStream.Subscribe(snapshot => _reactionSnapshot = snapshot);
+        reactionSnapshotStream.Subscribe(snapshot =>
+        {
+            _reactionSnapshot = snapshot;
+        });
     }
-
-    private void OnInputSnapshot(InputSnapshot inputSnapshot)
-    {
-        _currentInputSnapshot = inputSnapshot;
-        ProcessIntent();
-    }
-
     public void OnInputOrContextChanged()
     {
         ProcessIntent();
@@ -57,7 +52,7 @@ public class ActionSystem
     _movementSnapshot, _combatSnapshot, _reactionSnapshot);
 
         var updates = AnimationParameterMapper.AnimatorMapper(characterSnapshot);
-        AnimatorUpdates.OnNext(updates);
+        AnimatorUpdateStream.OnNext(updates);
     }
 
     public void ProcessIntent()
@@ -76,6 +71,12 @@ public class ActionSystem
             if (intent.Value.Combat.HasValue)
                 CombatIntentStream.OnNext(intent.Value.Combat.Value);
         }
+    }
+
+    private void onInputSnapshot(InputSnapshot inputSnapshot)
+    {
+        _currentInputSnapshot = inputSnapshot;
+        ProcessIntent();
     }
 
     // Optionally, you can also have public methods to trigger intent processing

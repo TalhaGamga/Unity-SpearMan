@@ -4,6 +4,8 @@ using UnityEngine;
 public class CombatManager : MonoBehaviour, ICombatManager
 {
     public Subject<CombatSnapshot> SnapshotStream { get; } = new();
+    public Subject<VFXSignal> VFXSnapshotStream { get; } = new(); 
+
     public Subject<CombatTransition> TransitionStream { get; } = new();
 
     private IWeapon _currentWeapon;
@@ -35,10 +37,10 @@ public class CombatManager : MonoBehaviour, ICombatManager
 
         _currentWeapon = newWeapon;
         _currentCombat = newWeapon.CreateCombat(this);
-        _currentCombat.Init(this,SnapshotStream,TransitionStream);
+        _currentCombat.Init(this, SnapshotStream, TransitionStream);
     }
 
-    public void HandleInput(CombatAction action)
+    public void HandleAction(CombatAction action)
     {
         _currentCombat?.HandleAction(action);
     }

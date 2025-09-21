@@ -8,6 +8,7 @@ public class CharacterHub : MonoBehaviour
     [SerializeField] private AnimatorSystem _animatorSystem;
     [SerializeField] private MovementManager _movementManager;
     [SerializeField] private CombatManager _combatManager;
+    [SerializeField] private VFXManager _vfxManager;
 
     public ActionSystem _actionSystem;
     private Subject<ReactionSnapshot> _dummyReactionSnapshotStream = new();
@@ -36,11 +37,11 @@ public class CharacterHub : MonoBehaviour
         });
 
         _actionSystem.MovementIntentStream
-            .Subscribe(_movementManager.HandleInput)
+            .Subscribe(_movementManager.HandleAction)
             .AddTo(_disposables);
 
         _actionSystem.CombatIntentStream
-            .Subscribe(_combatManager.HandleInput)
+            .Subscribe(_combatManager.HandleAction)
             .AddTo(_disposables);
 
         _movementManager.SnapshotStream.
@@ -51,7 +52,7 @@ public class CharacterHub : MonoBehaviour
             Subscribe(_ => _actionSystem.ProcessAnimator())
             .AddTo(_disposables);
 
-        _actionSystem.AnimatorUpdates
+        _actionSystem.AnimatorUpdateStream
             .Subscribe(_animatorSystem.HandleAnimatorUpdates)
             .AddTo(_disposables);
 
@@ -65,6 +66,10 @@ public class CharacterHub : MonoBehaviour
 
         _animatorSystem.MovementAnimationFrameStream
             .Subscribe(_movementManager.OnAnimationFrame)
+            .AddTo(_disposables);
+
+        _combatManager.VFXSnapshotStream
+            .Subscribe(_vfxManager.HandleVFXSignal)
             .AddTo(_disposables);
     }
 

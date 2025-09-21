@@ -5,13 +5,6 @@ using System.Collections;
 
 public sealed class AnimatorSystem : MonoBehaviour
 {
-    [Header("Animator parameter names")]
-    [SerializeField] string moveStateParam = "MoveState";
-    [SerializeField] string moveSpeedParam = "MoveSpeed";
-    [SerializeField] string combatStateParam = "CombatState";
-    [SerializeField] string energyParam = "Energy";
-    [SerializeField] string isHitParam = "IsHit";
-
     private Animator _anim;
     private readonly CompositeDisposable _disposables = new();
 
@@ -23,10 +16,8 @@ public sealed class AnimatorSystem : MonoBehaviour
     private readonly Subject<CombatAnimationFrame> _combatAnimationStream = new();
     private readonly Subject<MovementAnimationFrame> _movementAnimationStream = new();
 
-    // KEY: trigger name, VALUE: frames left before reset
     private Dictionary<string, float> _pendingTriggerResets = new();
 
-    // How many frames to delay trigger reset. 2 is a safe starting value.
     private const float TRIGGER_RESET_TIME = 0.1f;
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
@@ -117,11 +108,6 @@ public sealed class AnimatorSystem : MonoBehaviour
                     break;
             }
         }
-    }
-
-    void ApplyReaction(in ReactionSnapshot s)
-    {
-        _anim.SetBool(isHitParam, s.State == ReactionType.Hit);
     }
 
     public void ShakeCamera()
