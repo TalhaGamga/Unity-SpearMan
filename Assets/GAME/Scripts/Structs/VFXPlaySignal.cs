@@ -1,9 +1,10 @@
 using UnityEngine;
 
 
-public readonly struct VFXSignal
+public readonly struct VFXPlaySignal
 {
-    public readonly VFXType Type;
+    public readonly SystemType SystemType;
+    public readonly VFXType VFXType;
     public readonly Vector3 Position;
     public readonly Quaternion Rotation;
     public readonly Vector3 PositionOffset;
@@ -16,8 +17,10 @@ public readonly struct VFXSignal
     public readonly int InstanceId;
     public readonly float PlaybackRate;
     public readonly float StartDelay;
-    public VFXSignal(
-        VFXType type,
+
+    public VFXPlaySignal(
+        SystemType systemType,
+        VFXType vfxType,
         Vector3 position,
         Quaternion rotation,
         Vector3 positionOffset,
@@ -31,7 +34,8 @@ public readonly struct VFXSignal
         float playbackRate = 1f,
         float startDelay = 0f)
     {
-        Type = type;
+        SystemType = systemType;
+        VFXType = vfxType;
         Position = position;
         Rotation = rotation;
         PositionOffset = positionOffset;
@@ -46,5 +50,5 @@ public readonly struct VFXSignal
         StartDelay = startDelay;
     }
 
-    public static VFXSignal Default => new VFXSignal(VFXType.None, Vector3.zero, Quaternion.identity, Vector3.zero, Vector3.zero,Vector3.one);
+    public static VFXPlaySignal Default => new VFXPlaySignal(SystemType.Default, VFXType.None, Vector3.zero, Quaternion.identity, Vector3.zero, Vector3.zero, Vector3.one);
 }

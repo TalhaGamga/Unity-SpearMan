@@ -4,7 +4,7 @@ using UnityEngine;
 public class CombatManager : MonoBehaviour, ICombatManager
 {
     public Subject<CombatSnapshot> SnapshotStream { get; } = new();
-    public Subject<VFXSignal> VFXSnapshotStream { get; } = new(); 
+    public Subject<VFXPlaySignal> VFXSnapshotStream { get; } = new(); 
 
     public Subject<CombatTransition> TransitionStream { get; } = new();
 

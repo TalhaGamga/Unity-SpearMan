@@ -9,7 +9,7 @@ public class ActionSystem
     private MovementSnapshot _movementSnapshot = MovementSnapshot.Default;
     private CombatSnapshot _combatSnapshot = CombatSnapshot.Default;
     private ReactionSnapshot _reactionSnapshot = ReactionSnapshot.Default;
-    private VFXSignal _vfxSnapshot = VFXSignal.Default;
+    private VFXPlaySignal _vfxSnapshot = VFXPlaySignal.Default;
     private InputSnapshot _currentInputSnapshot = InputSnapshot.Empty;
 
     private readonly CompositeIntentMapper _intentMapper;

@@ -68,13 +68,13 @@ public class CharacterHub : MonoBehaviour
             .Subscribe(_movementManager.OnAnimationFrame)
             .AddTo(_disposables);
 
-        _combatManager.VFXSnapshotStream
-            .Subscribe(_vfxManager.HandleVFXSignal)
-            .AddTo(_disposables);
+        //_combatManager.VFXSnapshotStream
+        //    .Subscribe(_vfxManager.HandleVFXSignal)
+        //    .AddTo(_disposables);
     }
 
     private void OnDestroy()
     {
         _disposables.Dispose();
-    }
+    }   
 }
