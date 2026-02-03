@@ -76,5 +76,5 @@ public class CharacterHub : MonoBehaviour
     private void OnDestroy()
     {
         _disposables.Dispose();
-    }   
+    }
 }

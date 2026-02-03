@@ -20,7 +20,7 @@ public sealed class BulletDamageEventSource : IDamageEventSource
         _force = direction * strength;
     }
 
-    public Observable<IReactiveEvent> Stream(GameObject target)
+    public Observable<IReactiveEvent> Stream()
     {
         return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
             .Concat(Observable.Return<IReactiveEvent>(new KnockbackEvent(_direction, _strength))

@@ -361,7 +361,7 @@ public interface IReactiveEvent
 
 public interface IDamageEventSource
 {
-    Observable<IReactiveEvent> Stream(GameObject target);
+    Observable<IReactiveEvent> Stream();
 }
 
 public interface IIntentMapper

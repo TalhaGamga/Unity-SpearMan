@@ -1,6 +1,5 @@
 using R3;
 using System;
-using UnityEngine;
 
 public sealed class BleedDamageEventSource : IDamageEventSource
 {
@@ -17,7 +16,7 @@ public sealed class BleedDamageEventSource : IDamageEventSource
         _fx = fx;
     }
 
-    public Observable<IReactiveEvent> Stream(GameObject target)
+    public Observable<IReactiveEvent> Stream()
     {
         return Observable.Interval(TimeSpan.FromSeconds(_interval))
             .Take(_ticks)
