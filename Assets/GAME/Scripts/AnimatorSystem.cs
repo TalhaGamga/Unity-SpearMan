@@ -112,7 +112,7 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     public void ShakeCamera()
     {
-        CameraManager.Shake();
+        //CameraManager.Shake();
     }
 
     void OnDestroy() => _disposables.Dispose();
