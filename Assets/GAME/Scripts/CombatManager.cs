@@ -4,7 +4,7 @@ using UnityEngine;
 public class CombatManager : MonoBehaviour, ICombatManager
 {
     public Subject<CombatSnapshot> SnapshotStream { get; } = new();
-    public Subject<VFXPlaySignal> VFXSnapshotStream { get; } = new(); 
+    public Subject<VFXPlaySignal> VFXSnapshotStream { get; } = new();
 
     public Subject<CombatTransition> TransitionStream { get; } = new();
 
@@ -16,7 +16,16 @@ public class CombatManager : MonoBehaviour, ICombatManager
 
     private void Awake()
     {
+        IWeapon weapon = GetComponentInChildren<IWeapon>();
+        
+        if (weapon == null)
+        {
+            this.enabled = false;
+            return;
+        }
+
         SetWeapon(GetComponentInChildren<IWeapon>());
+
     }
 
     private void OnDestroy()

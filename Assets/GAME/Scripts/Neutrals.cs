@@ -294,8 +294,7 @@ public interface IHitscanProjectile : IProjectile
 
 public interface IInputHandler
 {
-    void BindInputs();
-    void UnbindInputs();
+    BehaviorSubject<InputSnapshot> InputSnapshotStream { get; }
 }
 
 public interface IAnimationHandler

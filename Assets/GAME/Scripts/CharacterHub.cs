@@ -4,18 +4,20 @@ using UnityEngine;
 
 public class CharacterHub : MonoBehaviour
 {
-    [SerializeField] private PlayerInputHandler _inputHandler;
+    [SerializeField] private MonoBehaviour _inputHandlerSource;
     [SerializeField] private AnimatorSystem _animatorSystem;
     [SerializeField] private MovementManager _movementManager;
     [SerializeField] private CombatManager _combatManager;
-    [SerializeField] private VFXManager _vfxManager;
 
+    private IInputHandler _inputHandler;
     public ActionSystem _actionSystem;
     private Subject<ReactionSnapshot> _dummyReactionSnapshotStream = new();
     private CompositeDisposable _disposables = new();
 
     private void Awake()
     {
+        _inputHandler = _inputHandlerSource as IInputHandler;
+
         _actionSystem = new ActionSystem(
             _inputHandler.InputSnapshotStream,
             _movementManager.SnapshotStream,

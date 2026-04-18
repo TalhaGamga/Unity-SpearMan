@@ -2,7 +2,7 @@ using R3;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerInputHandler : MonoBehaviour
+public class PlayerInputHandler : MonoBehaviour, IInputHandler
 {
     public BehaviorSubject<InputSnapshot> InputSnapshotStream { get; }
         = new BehaviorSubject<InputSnapshot>(InputSnapshot.Empty);
