@@ -8,6 +8,7 @@ public class CharacterHub : MonoBehaviour
     [SerializeField] private AnimatorSystem _animatorSystem;
     [SerializeField] private MovementManager _movementManager;
     [SerializeField] private CombatManager _combatManager;
+    [SerializeField] private ReactionManager _reactionManager;
 
     private IInputHandler _inputHandler;
     public ActionSystem _actionSystem;
@@ -23,8 +24,12 @@ public class CharacterHub : MonoBehaviour
             _movementManager.SnapshotStream,
             _combatManager.SnapshotStream,
             _dummyReactionSnapshotStream,
-            new CompositeIntentMapper(new SwordIntentMapper(), new MovementIntentMapper())
+            new CompositeIntentMapper(new ReactionIntentMapper(), new SwordIntentMapper(), new MovementIntentMapper())
             );
+
+        _inputHandler.InputSnapshotStream
+        .Subscribe(_ => _actionSystem.ProcessIntent())
+        .AddTo(_disposables);
 
         _movementManager.TransitionStream
         .Subscribe(transition =>
@@ -37,6 +42,10 @@ public class CharacterHub : MonoBehaviour
         {
             _actionSystem.ProcessIntent();
         });
+
+        _reactionManager.TransitionStream
+        .Subscribe(_ => _actionSystem.ProcessIntent())
+        .AddTo(_disposables);
 
         _actionSystem.MovementIntentStream
             .Subscribe(_movementManager.HandleAction)
@@ -53,6 +62,10 @@ public class CharacterHub : MonoBehaviour
         _combatManager.SnapshotStream.
             Subscribe(_ => _actionSystem.ProcessAnimator())
             .AddTo(_disposables);
+
+        _reactionManager.SnapshotStream
+        .Subscribe(_ => _actionSystem.ProcessAnimator())
+        .AddTo(_disposables);
 
         _actionSystem.AnimatorUpdateStream
             .Subscribe(_animatorSystem.HandleAnimatorUpdates)

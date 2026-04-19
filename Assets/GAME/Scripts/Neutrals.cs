@@ -43,6 +43,11 @@ public interface ICombatManager
     //public float CritModifier { get; set; }
 }
 
+public interface IReactionManager
+{
+
+}
+
 public interface ICombat
 {
     public CombatType CombatType { get; }
@@ -69,6 +74,20 @@ public interface IMover
     public void OnAnimationFrame(MovementAnimationFrame animationFrame);
 
     public void UpdateMover(float deltaTime);
+}
+
+public interface IReactor
+{
+    public ReactionType CurrentType { get; }
+
+    void Init(
+    IReactionManager reactionManager,
+    Subject<ReactionSnapshot> snapshotStream,
+    Subject<ReactionTransition> transitionStream);
+
+    void End();
+    void HandleAction(ReactionAction action);
+    void UpdateReactor(float deltaTime);
 }
 
 public interface IState
@@ -351,6 +370,11 @@ public interface IKnockbackable
 public interface IDestructible
 {
     void Break();
+}
+
+public interface IHitReactable
+{
+    void React(HitReactionData reaction);
 }
 
 public interface IReactiveEvent

@@ -1,6 +1,28 @@
-﻿public readonly struct ReactionSnapshot
+﻿using UnityEngine;
+
+public struct ReactionSnapshot
 {
-    public readonly ReactionType State; public readonly float Impact;
-    public ReactionSnapshot(ReactionType state, float impact) { State = state; Impact = impact; }
-    public static ReactionSnapshot Default => new ReactionSnapshot(ReactionType.None, 0);
+    public static readonly ReactionSnapshot Default = new ReactionSnapshot
+    {
+        State = ReactionType.None,
+        Direction = Vector2.zero,
+        Force = 0f,
+        Duration = 0f,
+        IsInHitStun = false,
+        IsAirborneByReaction = false,
+        LocksMovementInput = false,
+        LocksCombatInput = false,
+        AllowsAirDrift = false
+    };
+
+    public ReactionType State;
+    public Vector2 Direction;
+    public float Force;
+    public float Duration;
+
+    public bool IsInHitStun;
+    public bool IsAirborneByReaction;
+    public bool LocksMovementInput;
+    public bool LocksCombatInput;
+    public bool AllowsAirDrift;
 }

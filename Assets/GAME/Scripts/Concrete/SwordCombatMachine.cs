@@ -103,7 +103,6 @@ namespace Combat
             });
             #endregion
 
-
             #region OnExit
             grPA_S1.OnExit.AddListener(() =>
             {

@@ -1,1 +1,12 @@
-public enum ReactionType { None, Hit, Dead }
+public enum ReactionType
+{
+    None,
+    LightHit,
+    HeavyHit,
+    Knockback,
+    Launch,
+    AirJuggle,
+    Knockdown,
+    Recovery,
+    Dead
+}

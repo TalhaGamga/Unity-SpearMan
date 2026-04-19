@@ -76,7 +76,7 @@ public class ActionSystem
     private void onInputSnapshot(InputSnapshot inputSnapshot)
     {
         _currentInputSnapshot = inputSnapshot;
-        ProcessIntent();
+        //ProcessIntent();
     }
 
     // Optionally, you can also have public methods to trigger intent processing
