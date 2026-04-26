@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 862ef19a604dd07468275d5de62ee271, type: 3}
+  m_Name: DB_SwordAttack
+  m_EditorClassIdentifier: 
+  _attacks:
+  - {fileID: 11400000, guid: 835e317821180f94db2bf677846c9df6, type: 2}
+  - {fileID: 11400000, guid: de48fb5b53bcb354fa10426df1ec0ea8, type: 2}
+  - {fileID: 11400000, guid: 137e3d8b2dac7034e80005a2ee27f54f, type: 2}
+  - {fileID: 11400000, guid: 99da901acab265645b07393cf566274e, type: 2}

@@ -8,5 +8,6 @@ public enum ReactionType
     AirJuggle,
     Knockdown,
     Recovery,
+    Pierced,
     Dead
 }

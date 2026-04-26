@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public struct HitReaction
 {
     public ReactionType Type;

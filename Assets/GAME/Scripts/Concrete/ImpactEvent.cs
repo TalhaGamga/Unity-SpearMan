@@ -9,6 +9,6 @@ public sealed class ImpactEvent : IReactiveEvent
 
     public void Consume(TargetContext ctx)
     {
-        ctx.Knockbackable?.ApplyImpact(_data);
+        ctx.Impactable?.ApplyImpact(_data);
     }
 }
