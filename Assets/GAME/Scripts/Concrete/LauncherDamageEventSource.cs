@@ -16,17 +16,19 @@ public sealed class LauncherDamageEventSource : IDamageEventSource
 
     public Observable<IReactiveEvent> Stream()
     {
-        var reaction = new HitReactionData
-        {
-            Type = HitReactionType.Launch,
-            Direction = _direction,
-            Force = _force,
-            Lift = 1.5f,
-            CausesUngrounded = true,
-            CanChainFromAir = false
-        };
+        //var reaction = new HitReactionData
+        //{
+        //    Type = HitReactionType.Launch,
+        //    Direction = _direction,
+        //    Force = _force,
+        //    Lift = 1.5f,
+        //    CausesUngrounded = true,
+        //    CanChainFromAir = false
+        //};
 
-        return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
-            .Concat(Observable.Return<IReactiveEvent>(new HitReactEvent(reaction)));
+        //return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
+        //    .Concat(Observable.Return<IReactiveEvent>(new HitReactEvent(reaction)));
+
+        return null;
     }
 }

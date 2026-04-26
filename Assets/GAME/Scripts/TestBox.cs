@@ -1,7 +1,7 @@
 using UnityEngine;
 using DinoFracture;
 
-public class TestBox : MonoBehaviour, IDamageable, IKnockbackable, IDestructible
+public class TestBox : MonoBehaviour, IDamageable, IImpactable, IDestructible
 {
     private Rigidbody _rb;
     [SerializeField] private PreFracturedGeometry _preFractured;
@@ -11,13 +11,6 @@ public class TestBox : MonoBehaviour, IDamageable, IKnockbackable, IDestructible
     {
         _rb = GetComponent<Rigidbody>();
     }
-
-    public void ApplyForce(Vector3 direction)
-    {
-        _rb.AddForce(direction, ForceMode.Impulse);
-        Debug.Log("Force Applied: " + direction);
-    }
-
     public void ReceiveDamage(float amount)
     {
         Debug.Log("Damage Received");
@@ -39,5 +32,9 @@ public class TestBox : MonoBehaviour, IDamageable, IKnockbackable, IDestructible
         {
             Debug.Log($"DinoDestructible on {gameObject.name} has no fracture component attached.");
         }
+    }
+
+    public void ApplyImpact(ImpactData data)
+    {
     }
 }

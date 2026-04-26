@@ -9,17 +9,17 @@ namespace DevVorpian
     [System.Serializable]
     public class StateMachine<StateType>
     {
-        public UnityEvent OnTransitionedAutonomously = new();
+        [HideInInspector] public UnityEvent OnTransitionedAutonomously = new();
         public string CurrentStateName => _currentState.StateName;
 
-        private List<StateTransition<StateType>> _intentBasedTransitions;
+        private List<StateTransition<StateType>> _inputBasedTransitions;
         private List<StateTransition<StateType>> _autonomicTransitions;
 
         private IState _currentState;
 
         public StateMachine()
         {
-            _intentBasedTransitions = new();
+            _inputBasedTransitions = new();
             _autonomicTransitions = new();
             _currentState = new ConcreteState();
         }
@@ -32,7 +32,7 @@ namespace DevVorpian
 
         public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)
         {
-            _intentBasedTransitions.Add(stateTransition);
+            _inputBasedTransitions.Add(stateTransition);
         }
 
         public void AddAutonomicTransition(StateTransition<StateType> stateTransition)
@@ -76,14 +76,14 @@ namespace DevVorpian
 
         private StateTransitionData findInputBasedTransition(StateType targetStateType)
         {
-            foreach (var t in _intentBasedTransitions)
+            foreach (var t in _inputBasedTransitions)
             {
                 if (!t.TargetStateType.Equals(targetStateType)) continue;
                 if (t.From != null && t.From.Equals(_currentState) && t.Condition())
                     return new StateTransitionData(t.To, t.OnTransition);
             }
 
-            foreach (var t in _intentBasedTransitions)
+            foreach (var t in _inputBasedTransitions)
             {
                 if (!t.TargetStateType.Equals(targetStateType)) continue;
                 if (t.From == null && !_currentState.Equals(t.To) && t.Condition())

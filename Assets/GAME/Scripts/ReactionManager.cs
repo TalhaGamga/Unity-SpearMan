@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public class ReactionManager : MonoBehaviour, IReactionManager
+public class ReactionManager : MonoBehaviour, IReactionManager, IHitReactable
 {
     public Subject<ReactionSnapshot> SnapshotStream { get; } = new();
     public Subject<ReactionTransition> TransitionStream { get; } = new();
@@ -34,8 +34,8 @@ public class ReactionManager : MonoBehaviour, IReactionManager
         _currentReactor?.Init(this, SnapshotStream, TransitionStream);
     }
 
-    public void HandleAction(ReactionAction action)
+    public void HandleReaction(HitReaction reaction)
     {
-        _currentReactor?.HandleAction(action);
+        _currentReactor?.HandleAction(reaction);
     }
 }

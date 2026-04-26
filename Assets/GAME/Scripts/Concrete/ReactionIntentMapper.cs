@@ -49,7 +49,7 @@ public class ReactionIntentMapper : IIntentMapper
                     ActionType = MovementType.Fall, // this should change   
                     Direction = reaction.AllowsAirDrift
                         ? TryReadMove(inputSnapshot)
-                        : reaction.ForcedDirection,
+                        : reaction.Direction,
                     ReactionState = reaction.State
                 },
                 Combat = new CombatAction

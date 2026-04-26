@@ -45,7 +45,7 @@ public interface ICombatManager
 
 public interface IReactionManager
 {
-
+    void SetReactor(IReactor newReactor);
 }
 
 public interface ICombat
@@ -86,7 +86,7 @@ public interface IReactor
     Subject<ReactionTransition> transitionStream);
 
     void End();
-    void HandleAction(ReactionAction action);
+    void HandleAction(HitReaction action);
     void UpdateReactor(float deltaTime);
 }
 
@@ -362,9 +362,9 @@ public interface IDamageable
 {
     void ReceiveDamage(float amount);
 }
-public interface IKnockbackable
+public interface IImpactable
 {
-    void ApplyForce(Vector3 vector3);
+    void ApplyImpact(ImpactData data);
 }
 
 public interface IDestructible
@@ -374,7 +374,7 @@ public interface IDestructible
 
 public interface IHitReactable
 {
-    void React(HitReactionData reaction);
+    void HandleReaction(HitReaction reaction);
 }
 
 public interface IReactiveEvent

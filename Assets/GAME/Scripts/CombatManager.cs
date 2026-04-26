@@ -17,7 +17,7 @@ public class CombatManager : MonoBehaviour, ICombatManager
     private void Awake()
     {
         IWeapon weapon = GetComponentInChildren<IWeapon>();
-        
+
         if (weapon == null)
         {
             this.enabled = false;

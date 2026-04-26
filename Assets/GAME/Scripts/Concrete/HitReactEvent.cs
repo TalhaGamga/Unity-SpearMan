@@ -1,14 +1,14 @@
 public sealed class HitReactEvent : IReactiveEvent
 {
-    private readonly HitReactionData _data;
+    private readonly HitReaction _data;
 
-    public HitReactEvent(HitReactionData data)
+    public HitReactEvent(HitReaction data)
     {
         _data = data;
     }
 
     public void Consume(TargetContext ctx)
     {
-        ctx.HitReactable?.React(_data);
+        ctx.HitReactable?.HandleReaction(_data);
     }
 }

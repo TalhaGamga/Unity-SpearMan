@@ -23,7 +23,7 @@ public sealed class BulletDamageEventSource : IDamageEventSource
     public Observable<IReactiveEvent> Stream()
     {
         return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
-            .Concat(Observable.Return<IReactiveEvent>(new KnockbackEvent(_direction, _strength))
-            .Concat(Observable.Return<IReactiveEvent>(new BreakEvent())));
+            //.Concat(Observable.Return<IReactiveEvent>(new KnockbackEvent(_direction, _strength))
+            .Concat(Observable.Return<IReactiveEvent>(new BreakEvent()));
     }
 }
