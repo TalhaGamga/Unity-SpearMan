@@ -1,7 +1,14 @@
 public sealed class DamageEvent : IReactiveEvent
 {
-    private readonly float _amount;
-    public DamageEvent(float amount) => _amount = amount;
+    private readonly float _damage;
 
-    public void Consume(TargetContext ctx) => ctx.Damageable?.ReceiveDamage(_amount);
+    public DamageEvent(float damage)
+    {
+        _damage = damage;
+    }
+
+    public void Consume(TargetContext ctx)
+    {
+        ctx.Damageable?.ReceiveDamage(_damage);
+    }
 }

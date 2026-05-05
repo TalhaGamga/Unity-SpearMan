@@ -38,5 +38,12 @@ public static class AnimationParameterMapper
             ParamType = AnimatorParamUpdateType.Int,
             Value = snapshot.Combat.Version
         };
+
+        yield return new AnimatorParamUpdate
+        {
+            ParamName = snapshot.Reaction.State.ToString(),
+            ParamType = AnimatorParamUpdateType.Trigger,
+            Value = snapshot.Reaction.Force
+        };
     }
 }

@@ -1,6 +1,8 @@
 using DevVorpian;
 using Movement.State;
 using R3;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Combat
@@ -12,18 +14,28 @@ namespace Combat
 
         [SerializeField] private Context _context;
         [SerializeField] private StateMachine<CombatType> _stateMachine;
+        [SerializeField] private AttackDatabase _attackDatabase;
+        [SerializeField] private ComboAttackKey[] _comboAttackKeys;
 
-        private readonly Sword _view;
+        private AttackDefinition _activeAttack;
+        private bool _canDealDamage;
+        private readonly HashSet<GameObject> _hitTargets = new();
+        private bool _isHitWindowOpen;
+        private Dictionary<int, string> _comboAttackLookup;
+
+        private Sword _view;
         private readonly Subject<Unit> _snapshotStreamer = new();
         private readonly BehaviorSubject<CombatType> _transitionStreamer = new(CombatType.Idle);
 
         private CompositeDisposable _disposables = new();
         private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
         private CombatType _currentCombatType;
-        //public SwordCombatMachine(Sword view)
-        //{
-        //    _view = view;
-        //}
+
+
+        public void SetSwordView(Sword view)
+        {
+            _view = view;
+        }
 
         public void Init(ICombatManager combatManager, Subject<CombatSnapshot> snapshotStream, Subject<CombatTransition> transitionStream)
         {
@@ -185,22 +197,32 @@ namespace Combat
 
             switch (frame.EventKey)
             {
+                case "HitFrameOpen":
+                    openHitFrame();
+                    break;
+
+                case "HitFrameClose":
+                    closeHitFrame();
+                    break;
+
                 case "Cancelable":
                     setCancelable(true);
                     submitSnapshot();
                     submitTransitionStream();
                     break;
+
                 case "ComboWindowOpen":
                     setCanCombo(true);
                     break;
+
                 case "ComboWindowClose":
                     setCanCombo(false);
                     break;
+
                 case "SlashEnd":
                     setAttackSequence(false);
                     setCanCombo(false);
-                    break;
-                default:
+                    closeHitFrame();
                     break;
             }
         }
@@ -212,10 +234,35 @@ namespace Combat
         public void Update(float deltaTime)
         {
             _stateMachine.Update();
+
+            if (_isHitWindowOpen && _activeAttack != null)
+            {
+                processHitFrame();
+            }
         }
 
         public void End()
         {
+        }
+
+        private void openHitFrame()
+        {
+            if (!tryResolveAttackDefinition(out _activeAttack))
+            {
+                _isHitWindowOpen = false;
+                _activeAttack = null;
+                return;
+            }
+
+            _hitTargets.Clear();
+            _isHitWindowOpen = true;
+        }
+
+        private void closeHitFrame()
+        {
+            _isHitWindowOpen = false;
+            _activeAttack = null;
+            _hitTargets.Clear();
         }
 
         private void setContextState(CombatType combatType)
@@ -260,6 +307,55 @@ namespace Combat
             return Vector3.zero;
         }
 
+        private void buildComboAttackLookup()
+        {
+            _comboAttackLookup = new Dictionary<int, string>();
+
+            if (_comboAttackKeys == null)
+                return;
+
+            foreach (var entry in _comboAttackKeys)
+            {
+                if (entry.ComboStep <= 0 || string.IsNullOrWhiteSpace(entry.AttackKey))
+                    continue;
+
+                _comboAttackLookup[entry.ComboStep] = entry.AttackKey;
+            }
+        }
+
+        private bool tryResolveAttackDefinition(out AttackDefinition attack)
+        {
+            attack = null;
+
+            if (_attackDatabase == null)
+            {
+                return false;
+            }
+
+            if (_comboAttackLookup == null)
+                buildComboAttackLookup();
+
+            if (!_comboAttackLookup.TryGetValue(_context.ComboStep, out var key))
+            {
+                return false;
+            }
+
+            if (!_attackDatabase.TryGet(key, out attack))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void processHitFrame()
+        {
+            if (!tryResolveAttackDefinition(out var attack))
+                return;
+
+            _view.ProcessHitWindow(_activeAttack, _hitTargets);
+        }
+
         [System.Serializable]
         public class Context
         {
@@ -269,6 +365,14 @@ namespace Combat
             public bool CanCombo;
             public int ComboStep;
             public int Version = 0;
+        }
+
+
+        [Serializable]
+        private struct ComboAttackKey
+        {
+            public int ComboStep;
+            public string AttackKey;
         }
     }
 }

@@ -1,4 +1,4 @@
-public class BreakEvent : IReactiveEvent
+public sealed class BreakEvent : IReactiveEvent
 {
     public void Consume(TargetContext ctx)
     {

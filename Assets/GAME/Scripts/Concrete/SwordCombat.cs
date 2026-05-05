@@ -2,6 +2,7 @@ using R3;
 using System;
 using UnityEngine;
 
+// Legacy
 public class SwordCombat : ICombat
 {
     public CombatType CombatType => _currentSnapshot.State;

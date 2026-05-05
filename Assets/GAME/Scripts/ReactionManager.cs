@@ -36,6 +36,8 @@ public class ReactionManager : MonoBehaviour, IReactionManager, IHitReactable
 
     public void HandleReaction(HitReaction reaction)
     {
+        Debug.Log($"{name} received reaction: {reaction.Type}");
+
         _currentReactor?.HandleAction(reaction);
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Sword_Light
   m_EditorClassIdentifier: 
   Key: Sword_Light_1
-  Damage: 5
+  Damage: 10
   HasImpact: 0
   Impact:
     Direction: {x: 0, y: 0, z: 0}
@@ -23,8 +23,8 @@ MonoBehaviour:
   Reaction:
     Type: 1
     Direction: {x: 0, y: 0}
-    Force: 0.5
-    Duration: 0.12
+    Force: 1
+    Duration: 0.25
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0

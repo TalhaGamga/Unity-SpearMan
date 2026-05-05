@@ -62,6 +62,8 @@ public interface ICombat
 public interface IWeapon
 {
     ICombat CreateCombat(ICombatManager combatManager);
+
+    //bool TryGetAttackDefinition(string key, out AttackDefinition attack);
 }
 
 public interface IMover
