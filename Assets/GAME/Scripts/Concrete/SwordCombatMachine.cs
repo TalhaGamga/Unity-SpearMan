@@ -31,7 +31,6 @@ namespace Combat
         private CombatSnapshot _currentSnapshot = CombatSnapshot.Default;
         private CombatType _currentCombatType;
 
-
         public void SetSwordView(Sword view)
         {
             _view = view;
@@ -350,8 +349,8 @@ namespace Combat
 
         private void processHitFrame()
         {
-            if (!tryResolveAttackDefinition(out var attack))
-                return;
+            //if (!tryResolveAttackDefinition(out var attack))
+            //    return;
 
             _view.ProcessHitWindow(_activeAttack, _hitTargets);
         }

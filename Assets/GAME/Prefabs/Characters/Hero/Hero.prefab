@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8681127858011271726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5705605065776684112}
+  m_Layer: 0
+  m_Name: HitboxCenter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5705605065776684112
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8681127858011271726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.00000035146866, y: -0.000000013873763, z: 1.2414031}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2823156507801241742}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1020897678230575603
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8,6 +39,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 695269852706644201, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _hitboxCenter
+      value: 
+      objectReference: {fileID: 5705605065776684112}
+    - target: {fileID: 695269852706644201, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _halfExtents.x
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 695269852706644201, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _halfExtents.y
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 695269852706644201, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _halfExtents.z
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 695269852706644201, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _targetLayer.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 969792262171777762, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -48,13 +99,146 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _dispatcher
+      value: 
+      objectReference: {fileID: 374661155237956300}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _attackDatabase
+      value: 
+      objectReference: {fileID: 11400000, guid: e297cf692daa4ff4fad558b78c61383b, type: 2}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._attackDatabase
+      value: 
+      objectReference: {fileID: 11400000, guid: e297cf692daa4ff4fad558b78c61383b, type: 2}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[0].AttackKey
+      value: Sword_Light_1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[0].ComboStep
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[1].AttackKey
+      value: Sword_Light_2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[1].ComboStep
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[2].AttackKey
+      value: Sword_Heavy
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[2].ComboStep
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 5970298094073906991, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: m_Name
       value: Hero
       objectReference: {fileID: 0}
+    - target: {fileID: 7281300465575250766, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _reactionManager
+      value: 
+      objectReference: {fileID: 2366259291784733512}
+    - target: {fileID: 7281300465575250766, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _inputHandlerSource
+      value: 
+      objectReference: {fileID: 3920620127407895090}
     m_RemovedComponents:
     - {fileID: 7737928755240682810, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 2956376645984260477, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5705605065776684112}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5970298094073906991, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      insertIndex: 5
+      addedObject: {fileID: 2366259291784733512}
+    - targetCorrespondingSourceObject: {fileID: 1450742503472309788, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 374661155237956300}
   m_SourcePrefab: {fileID: 100100000, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+--- !u!1 &1876003890641731567 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1450742503472309788, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+  m_PrefabInstance: {fileID: 1020897678230575603}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &374661155237956300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876003890641731567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7e7af57976f8b0458f54e80f16d604d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &2823156507801241742 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2956376645984260477, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+  m_PrefabInstance: {fileID: 1020897678230575603}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3920620127407895090 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4053840257015131073, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+  m_PrefabInstance: {fileID: 1020897678230575603}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6696913649644330716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30dab9dcb4c28ed4297450a181a9e6d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1 &6696913649644330716 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5970298094073906991, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+  m_PrefabInstance: {fileID: 1020897678230575603}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2366259291784733512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6696913649644330716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aabe3de0313c7046a9c5a2f42b41fac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _reactionMachine:
+    _context:
+      State: 0
+      PendingAction:
+        Type: 0
+        Direction: {x: 0, y: 0}
+        Force: 0
+        Duration: 0
+        LocksMovementInput: 0
+        LocksCombatInput: 0
+        AllowsAirDrift: 0
+      Direction: {x: 0, y: 0}
+      Force: 0
+      Duration: 0
+      Elapsed: 0
+      IsInHitStun: 0
+      IsAirborneByReaction: 0
+      LocksMovementInput: 0
+      LocksCombatInput: 0
+      AllowsAirDrift: 0
+      RecoveryDuration: 0.12
+      MinStateDuration: 0.05
+    _stateMachine:
+      OnTransitionedAutonomously:
+        m_PersistentCalls:
+          m_Calls: []
