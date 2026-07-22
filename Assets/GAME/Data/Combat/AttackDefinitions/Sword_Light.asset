@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Key: Sword_Light_1
   Damage: 10
-  HasImpact: 0
+  HasImpact: 1
   Impact:
-    Direction: {x: 0, y: 0, z: 0}
-    Force: 0
+    Direction: {x: 0, y: 0, z: 15}
+    Force: 25
     Point: {x: 0, y: 0, z: 0}
   HasReaction: 1
   Reaction:
@@ -28,4 +28,8 @@ MonoBehaviour:
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0
-  Breaks: 0
+  IsDestructive: 1
+  Destruct:
+    Direction: {x: 0, y: 0, z: 0}
+    Force: 0
+    Point: {x: 0, y: 0, z: 0}
