@@ -1,3 +1,5 @@
+using UnityEngine.Serialization;
+
 [System.Serializable]
 public class AttackReactiveProfile
 {
@@ -9,5 +11,7 @@ public class AttackReactiveProfile
     public bool HasReaction;
     public HitReaction Reaction;
 
-    public bool Breaks;
+    [FormerlySerializedAs("Breaks")]
+    public bool IsDestructive;
+    public DestructData Destruct;
 }

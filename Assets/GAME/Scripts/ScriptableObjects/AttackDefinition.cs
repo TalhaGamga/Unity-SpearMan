@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "ScriptableObjects/Combat/Attack Definition")]
 public class AttackDefinition : ScriptableObject
@@ -13,5 +14,7 @@ public class AttackDefinition : ScriptableObject
     public bool HasReaction;
     public HitReaction Reaction;
 
-    public bool Breaks;
+    [FormerlySerializedAs("Breaks")]
+    public bool IsDestructive;
+    public DestructData Destruct;
 }

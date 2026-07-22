@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public sealed class AttackReactiveEventSource : IDamageEventSource
+public sealed class AttackReactiveEventSource : IReactiveEventSource
 {
     private readonly AttackDefinition _attack;
     private readonly Vector3 _direction;
@@ -54,12 +54,17 @@ public sealed class AttackReactiveEventSource : IDamageEventSource
             );
         }
 
-        // Break
-        if (_attack.Breaks)
+        // Destruct
+        if (_attack.IsDestructive)
         {
+            var destruct = _attack.Destruct;
+
+            destruct.Direction = _direction;
+            destruct.Point = _hitPoint;
+
             stream = stream.Concat(
                 Observable.Return<IReactiveEvent>(
-                    new BreakEvent()
+                    new DestructEvent(destruct)
                 )
             );
         }

@@ -1,8 +1,8 @@
 using UnityEngine;
 using R3;
-public sealed class ReactiveHitDispatcher : MonoBehaviour
+public sealed class ReactiveEventDispatcher : MonoBehaviour
 {
-    public void Apply(IDamageEventSource source, GameObject target)
+    public void Apply(IReactiveEventSource source, GameObject target)
     {
         if (source == null || target == null)
             return;

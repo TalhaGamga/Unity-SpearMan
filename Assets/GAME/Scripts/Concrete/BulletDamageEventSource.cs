@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public sealed class BulletDamageEventSource : IDamageEventSource
+public sealed class BulletDamageEventSource : IReactiveEventSource
 {
     private readonly float _damage;
     private readonly Vector3 _force;
@@ -22,8 +22,15 @@ public sealed class BulletDamageEventSource : IDamageEventSource
 
     public Observable<IReactiveEvent> Stream()
     {
+        var destruct = new DestructData
+        {
+            Direction = _direction,
+            Force = _strength,
+            Point = _origin
+        };
+
         return Observable.Return<IReactiveEvent>(new DamageEvent(_damage))
             //.Concat(Observable.Return<IReactiveEvent>(new KnockbackEvent(_direction, _strength))
-            .Concat(Observable.Return<IReactiveEvent>(new BreakEvent()));
+            .Concat(Observable.Return<IReactiveEvent>(new DestructEvent(destruct)));
     }
 }

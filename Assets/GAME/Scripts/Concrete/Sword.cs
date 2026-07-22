@@ -7,7 +7,7 @@ public class Sword : MonoBehaviour, IWeapon
     [SerializeField] private WeaponHitboxSensor _hitbox;
     [SerializeField] private SwordCombatMachine _swordCombatMachine;
     [SerializeField] private AttackDatabase _attackDatabase;
-    [SerializeField] private ReactiveHitDispatcher _dispatcher;
+    [SerializeField] private ReactiveEventDispatcher _dispatcher;
 
     public ICombat CreateCombat(ICombatManager combatManager)
     {

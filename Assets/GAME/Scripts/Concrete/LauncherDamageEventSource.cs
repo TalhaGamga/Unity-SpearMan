@@ -1,7 +1,7 @@
 using R3;
 using UnityEngine;
 
-public sealed class LauncherDamageEventSource : IDamageEventSource
+public sealed class LauncherDamageEventSource : IReactiveEventSource
 {
     private readonly float _damage;
     private readonly Vector3 _direction;

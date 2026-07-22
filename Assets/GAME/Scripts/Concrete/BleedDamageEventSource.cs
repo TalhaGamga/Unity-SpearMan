@@ -1,7 +1,7 @@
 using R3;
 using System;
 
-public sealed class BleedDamageEventSource : IDamageEventSource
+public sealed class BleedDamageEventSource : IReactiveEventSource
 {
     private readonly float _perTick;
     private readonly float _interval;

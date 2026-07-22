@@ -16,7 +16,7 @@ public class TestBox : MonoBehaviour, IDamageable, IImpactable, IDestructible
         Debug.Log("Damage Received");
     }
 
-    public void Break()
+    public void Destruct(DestructData data)
     {
         if (_preFractured != null)
         {

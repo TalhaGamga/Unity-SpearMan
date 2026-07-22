@@ -371,7 +371,7 @@ public interface IImpactable
 
 public interface IDestructible
 {
-    void Break();
+    void Destruct(DestructData data);
 }
 
 public interface IHitReactable
@@ -384,7 +384,7 @@ public interface IReactiveEvent
     void Consume(TargetContext ctx);
 }
 
-public interface IDamageEventSource
+public interface IReactiveEventSource
 {
     Observable<IReactiveEvent> Stream();
 }
