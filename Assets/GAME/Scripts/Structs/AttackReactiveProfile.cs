@@ -16,4 +16,5 @@ public class AttackReactiveProfile
     public DestructSettings Destruct;
 
     public bool CanSlice;
+    public SliceSettings Slice;
 }

@@ -82,7 +82,8 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         {
             var slice = new SliceData(
                 _hit.Point,
-                _hit.SlicePlaneNormal
+                _hit.SlicePlaneNormal,
+                _hit.Speed * _attack.Slice.ForceMultiplier
             );
 
             stream = stream.Concat(

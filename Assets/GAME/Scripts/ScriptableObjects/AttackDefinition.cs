@@ -19,4 +19,5 @@ public class AttackDefinition : ScriptableObject
     public DestructSettings Destruct;
 
     public bool CanSlice;
+    public SliceSettings Slice;
 }

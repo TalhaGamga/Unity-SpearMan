@@ -56,6 +56,10 @@ PrefabInstance:
       propertyPath: _combatManager
       value: 
       objectReference: {fileID: 114871395882268022}
+    - target: {fileID: 7281300465575250766, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _inputHandlerSource
+      value: 
+      objectReference: {fileID: 5066525804296807317}
     - target: {fileID: 8669881124919861435, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
