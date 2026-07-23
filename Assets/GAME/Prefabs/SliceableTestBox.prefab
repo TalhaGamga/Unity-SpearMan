@@ -15,7 +15,8 @@ GameObject:
   - component: {fileID: 5826553670177653615}
   - component: {fileID: 62894982614680829}
   - component: {fileID: 8653341001847544029}
-  m_Layer: 10
+  - component: {fileID: 7025735376799155910}
+  m_Layer: 0
   m_Name: SliceableTestBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -166,5 +167,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3831578e3316d041b73e0e29a8c2dc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7025735376799155910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8921783171485760805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3489755e5f634fc594e40001141c077f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

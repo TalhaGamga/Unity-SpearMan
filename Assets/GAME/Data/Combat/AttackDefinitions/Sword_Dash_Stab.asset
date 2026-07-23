@@ -16,16 +16,15 @@ MonoBehaviour:
   Damage: 10
   HasImpact: 1
   Impact:
-    Direction: {x: 1, y: 0.25, z: 0}
-    Force: 25
-    Point: {x: 0, y: 0, z: 0}
+    ForceMultiplier: 25
   HasReaction: 1
   Reaction:
     Type: 4
-    Direction: {x: 1, y: 0.25}
-    Force: 25
+    ForceMultiplier: 25
     Duration: 0.2
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0
-  Breaks: 0
+  IsDestructive: 0
+  Destruct:
+    ForceMultiplier: 1

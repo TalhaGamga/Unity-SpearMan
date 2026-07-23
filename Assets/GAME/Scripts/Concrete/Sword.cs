@@ -47,13 +47,19 @@ public class Sword : MonoBehaviour, IWeapon
 
             hitTargets.Add(target);
 
-            Vector3 direction = (target.transform.position - transform.position).normalized;
-            Vector3 hitPoint = hit.ClosestPoint(transform.position);
+            Vector3 velocity = _hitbox.Velocity;
+            Vector3 hitPoint = hit.ClosestPoint(_hitbox.Position);
+            Vector3 fallbackDirection = target.transform.position - _hitbox.Position;
+            var hitContext = new HitContext(
+                velocity,
+                hitPoint,
+                fallbackDirection,
+                _hitbox.BladeDirection
+            );
 
             var source = new AttackReactiveEventSource(
                 attack,
-                direction,
-                hitPoint
+                hitContext
             );
 
             _dispatcher.Apply(source, target);

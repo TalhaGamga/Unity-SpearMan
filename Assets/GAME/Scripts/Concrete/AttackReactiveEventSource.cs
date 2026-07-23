@@ -4,17 +4,14 @@ using UnityEngine;
 public sealed class AttackReactiveEventSource : IReactiveEventSource
 {
     private readonly AttackDefinition _attack;
-    private readonly Vector3 _direction;
-    private readonly Vector3 _hitPoint;
+    private readonly HitContext _hit;
 
     public AttackReactiveEventSource(
         AttackDefinition attack,
-        Vector3 direction,
-        Vector3 hitPoint)
+        HitContext hit)
     {
         _attack = attack;
-        _direction = direction;
-        _hitPoint = hitPoint;
+        _hit = hit;
     }
 
     public Observable<IReactiveEvent> Stream()
@@ -27,10 +24,12 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         // Impact (physics)
         if (_attack.HasImpact)
         {
-            var impact = _attack.Impact;
-
-            impact.Direction = _direction;
-            impact.Point = _hitPoint;
+            var impact = new ImpactData
+            {
+                Direction = _hit.Direction,
+                Force = _hit.Speed * _attack.Impact.ForceMultiplier,
+                Point = _hit.Point
+            };
 
             stream = stream.Concat(
                 Observable.Return<IReactiveEvent>(
@@ -42,10 +41,17 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         // Reaction (state machine)
         if (_attack.HasReaction)
         {
-            var reaction = _attack.Reaction;
-
-            // Convert 3D direction ? 2D for your reaction system
-            reaction.Direction = new Vector2(_direction.x, _direction.z);
+            var settings = _attack.Reaction;
+            var reaction = new HitReaction
+            {
+                Type = settings.Type,
+                Direction = new Vector2(_hit.Direction.x, _hit.Direction.z),
+                Force = _hit.Speed * settings.ForceMultiplier,
+                Duration = settings.Duration,
+                LocksMovementInput = settings.LocksMovementInput,
+                LocksCombatInput = settings.LocksCombatInput,
+                AllowsAirDrift = settings.AllowsAirDrift
+            };
 
             stream = stream.Concat(
                 Observable.Return<IReactiveEvent>(
@@ -57,14 +63,31 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         // Destruct
         if (_attack.IsDestructive)
         {
-            var destruct = _attack.Destruct;
-
-            destruct.Direction = _direction;
-            destruct.Point = _hitPoint;
+            var destruct = new DestructData
+            {
+                Direction = _hit.Direction,
+                Force = _hit.Speed * _attack.Destruct.ForceMultiplier,
+                Point = _hit.Point
+            };
 
             stream = stream.Concat(
                 Observable.Return<IReactiveEvent>(
                     new DestructEvent(destruct)
+                )
+            );
+        }
+
+        // Slice (geometry)
+        if (_attack.CanSlice && _hit.SlicePlaneNormal != Vector3.zero)
+        {
+            var slice = new SliceData(
+                _hit.Point,
+                _hit.SlicePlaneNormal
+            );
+
+            stream = stream.Concat(
+                Observable.Return<IReactiveEvent>(
+                    new SliceEvent(slice)
                 )
             );
         }

@@ -4,17 +4,41 @@ using UnityEngine;
 public class WeaponHitboxSensor : MonoBehaviour
 {
     public event Action<Collider> OnHit;
+    public Vector3 Position => _hitboxCenter != null ? _hitboxCenter.position : transform.position;
+    public Vector3 BladeDirection => _hitboxCenter != null ? _hitboxCenter.forward : transform.forward;
+    public Vector3 Velocity { get; private set; }
 
     [SerializeField] private Transform _hitboxCenter;
     [SerializeField] private Vector3 _halfExtents = new Vector3(0.5f, 0.5f, 0.5f);
     [SerializeField] private LayerMask _targetLayer;
 
+    private Vector3 _previousPosition;
+
+    private void OnEnable()
+    {
+        _previousPosition = Position;
+        Velocity = Vector3.zero;
+    }
+
+    private void LateUpdate()
+    {
+        Vector3 currentPosition = Position;
+
+        Velocity = Time.deltaTime > Mathf.Epsilon
+            ? (currentPosition - _previousPosition) / Time.deltaTime
+            : Vector3.zero;
+
+        _previousPosition = currentPosition;
+    }
+
     public Collider[] ScanHits()
     {
+        Transform hitbox = _hitboxCenter != null ? _hitboxCenter : transform;
+
         return Physics.OverlapBox(
-            _hitboxCenter.position,
+            hitbox.position,
             _halfExtents,
-            _hitboxCenter.rotation,
+            hitbox.rotation,
             _targetLayer
         );
     }

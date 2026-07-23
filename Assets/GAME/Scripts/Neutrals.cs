@@ -374,6 +374,11 @@ public interface IDestructible
     void Destruct(DestructData data);
 }
 
+public interface ISliceable
+{
+    void Slice(SliceData data);
+}
+
 public interface IHitReactable
 {
     void HandleReaction(HitReaction reaction);

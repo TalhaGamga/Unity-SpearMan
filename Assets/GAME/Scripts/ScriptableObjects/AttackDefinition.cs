@@ -9,12 +9,14 @@ public class AttackDefinition : ScriptableObject
     public float Damage;
 
     public bool HasImpact;
-    public ImpactData Impact;
+    public ImpactSettings Impact;
 
     public bool HasReaction;
-    public HitReaction Reaction;
+    public HitReactionSettings Reaction;
 
     [FormerlySerializedAs("Breaks")]
     public bool IsDestructive;
-    public DestructData Destruct;
+    public DestructSettings Destruct;
+
+    public bool CanSlice;
 }
