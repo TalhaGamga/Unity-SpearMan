@@ -21,10 +21,12 @@ MonoBehaviour:
       RotationAxes: -1
       LinearMultiplier: 1.7
       AngularMultiplier: 0.7
+      VerticalMode: 2
+      MinimumVerticalRatio: 0.65
+      MinimumLinearForce: 0
   HasReaction: 1
   Reaction:
-    Type: 2
-    ForceMultiplier: 20
+    Type: 1
     Duration: 0.15
     LocksMovementInput: 1
     LocksCombatInput: 1

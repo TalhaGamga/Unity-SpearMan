@@ -30,6 +30,11 @@ namespace DevVorpian
             checkTransition();
         }
 
+        public void PhysicsUpdate()
+        {
+            _currentState?.PhysicsUpdate();
+        }
+
         public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)
         {
             _inputBasedTransitions.Add(stateTransition);

@@ -104,7 +104,16 @@ namespace Movement
                 }
             }
 
+            public void HandleImpact(ImpactData impact)
+            {
+                // This legacy mover explicitly opts out of external impacts.
+            }
+
             public void UpdateMover(float deltaTime)
+            {
+            }
+
+            public void PhysicsUpdateMover(float deltaTime)
             {
                 if (_rb == null) return;
 

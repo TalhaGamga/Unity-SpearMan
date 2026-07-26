@@ -72,10 +72,12 @@ public interface IMover
     void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream);
     void End();
     public void HandleAction(MovementAction action);
+    public void HandleImpact(ImpactData impact);
     public void HandleRootMotion(RootMotionFrame rootMotion);
     public void OnAnimationFrame(MovementAnimationFrame animationFrame);
 
     public void UpdateMover(float deltaTime);
+    public void PhysicsUpdateMover(float deltaTime);
 }
 
 public interface IReactor
@@ -98,8 +100,10 @@ public interface IState
     public UnityEvent OnEnter { get; set; }
     public UnityEvent OnExit { get; set; }
     public UnityEvent OnUpdate { get; set; }
+    public UnityEvent OnPhysicsUpdate { get; set; }
     void Enter();
     void Update();
+    void PhysicsUpdate();
     void Exit();
 }
 

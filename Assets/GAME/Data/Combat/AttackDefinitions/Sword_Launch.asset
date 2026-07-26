@@ -17,14 +17,16 @@ MonoBehaviour:
   HasImpact: 1
   Impact:
     Motion:
-      TranslationAxes: 6
+      TranslationAxes: 2
       RotationAxes: 1
       LinearMultiplier: 0.9
       AngularMultiplier: 0.4
+      VerticalMode: 1
+      MinimumVerticalRatio: 0.65
+      MinimumLinearForce: 5
   HasReaction: 1
   Reaction:
-    Type: 4
-    ForceMultiplier: 1
+    Type: 2
     Duration: 0.25
     LocksMovementInput: 1
     LocksCombatInput: 1

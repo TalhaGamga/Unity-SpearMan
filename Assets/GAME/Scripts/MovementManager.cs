@@ -59,7 +59,14 @@ namespace Movement
         private void Update()
         {
             _currentMover?.UpdateMover(Time.deltaTime);
-            currentState = _currentMover.CurrentType;
+            currentState = _currentMover != null
+                ? _currentMover.CurrentType
+                : MovementType.None;
+        }
+
+        private void FixedUpdate()
+        {
+            _currentMover?.PhysicsUpdateMover(Time.fixedDeltaTime);
         }
 
         public void SetMover(IMover newMover)
@@ -85,11 +92,24 @@ namespace Movement
             _currentMover.HandleRootMotion(rootMotion);
         }
 
+        public void HandleImpact(ImpactData impact)
+        {
+            _currentMover?.HandleImpact(impact);
+        }
+
         public bool GetIsGrounded()
         {
             foreach (var checkPoint in _groundCheckPoints)
             {
-                return Physics.OverlapSphere(checkPoint.position, _groundCheckDistance, _groundLayer).Length > 0;
+                if (checkPoint != null && Physics.CheckSphere(
+                    checkPoint.position,
+                    _groundCheckDistance,
+                    _groundLayer,
+                    QueryTriggerInteraction.Ignore
+                ))
+                {
+                    return true;
+                }
             }
 
             return false;

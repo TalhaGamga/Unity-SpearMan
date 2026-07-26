@@ -31,6 +31,7 @@ public class CharacterHub : MonoBehaviour
             _combatManager.SnapshotStream,
             _reactionManager.SnapshotStream,
             new CompositeIntentMapper(
+                new ForcedMotionIntentMapper(),
                 new ReactionIntentMapper(),
                 new SwordIntentMapper(),
                 new MovementIntentMapper())
@@ -73,6 +74,11 @@ public class CharacterHub : MonoBehaviour
 
         _reactionManager.SnapshotStream
             .Subscribe(_ => _actionSystem.ProcessAnimator())
+            .AddTo(_disposables);
+
+        _reactionManager.TransitionStream
+            .Select(AnimationParameterMapper.ReactionAnimatorMapper)
+            .Subscribe(_animatorSystem.HandleAnimatorUpdates)
             .AddTo(_disposables);
     }
 

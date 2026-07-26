@@ -11,4 +11,12 @@ public struct PhysicsResponseSettings
 
     [Min(0f)]
     public float AngularMultiplier;
+
+    public VerticalImpactMode VerticalMode;
+
+    [Range(0f, 1f)]
+    public float MinimumVerticalRatio;
+
+    [Min(0f)]
+    public float MinimumLinearForce;
 }

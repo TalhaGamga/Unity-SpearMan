@@ -25,8 +25,6 @@ public class ReactionStateMachine : IReactor
         _stateMachine = new StateMachine<ReactionType>();
         _manager = reactionManager;
 
-        _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
-
         _snapshotStreamer
             .Select(_ => buildSnapshot())
             .DistinctUntilChanged()
@@ -34,6 +32,7 @@ public class ReactionStateMachine : IReactor
             .AddTo(_disposables);
 
         _transitionStreamer
+            .DistinctUntilChanged()
             .Pairwise()
             .Subscribe(pair =>
             {
@@ -64,7 +63,6 @@ public class ReactionStateMachine : IReactor
             setState(ReactionType.LightHit);
             _context.Elapsed = 0f;
             _context.IsInHitStun = true;
-            _context.IsAirborneByReaction = false;
 
             SubmitSnapshot();
         });
@@ -76,7 +74,6 @@ public class ReactionStateMachine : IReactor
             setState(ReactionType.Launch);
             _context.Elapsed = 0f;
             _context.IsInHitStun = true;
-            _context.IsAirborneByReaction = true;
 
             SubmitSnapshot();
         });
@@ -88,7 +85,6 @@ public class ReactionStateMachine : IReactor
             setState(ReactionType.AirJuggle);
             _context.Elapsed = 0f;
             _context.IsInHitStun = true;
-            _context.IsAirborneByReaction = true;
 
             SubmitSnapshot();
         });
@@ -111,12 +107,9 @@ public class ReactionStateMachine : IReactor
             _context.Elapsed = 0f;
 
             _context.IsInHitStun = false;
-            _context.IsAirborneByReaction = false;
             _context.LocksMovementInput = true;
             _context.LocksCombatInput = true;
             _context.AllowsAirDrift = false;
-            _context.Direction = Vector2.zero;
-            _context.Force = 0f;
 
             SubmitSnapshot();
         });
@@ -176,8 +169,6 @@ public class ReactionStateMachine : IReactor
 
         recoveryState.OnExit.AddListener(() =>
         {
-            _context.Direction = Vector2.zero;
-            _context.Force = 0f;
             _context.Duration = 0f;
             SubmitSnapshot();
         });
@@ -278,12 +269,12 @@ public class ReactionStateMachine : IReactor
 
     public void HandleAction(HitReaction action)
     {
-        _context.PendingAction = action;
-
-        if (action.Type == ReactionType.None)
+        if (!tryResolveRuntimeState(action.Type, out ReactionType state))
             return;
 
-        _stateMachine.SetState(action.Type);
+        _context.PendingAction = action;
+        _context.Version++;
+        _stateMachine.SetState(state);
     }
 
     public void UpdateReactor(float deltaTime)
@@ -297,11 +288,9 @@ public class ReactionStateMachine : IReactor
         return new ReactionSnapshot
         {
             State = _context.State,
-            Direction = _context.Direction,
-            Force = _context.Force,
+            Version = _context.Version,
             Duration = _context.Duration,
             IsInHitStun = _context.IsInHitStun,
-            IsAirborneByReaction = _context.IsAirborneByReaction,
             LocksMovementInput = _context.LocksMovementInput,
             LocksCombatInput = _context.LocksCombatInput,
             AllowsAirDrift = _context.AllowsAirDrift
@@ -311,17 +300,32 @@ public class ReactionStateMachine : IReactor
     private void SubmitSnapshot()
     {
         _snapshotStreamer.OnNext(Unit.Default);
+        _transitionStreamer.OnNext(_context.State);
     }
 
-    private void submitAutonomicStateTransition()
+    private static bool tryResolveRuntimeState(
+        HitReactionType request,
+        out ReactionType state)
     {
-        _transitionStreamer.OnNext(_context.State);
+        switch (request)
+        {
+            case HitReactionType.LightStagger:
+                state = ReactionType.LightHit;
+                return true;
+            case HitReactionType.Launch:
+                state = ReactionType.Launch;
+                return true;
+            case HitReactionType.AirJuggle:
+                state = ReactionType.AirJuggle;
+                return true;
+            default:
+                state = ReactionType.None;
+                return false;
+        }
     }
 
     private void applyPendingActionToContext()
     {
-        _context.Direction = _context.PendingAction.Direction;
-        _context.Force = _context.PendingAction.Force;
         _context.Duration = Mathf.Max(_context.PendingAction.Duration, _context.MinStateDuration);
         _context.LocksMovementInput = _context.PendingAction.LocksMovementInput;
         _context.LocksCombatInput = _context.PendingAction.LocksCombatInput;
@@ -330,13 +334,10 @@ public class ReactionStateMachine : IReactor
 
     private void resetReactionFlags()
     {
-        _context.Direction = Vector2.zero;
-        _context.Force = 0f;
         _context.Duration = 0f;
         _context.Elapsed = 0f;
 
         _context.IsInHitStun = false;
-        _context.IsAirborneByReaction = false;
         _context.LocksMovementInput = false;
         _context.LocksCombatInput = false;
         _context.AllowsAirDrift = false;
@@ -351,15 +352,12 @@ public class ReactionStateMachine : IReactor
     public class Context
     {
         public ReactionType State = ReactionType.None;
+        public int Version;
         public HitReaction PendingAction;
-
-        public Vector2 Direction;
-        public float Force;
         public float Duration;
         public float Elapsed;
 
         public bool IsInHitStun;
-        public bool IsAirborneByReaction;
         public bool LocksMovementInput;
         public bool LocksCombatInput;
         public bool AllowsAirDrift;

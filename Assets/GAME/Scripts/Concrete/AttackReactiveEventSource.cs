@@ -56,13 +56,10 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         // Reaction ordering is intentionally provisional.
         if (_attack.HasReaction)
         {
-            var settings = _attack.Reaction;
-            Vector3 direction = _hit.GetDirection(PhysicsAxes.YZ);
+            HitReactionSettings settings = _attack.Reaction;
             var reaction = new HitReaction
             {
                 Type = settings.Type,
-                Direction = new Vector2(direction.z, direction.y),
-                Force = _hit.GetSpeed(PhysicsAxes.YZ) * settings.ForceMultiplier,
                 Duration = settings.Duration,
                 LocksMovementInput = settings.LocksMovementInput,
                 LocksCombatInput = settings.LocksCombatInput,
@@ -88,13 +85,60 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
         );
         PhysicsAxes motionAxes = translationAxes | rotationAxes;
 
-        return new ImpactData(
-            _hit.GetDirection(motionAxes),
+        Vector3 linearDirection = ShapeLinearDirection(
+            _hit.GetDirection(translationAxes),
+            motion
+        );
+        Vector3 angularDirection = _hit.GetDirection(rotationAxes);
+        float linearForce = Mathf.Max(
             _hit.GetSpeed(translationAxes) * motion.LinearMultiplier,
+            motion.MinimumLinearForce
+        );
+
+        return new ImpactData(
+            linearDirection,
+            linearForce,
             _hit.Point,
             translationAxes,
             rotationAxes,
-            _hit.GetSpeed(motionAxes) * motion.AngularMultiplier
+            _hit.GetSpeed(motionAxes) * motion.AngularMultiplier,
+            angularDirection
         );
+    }
+
+    private static Vector3 ShapeLinearDirection(
+        Vector3 runtimeDirection,
+        PhysicsResponseSettings motion)
+    {
+        bool supportsVertical =
+            (motion.TranslationAxes & PhysicsAxes.Y) != 0;
+        float minimumVertical = Mathf.Clamp01(
+            motion.MinimumVerticalRatio
+        );
+
+        if (!supportsVertical ||
+            motion.VerticalMode == VerticalImpactMode.Preserve ||
+            minimumVertical <= 0f)
+        {
+            return runtimeDirection;
+        }
+
+        float verticalSign = motion.VerticalMode ==
+            VerticalImpactMode.Upward
+                ? 1f
+                : -1f;
+
+        Vector3 horizontal = runtimeDirection;
+        horizontal.y = 0f;
+
+        if (horizontal.sqrMagnitude <= Mathf.Epsilon)
+            return Vector3.up * verticalSign;
+
+        float horizontalRatio = Mathf.Sqrt(
+            1f - minimumVertical * minimumVertical
+        );
+
+        return horizontal.normalized * horizontalRatio +
+            Vector3.up * (verticalSign * minimumVertical);
     }
 }

@@ -48,11 +48,25 @@ public static class AnimationParameterMapper
             Value = snapshot.Combat.Version
         };
 
+    }
+
+    public static IEnumerable<AnimatorParamUpdate> ReactionAnimatorMapper(
+        ReactionTransition transition)
+    {
+        string trigger = transition.To switch
+        {
+            ReactionType.LightHit => "LightHit",
+            ReactionType.Launch => "Launch",
+            _ => null
+        };
+
+        if (trigger == null)
+            yield break;
+
         yield return new AnimatorParamUpdate
         {
-            ParamName = snapshot.Reaction.State.ToString(),
-            ParamType = AnimatorParamUpdateType.Trigger,
-            Value = snapshot.Reaction.Force
+            ParamName = trigger,
+            ParamType = AnimatorParamUpdateType.Trigger
         };
     }
 }

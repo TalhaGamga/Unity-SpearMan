@@ -1,4 +1,4 @@
-﻿public enum MovementType
+public enum MovementType
 {
     None = 0,
     Idle,
@@ -15,6 +15,8 @@
     Interact,
     Parkour,
     Neutral,
+    Launched,
+    ForcedFall,
 
     // Add more as needed
 }

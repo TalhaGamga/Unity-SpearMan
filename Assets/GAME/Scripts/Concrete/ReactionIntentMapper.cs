@@ -2,9 +2,11 @@ using UnityEngine;
 
 public class ReactionIntentMapper : IIntentMapper
 {
-    public ActionIntent? MapInputToIntent(InputSnapshot inputSnapshot, CharacterSnapshot snapshot)
+    public ActionIntent? MapInputToIntent(
+        InputSnapshot inputSnapshot,
+        CharacterSnapshot snapshot)
     {
-        var reaction = snapshot.Reaction;
+        ReactionSnapshot reaction = snapshot.Reaction;
 
         if (reaction.State == ReactionType.Dead)
         {
@@ -13,8 +15,7 @@ public class ReactionIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     ActionType = MovementType.Idle,
-                    Direction = Vector2.zero,
-                    ReactionState = reaction.State
+                    Direction = Vector2.zero
                 },
                 Combat = new CombatAction
                 {
@@ -23,15 +24,16 @@ public class ReactionIntentMapper : IIntentMapper
             };
         }
 
-        if (reaction.IsInHitStun && reaction.LocksMovementInput && reaction.LocksCombatInput)
+        if (reaction.IsInHitStun &&
+            reaction.LocksMovementInput &&
+            reaction.LocksCombatInput)
         {
             return new ActionIntent
             {
                 Movement = new MovementAction
                 {
                     ActionType = MovementType.Idle,
-                    Direction = Vector2.zero,
-                    ReactionState = reaction.State
+                    Direction = Vector2.zero
                 },
                 Combat = new CombatAction
                 {
@@ -40,17 +42,18 @@ public class ReactionIntentMapper : IIntentMapper
             };
         }
 
-        if (reaction.State == ReactionType.Launch || reaction.State == ReactionType.AirJuggle)
+        if (reaction.State == ReactionType.AirJuggle)
         {
             return new ActionIntent
             {
                 Movement = new MovementAction
                 {
-                    ActionType = MovementType.Fall, // this should change   
+                    ActionType = reaction.AllowsAirDrift
+                        ? MovementType.Fall
+                        : MovementType.None,
                     Direction = reaction.AllowsAirDrift
                         ? TryReadMove(inputSnapshot)
-                        : reaction.Direction,
-                    ReactionState = reaction.State
+                        : Vector2.zero
                 },
                 Combat = new CombatAction
                 {
@@ -62,10 +65,12 @@ public class ReactionIntentMapper : IIntentMapper
         return null;
     }
 
-    private Vector2 TryReadMove(InputSnapshot inputSnapshot)
+    private static Vector2 TryReadMove(InputSnapshot inputSnapshot)
     {
-        return inputSnapshot.CurrentInputs.TryGetValue(PlayerAction.Move, out var moveInput)
-            ? (Vector2)moveInput.Value
-            : Vector2.zero;
+        return inputSnapshot.CurrentInputs.TryGetValue(
+            PlayerAction.Move,
+            out var moveInput)
+                ? (Vector2)moveInput.Value
+                : Vector2.zero;
     }
 }

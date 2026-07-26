@@ -11,6 +11,7 @@ namespace Movement
             public UnityEvent OnEnter { get; set; } = new UnityEvent();
             public UnityEvent OnExit { get; set; } = new UnityEvent();
             public UnityEvent OnUpdate { get; set; } = new UnityEvent();
+            public UnityEvent OnPhysicsUpdate { get; set; } = new UnityEvent();
 
 
             private string _stateName = "Concrete State";
@@ -35,6 +36,11 @@ namespace Movement
             public void Update()
             {
                 OnUpdate?.Invoke();
+            }
+
+            public void PhysicsUpdate()
+            {
+                OnPhysicsUpdate?.Invoke();
             }
         }
     }

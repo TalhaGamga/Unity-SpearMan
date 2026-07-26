@@ -240,6 +240,7 @@ GameObject:
   - component: {fileID: 1039437672387605739}
   - component: {fileID: 7281300465575250766}
   - component: {fileID: 7017626144925669415}
+  - component: {fileID: 9000000000000000101}
   - component: {fileID: 4053840257015131073}
   - component: {fileID: 3666161005976104089}
   - component: {fileID: 8356153742589727500}
@@ -298,7 +299,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 114
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!136 &1039437672387605739
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -359,7 +360,7 @@ MonoBehaviour:
   _groundLayer:
     serializedVersion: 2
     m_Bits: 1024
-  _groundCheckDistance: 0.2
+  _groundCheckDistance: 0.1
   _rbMoverMachine:
     _context:
       State: 0
@@ -378,6 +379,7 @@ MonoBehaviour:
       JumpHeight: 5
       AirborneMovementSpeed: 8
       JumpTimeToPeak: 0.5
+      GroundSnapDistance: 0.25
       StabDuration: 0.1
       IsStabStarted: 0
       IsStabbing: 0
@@ -401,6 +403,19 @@ MonoBehaviour:
       OnTransitionedAutonomously:
         m_PersistentCalls:
           m_Calls: []
+--- !u!114 &9000000000000000101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5970298094073906991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afde2a3c04e84db78eb37fb23ae560d1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _movementManager: {fileID: 7017626144925669415}
 --- !u!114 &4053840257015131073
 MonoBehaviour:
   m_ObjectHideFlags: 0
