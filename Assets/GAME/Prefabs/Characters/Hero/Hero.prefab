@@ -249,6 +249,7 @@ MonoBehaviour:
       LocksCombatInput: 0
       AllowsAirDrift: 0
       RecoveryDuration: 0.12
+      KnockdownRecoveryDuration: 0.7
       MinStateDuration: 0.05
     _stateMachine:
       OnTransitionedAutonomously:

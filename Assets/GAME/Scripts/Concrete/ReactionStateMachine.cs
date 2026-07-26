@@ -44,6 +44,7 @@ public class ReactionStateMachine : IReactor
         IState lightHitState = new ConcreteState();
         IState launchState = new ConcreteState();
         IState airJuggleState = new ConcreteState();
+        IState knockdownState = new ConcreteState();
         IState recoveryState = new ConcreteState();
         IState deadState = new ConcreteState();
 
@@ -89,14 +90,36 @@ public class ReactionStateMachine : IReactor
             SubmitSnapshot();
         });
 
+        knockdownState.OnEnter.AddListener(() =>
+        {
+            applyPendingActionToContext();
+
+            setState(ReactionType.Knockdown);
+            _context.Elapsed = 0f;
+            _context.IsInHitStun = true;
+
+            SubmitSnapshot();
+        });
+
         recoveryState.OnEnter.AddListener(() =>
         {
             setState(ReactionType.Recovery);
             _context.Elapsed = 0f;
 
-            _context.IsInHitStun = false;
-            _context.LocksMovementInput = false;
-            _context.LocksCombatInput = false;
+            bool recoveringFromKnockdown =
+                _context.PendingAction.Type ==
+                HitReactionType.Knockdown;
+
+            _context.Duration = recoveringFromKnockdown
+                ? _context.KnockdownRecoveryDuration
+                : _context.RecoveryDuration;
+            _context.IsInHitStun = recoveringFromKnockdown;
+            _context.LocksMovementInput =
+                recoveringFromKnockdown &&
+                _context.PendingAction.LocksMovementInput;
+            _context.LocksCombatInput =
+                recoveringFromKnockdown &&
+                _context.PendingAction.LocksCombatInput;
 
             SubmitSnapshot();
         });
@@ -138,6 +161,11 @@ public class ReactionStateMachine : IReactor
             SubmitSnapshot();
         });
 
+        knockdownState.OnUpdate.AddListener(() =>
+        {
+            SubmitSnapshot();
+        });
+
         recoveryState.OnUpdate.AddListener(() =>
         {
             SubmitSnapshot();
@@ -163,6 +191,11 @@ public class ReactionStateMachine : IReactor
         });
 
         airJuggleState.OnExit.AddListener(() =>
+        {
+            SubmitSnapshot();
+        });
+
+        knockdownState.OnExit.AddListener(() =>
         {
             SubmitSnapshot();
         });
@@ -205,6 +238,13 @@ public class ReactionStateMachine : IReactor
             () => _context.State == ReactionType.Launch || _context.State == ReactionType.AirJuggle
         );
 
+        var toKnockdown = new StateTransition<ReactionType>(
+            null,
+            knockdownState,
+            ReactionType.Knockdown,
+            () => _context.State != ReactionType.Dead
+        );
+
         var toDead = new StateTransition<ReactionType>(
             null,
             deadState,
@@ -216,6 +256,7 @@ public class ReactionStateMachine : IReactor
         _stateMachine.AddIntentBasedTransition(toLightHit);
         _stateMachine.AddIntentBasedTransition(toLaunch);
         _stateMachine.AddIntentBasedTransition(toAirJuggle);
+        _stateMachine.AddIntentBasedTransition(toKnockdown);
         _stateMachine.AddIntentBasedTransition(toDead);
 
         #endregion
@@ -243,16 +284,24 @@ public class ReactionStateMachine : IReactor
             () => _context.Elapsed >= _context.Duration
         );
 
+        var knockdownToRecovery = new StateTransition<ReactionType>(
+            knockdownState,
+            recoveryState,
+            ReactionType.Recovery,
+            () => _context.Elapsed >= _context.Duration
+        );
+
         var recoveryToNone = new StateTransition<ReactionType>(
             recoveryState,
             noneState,
             ReactionType.None,
-            () => _context.Elapsed >= _context.RecoveryDuration
+            () => _context.Elapsed >= _context.Duration
         );
 
         _stateMachine.AddAutonomicTransition(lightHitToRecovery);
         _stateMachine.AddAutonomicTransition(launchToRecovery);
         _stateMachine.AddAutonomicTransition(airJuggleToRecovery);
+        _stateMachine.AddAutonomicTransition(knockdownToRecovery);
         _stateMachine.AddAutonomicTransition(recoveryToNone);
 
         #endregion
@@ -318,6 +367,9 @@ public class ReactionStateMachine : IReactor
             case HitReactionType.AirJuggle:
                 state = ReactionType.AirJuggle;
                 return true;
+            case HitReactionType.Knockdown:
+                state = ReactionType.Knockdown;
+                return true;
             default:
                 state = ReactionType.None;
                 return false;
@@ -363,6 +415,7 @@ public class ReactionStateMachine : IReactor
         public bool AllowsAirDrift;
 
         public float RecoveryDuration = 0.12f;
+        public float KnockdownRecoveryDuration = 0.7f;
         public float MinStateDuration = 0.05f;
     }
 }

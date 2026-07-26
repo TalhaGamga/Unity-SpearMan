@@ -57,6 +57,10 @@ public static class AnimationParameterMapper
         {
             ReactionType.LightHit => "LightHit",
             ReactionType.Launch => "Launch",
+            ReactionType.Knockdown => "Knockdown",
+            ReactionType.Recovery
+                when transition.From == ReactionType.Knockdown
+                    => "GetUp",
             _ => null
         };
 

@@ -26,7 +26,7 @@ MonoBehaviour:
   HasReaction: 1
   Reaction:
     Type: 2
-    Duration: 0.25
+    Duration: 1
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0
