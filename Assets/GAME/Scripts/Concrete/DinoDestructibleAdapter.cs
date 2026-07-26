@@ -1,6 +1,6 @@
 using DinoFracture;
+using R3;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -47,16 +47,22 @@ public sealed class DinoDestructibleAdapter : MonoBehaviour, IDestructible
             return;
         }
 
-        StartCoroutine(CompleteWhenReady(fracture, completed));
+        if (fracture.IsComplete)
+        {
+            Complete(fracture, completed);
+            return;
+        }
+
+        Observable.EveryUpdate()
+            .Where(_ => fracture.IsComplete)
+            .Take(1)
+            .Subscribe(_ => Complete(fracture, completed));
     }
 
-    private IEnumerator CompleteWhenReady(
+    private static void Complete(
         AsyncFractureResult fracture,
         Action<StructuralResult> completed)
     {
-        while (!fracture.IsComplete)
-            yield return null;
-
         var targets = new List<GameObject>();
         if (fracture.PiecesRoot != null)
         {
