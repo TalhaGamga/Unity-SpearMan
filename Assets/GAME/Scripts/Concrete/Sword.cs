@@ -9,8 +9,12 @@ public class Sword : MonoBehaviour, IWeapon
     [SerializeField] private AttackDatabase _attackDatabase;
     [SerializeField] private ReactiveEventDispatcher _dispatcher;
 
+    private Transform _owner;
+
     public ICombat CreateCombat(ICombatManager combatManager)
     {
+        _owner = (combatManager as Component)?.transform;
+
         var logic = _swordCombatMachine;
         logic.SetSwordView(this);
         return logic;
@@ -35,6 +39,9 @@ public class Sword : MonoBehaviour, IWeapon
 
         foreach (var hit in hits)
         {
+            if (IsOwnerCollider(hit))
+                continue;
+
             GameObject target = hit.attachedRigidbody != null
                 ? hit.attachedRigidbody.gameObject
                 : hit.gameObject;
@@ -64,5 +71,18 @@ public class Sword : MonoBehaviour, IWeapon
 
             _dispatcher.Apply(source, target);
         }
+    }
+
+    private bool IsOwnerCollider(Collider hit)
+    {
+        if (_owner == null || hit == null)
+            return false;
+
+        if (hit.transform == _owner || hit.transform.IsChildOf(_owner))
+            return true;
+
+        Transform rigidbodyTransform = hit.attachedRigidbody?.transform;
+        return rigidbodyTransform != null &&
+               (rigidbodyTransform == _owner || rigidbodyTransform.IsChildOf(_owner));
     }
 }

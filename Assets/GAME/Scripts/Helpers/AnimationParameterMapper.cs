@@ -20,9 +20,18 @@ public static class AnimationParameterMapper
 
         yield return new AnimatorParamUpdate
         {
-            ParamName = snapshot.Combat.State.ToString(),
+            ParamName = CombatType.GroundedPrimaryAttack.ToString(),
             ParamType = AnimatorParamUpdateType.Bool,
-            Value = snapshot.Combat.IsAttacking
+            Value = snapshot.Combat.IsAttacking &&
+                snapshot.Combat.State == CombatType.GroundedPrimaryAttack
+        };
+
+        yield return new AnimatorParamUpdate
+        {
+            ParamName = CombatType.Stab.ToString(),
+            ParamType = AnimatorParamUpdateType.Bool,
+            Value = snapshot.Combat.IsAttacking &&
+                snapshot.Combat.State == CombatType.Stab
         };
 
         yield return new AnimatorParamUpdate

@@ -17,8 +17,8 @@ MonoBehaviour:
   HasImpact: 1
   Impact:
     Motion:
-      TranslationAxes: 7
-      RotationAxes: 7
+      TranslationAxes: -1
+      RotationAxes: -1
       LinearMultiplier: 1.4
       AngularMultiplier: 0.7
   HasReaction: 1

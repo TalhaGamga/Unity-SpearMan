@@ -26,7 +26,9 @@ public static class AnimationEventParser
         int comboStep = parsed.TryGetValue("ComboStep", out var cs) && int.TryParse(cs, out var csInt) ? csInt : 0;
         string comboType = parsed.TryGetValue("ComboType", out var ct) ? ct : "";
         bool isCancelable = parsed.TryGetValue("Cancelable", out var c) && bool.TryParse(c, out var b) && b;
-        string stateName = "";
+        string stateName = parsed.TryGetValue("StateName", out var sn)
+            ? sn
+            : "";
 
         // Pass comboStep and comboType to AnimationFrame constructor as needed
 

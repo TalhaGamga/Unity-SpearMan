@@ -60,7 +60,7 @@ namespace Combat
             var grPA_S1 = new ConcreteState("GrPA_S1");
             var grPA_S2 = new ConcreteState("GrPA_S2");
             var grPA_S3 = new ConcreteState("GrPA_S3");
-            var stab = new ConcreteState("Stab");
+            var stab = new ConcreteState("DashingAttack");
 
             #region OnEnter
             idleState.OnEnter.AddListener(() =>
@@ -117,7 +117,6 @@ namespace Combat
             #region OnExit
             grPA_S1.OnExit.AddListener(() =>
             {
-                setAttackSequence(false);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -126,7 +125,6 @@ namespace Combat
 
             grPA_S2.OnExit.AddListener(() =>
             {
-                setAttackSequence(false);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -135,7 +133,6 @@ namespace Combat
 
             grPA_S3.OnExit.AddListener(() =>
             {
-                setAttackSequence(false);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -144,7 +141,6 @@ namespace Combat
 
             stab.OnExit.AddListener(() =>
             {
-                setAttackSequence(false);
                 setCanCombo(false);
                 setCancelable(false);
                 resetVersion();
@@ -184,12 +180,24 @@ namespace Combat
         public void HandleAction(CombatAction action)
         {
             _context.Version = action.Version;
+
+            if (action.ActionType == CombatType.GroundedPrimaryAttack &&
+                _context.IsAttacking &&
+                !_context.CanCombo)
+            {
+                return;
+            }
+
             _stateMachine.SetState(action.ActionType);
         }
 
         public void OnAnimationFrame(CombatAnimationFrame frame)
         {
-            if (string.Equals(frame.StateName, _stateMachine.CurrentStateName))
+            if (!string.IsNullOrEmpty(frame.StateName) &&
+                !string.Equals(
+                    frame.StateName,
+                    _stateMachine.CurrentStateName,
+                    StringComparison.Ordinal))
             {
                 return;
             }
