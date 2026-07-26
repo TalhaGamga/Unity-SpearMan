@@ -16,7 +16,11 @@ MonoBehaviour:
   Damage: 10
   HasImpact: 1
   Impact:
-    ForceMultiplier: 25
+    Motion:
+      TranslationAxes: 6
+      RotationAxes: 1
+      LinearMultiplier: 25
+      AngularMultiplier: 0.25
   HasReaction: 1
   Reaction:
     Type: 4
@@ -26,5 +30,4 @@ MonoBehaviour:
     LocksCombatInput: 1
     AllowsAirDrift: 0
   IsDestructive: 0
-  Destruct:
-    ForceMultiplier: 1
+  CanSlice: 0

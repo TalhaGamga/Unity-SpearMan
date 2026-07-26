@@ -64,7 +64,7 @@ namespace Movement.Mover
             moveState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Move);
-                constraintRbAxisY(true);
+                setMovementConstraints(true);
                 submitSnapshot();
             });
 
@@ -77,7 +77,7 @@ namespace Movement.Mover
             fallState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Fall);
-                constraintRbAxisY(false);
+                setMovementConstraints(false);
                 setHorizontalSpeed(_context.AirborneMovementSpeed);
                 submitSnapshot();
             });
@@ -98,7 +98,7 @@ namespace Movement.Mover
             dashState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Dash);
-                constraintRbAxisY(true);
+                setMovementConstraints(true);
                 dash();
                 submitSnapshot();
             });
@@ -106,7 +106,7 @@ namespace Movement.Mover
             stabState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Stab);
-                constraintRbAxisY(true);
+                setMovementConstraints(true);
                 _context.Rb.linearVelocity = Vector3.zero;
                 submitSnapshot();
             });
@@ -115,12 +115,12 @@ namespace Movement.Mover
             #region OnExit
             dashState.OnExit.AddListener(() =>
             {
-                constraintRbAxisY(false);
+                setMovementConstraints(false);
             });
 
             moveState.OnExit.AddListener(() =>
             {
-                constraintRbAxisY(false);
+                setMovementConstraints(false);
             });
 
             jumpState.OnExit.AddListener(() =>
@@ -245,6 +245,7 @@ namespace Movement.Mover
             _stateMachine.SetState(MovementType.Idle);
 
             setContextGravity();
+            setMovementConstraints(false);
         }
 
         public void End()
@@ -326,17 +327,25 @@ namespace Movement.Mover
 
         private void applyRootMotionAsVelocity()
         {
-            Vector3 delta = _context.RootMotionDeltaPosition;
-            Vector3 velocity = new Vector3(delta.x, delta.y, delta.z) / Time.deltaTime;
+            if (Time.deltaTime <= Mathf.Epsilon)
+                return;
 
-            _context.Rb.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
+            Vector3 delta = _context.RootMotionDeltaPosition;
+            Vector3 velocity = PhysicsAxesUtility.Project(delta / Time.deltaTime, PhysicsAxes.YZ);
+
+            _context.Rb.linearVelocity = velocity;
 
             _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
         private void stab(Vector3 stabPoint)
         {
-            _context.MoverTransform.DOMove(stabPoint, _context.StabDuration).SetEase(_context.StabEase);
+            Vector3 planarPoint = PhysicsAxesUtility.ConstrainPoint(
+                stabPoint,
+                _context.MoverTransform.position,
+                PhysicsAxes.YZ
+            );
+            _context.MoverTransform.DOMove(planarPoint, _context.StabDuration).SetEase(_context.StabEase);
         }
 
         private Vector3 findStabDirection()
@@ -344,17 +353,20 @@ namespace Movement.Mover
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, _context.CharacterMouseSensor))
             {
-                Vector3 baseDir = -_characterOrientator.up;
-                Vector3 dir = (hit.point - _characterOrientator.position).normalized;
+                Vector3 baseDir = Vector3.down;
+                Vector3 dir = PhysicsAxesUtility.Direction(hit.point - _characterOrientator.position, PhysicsAxes.YZ);
 
-                float angle = Vector3.SignedAngle(baseDir, dir, _characterOrientator.right);
+                if (dir == Vector3.zero)
+                    return Vector3.zero;
+
+                float angle = Vector3.SignedAngle(baseDir, dir, Vector3.right);
 
                 if (angle > 0)
                     angle = Mathf.Clamp(angle, _context.StabMinAngle, _context.StabMaxAngle);
                 else
                     angle = Mathf.Clamp(angle, -_context.StabMaxAngle, -_context.StabMinAngle);
 
-                Quaternion rot = Quaternion.AngleAxis(angle, _characterOrientator.right);
+                Quaternion rot = Quaternion.AngleAxis(angle, Vector3.right);
                 Vector3 clampedDir = rot * baseDir;
 
                 Debug.DrawLine(_characterOrientator.position, hit.point, Color.yellow);     // raw mouse ray hit
@@ -369,9 +381,16 @@ namespace Movement.Mover
 
         private Vector3 findStabPoint(Vector3 direction)
         {
-            Ray ray = new Ray(_context.MoverTransform.position, direction.normalized);
+            Vector3 planarDirection = PhysicsAxesUtility.Direction(direction, PhysicsAxes.YZ);
+
+            if (planarDirection == Vector3.zero)
+                return _context.MoverTransform.position;
+
+            Vector3 origin = _context.MoverTransform.position;
+            Ray ray = new Ray(origin, planarDirection);
+
             if (Physics.Raycast(ray, out RaycastHit hit, _context.StabRange, _context.PlatformLayer))
-                return hit.point;
+                return PhysicsAxesUtility.ConstrainPoint(hit.point, origin, PhysicsAxes.YZ);
 
             return ray.origin + ray.direction * _context.StabRange;
         }
@@ -386,27 +405,40 @@ namespace Movement.Mover
 
             _characterOrientator.DOLocalRotate(
                 targetEuler,
-                1f / _context.FaceTurnSpeedInDegree,  // adjust duration according to your speed variable
+                1f / _context.FaceTurnSpeedInDegree,
                 RotateMode.Fast
             );
         }
 
-        private void constraintRbAxisY(bool isAllowed)
+        private void setMovementConstraints(bool freezeVerticalPosition)
         {
-            _context.Rb.constraints = isAllowed
-                ? RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY   // lock Y + all rotations
-                : RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX;
+            RigidbodyConstraints constraints =
+                RigidbodyConstraints.FreezeRotation |
+                RigidbodyConstraints.FreezePositionX;
+
+            if (freezeVerticalPosition)
+                constraints |= RigidbodyConstraints.FreezePositionY;
+
+            _context.Rb.constraints = constraints;
         }
 
         private void dash()
         {
-            _context.Rb.linearVelocity = new Vector3(0, 0, _context.DashSpeed * _context.LastFaceX);
+            _context.Rb.linearVelocity = new Vector3(
+                0f,
+                0f,
+                _context.DashSpeed * _context.LastFaceX
+            );
             _context.VerticalVelocity = 0;
         }
 
         private void handleAirborneMovement()
         {
-            _context.Rb.linearVelocity = new Vector3(0, _context.VerticalVelocity, _context.HorizontalVelocity);
+            _context.Rb.linearVelocity = new Vector3(
+                0f,
+                _context.VerticalVelocity,
+                _context.HorizontalVelocity
+            );
         }
 
         private void handleGravity()

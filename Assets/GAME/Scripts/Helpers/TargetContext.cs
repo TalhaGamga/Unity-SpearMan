@@ -2,18 +2,24 @@ using UnityEngine;
 
 public sealed class TargetContext
 {
-    public readonly IDamageable Damageable;
-    public readonly IImpactable Impactable;
-    public readonly IDestructible Destructible;
-    public readonly ISliceable Sliceable;
-    public readonly IHitReactable HitReactable;
+    public GameObject Target { get; }
+    public bool IsStructuralResult { get; }
 
-    public TargetContext(GameObject target)
+    public TargetContext(
+        GameObject target,
+        bool isStructuralResult = false)
     {
-        Damageable = target.GetComponent<IDamageable>();
-        Impactable = target.GetComponent<IImpactable>();
-        Destructible = target.GetComponent<IDestructible>();
-        Sliceable = target.GetComponent<ISliceable>();
-        HitReactable = target.GetComponent<IHitReactable>();
+        Target = target;
+        IsStructuralResult = isStructuralResult;
+    }
+
+    public bool TryGet<TCapability>(out TCapability capability)
+        where TCapability : class
+    {
+        capability = Target != null
+            ? Target.GetComponent<TCapability>()
+            : null;
+
+        return capability != null;
     }
 }

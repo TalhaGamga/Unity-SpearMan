@@ -14,9 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Key: Sword_Heavy
   Damage: 25
-  HasImpact: 0
+  HasImpact: 1
   Impact:
-    ForceMultiplier: 1
+    Motion:
+      TranslationAxes: 7
+      RotationAxes: 7
+      LinearMultiplier: 1.4
+      AngularMultiplier: 0.7
   HasReaction: 1
   Reaction:
     Type: 2
@@ -25,6 +29,5 @@ MonoBehaviour:
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0
-  IsDestructive: 0
-  Destruct:
-    ForceMultiplier: 1
+  IsDestructive: 1
+  CanSlice: 1

@@ -63,6 +63,9 @@ namespace Movement
                     Debug.LogError("RbMover: Rigidbody not found!");
 
                 _rb.useGravity = false;
+                _rb.constraints &= ~RigidbodyConstraints.FreezePositionZ;
+                _rb.constraints |= RigidbodyConstraints.FreezePositionX;
+                _rb.linearVelocity = PhysicsAxesUtility.Project(_rb.linearVelocity, PhysicsAxes.YZ);
 
                 _gravity = (2f * _jumpHeight) / (_jumpTimeToPeak * _jumpTimeToPeak);
                 _jumpVelocity = _gravity * _jumpTimeToPeak;
@@ -121,9 +124,9 @@ namespace Movement
                 else _coyoteTimer -= deltaTime;
 
                 // --- Root motion delta for ground movement ---
-                float zRootSpeed = _rootMotionDelta.z / deltaTime;
                 float xRootSpeed = _rootMotionDelta.x / deltaTime;
-                Vector3 rootMotionVelocity = new Vector3(xRootSpeed, 0f, zRootSpeed);
+                float zRootSpeed = _rootMotionDelta.z / deltaTime;
+                float authoredHorizontalSpeed = new Vector2(xRootSpeed, zRootSpeed).magnitude;
 
                 // --- Physics for vertical (Y) ---
                 float verticalVel = rbVel.y;
@@ -155,35 +158,25 @@ namespace Movement
                     verticalVel -= _gravity * deltaTime;
                 }
 
-                Vector3 finalVel = rbVel;
+                Vector3 finalVel = new Vector3(0f, verticalVel, rbVel.z);
 
                 if (isGrounded)
                 {
                     if (_moveInput.sqrMagnitude < 0.01f)
                     {
-                        // --- IDLE: apply root motion in character's facing direction ---
-                        if (_characterOrientator != null)
-                        {
-                            Vector3 rootMotionLocal = new Vector3(rootMotionVelocity.x, 0f, rootMotionVelocity.z);
-                            Vector3 rootMotionWorld = _characterOrientator.TransformDirection(rootMotionLocal);
-                            finalVel = new Vector3(rootMotionWorld.x, verticalVel, rootMotionWorld.z);
-                        }
-                        else
-                        {
-                            finalVel = new Vector3(rootMotionVelocity.x, verticalVel, rootMotionVelocity.z);
-                        }
+                        finalVel = new Vector3(0f, verticalVel, 0f);
                     }
                     else
                     {
-                        // --- WALK/RUN: use root motion modulated by input (customize if needed) ---
-                        finalVel = new Vector3(rootMotionVelocity.x, verticalVel, rootMotionVelocity.z * _moveInput.x);
+                        float horizontalVelocity =
+                            authoredHorizontalSpeed * Mathf.Sign(_moveInput.x);
+                        finalVel = new Vector3(0f, verticalVel, horizontalVelocity);
                     }
                 }
                 else
                 {
-                    // --- Air: use input for X/Z (air control), ignore root motion ---
-                    Vector3 airMove = new Vector3(-_moveInput.y, 0f, _moveInput.x).normalized * _airControlSpeed;
-                    finalVel = new Vector3(airMove.x, verticalVel, airMove.z);
+                    float horizontalVelocity = _moveInput.x * _airControlSpeed;
+                    finalVel = new Vector3(0f, verticalVel, horizontalVelocity);
                 }
 
                 // --- Apply velocity ---
@@ -192,8 +185,8 @@ namespace Movement
                 // --- Face intended direction ---
                 if (_moveInput.sqrMagnitude > 0.01f && _characterOrientator != null)
                 {
-                    Vector3 inputDir = new Vector3(-_moveInput.y, 0f, _moveInput.x);
-                    Quaternion targetRot = Quaternion.LookRotation(inputDir.normalized, Vector3.up);
+                    Vector3 facing = new Vector3(0f, 0f, Mathf.Sign(_moveInput.x));
+                    Quaternion targetRot = Quaternion.LookRotation(facing, Vector3.up);
                     _characterOrientator.rotation = Quaternion.Slerp(_characterOrientator.rotation, targetRot, 0.2f);
                 }
 

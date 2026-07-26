@@ -1,9 +1,16 @@
 using UnityEngine;
 
 [System.Serializable]
-public struct DestructData
+public readonly struct DestructData
 {
-    public Vector3 Direction;
-    public float Force;
-    public Vector3 Point;
+    public Vector3 Direction { get; }
+    public Vector3 Point { get; }
+
+    public DestructData(Vector3 direction, Vector3 point)
+    {
+        Direction = direction.sqrMagnitude > Mathf.Epsilon
+            ? direction.normalized
+            : Vector3.zero;
+        Point = point;
+    }
 }

@@ -371,12 +371,12 @@ public interface IImpactable
 
 public interface IDestructible
 {
-    void Destruct(DestructData data);
+    void Destruct(DestructData data, Action<StructuralResult> completed);
 }
 
 public interface ISliceable
 {
-    void Slice(SliceData data);
+    void Slice(SliceData data, Action<StructuralResult> completed);
 }
 
 public interface IHitReactable
@@ -386,7 +386,9 @@ public interface IHitReactable
 
 public interface IReactiveEvent
 {
-    void Consume(TargetContext ctx);
+    void Consume(
+        IReadOnlyList<TargetContext> contexts,
+        Action<IReadOnlyList<TargetContext>> completed);
 }
 
 public interface IReactiveEventSource

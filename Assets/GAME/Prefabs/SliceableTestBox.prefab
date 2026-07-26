@@ -14,8 +14,9 @@ GameObject:
   - component: {fileID: 8135727330594533079}
   - component: {fileID: 5826553670177653615}
   - component: {fileID: 62894982614680829}
-  - component: {fileID: 8653341001847544029}
   - component: {fileID: 7025735376799155910}
+  - component: {fileID: 466196999031118922}
+  - component: {fileID: 421431373944543927}
   m_Layer: 0
   m_Name: SliceableTestBox
   m_TagString: Untagged
@@ -157,18 +158,6 @@ MonoBehaviour:
   _sliceId: 0
   _lastSliceTime: -3.4028235e+38
   delayBetweenSlices: 1
---- !u!114 &8653341001847544029
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8921783171485760805}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f3831578e3316d041b73e0e29a8c2dc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &7025735376799155910
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,3 +170,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3489755e5f634fc594e40001141c077f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &466196999031118922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8921783171485760805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0722b23f5c884c5886b455a0272b9818, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _logDamage: 1
+--- !u!114 &421431373944543927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8921783171485760805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ca147953b67e99429279ef9dd4ae342, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _rb: {fileID: 8135727330594533079}
+  _supportedTranslationAxes: 7
+  _supportedRotationAxes: 7
+  _forceMode: 2
+  _maxAngularSpeed: 20

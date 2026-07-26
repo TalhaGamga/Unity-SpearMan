@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 public sealed class ImpactEvent : IReactiveEvent
 {
     private readonly ImpactData _data;
@@ -7,8 +10,19 @@ public sealed class ImpactEvent : IReactiveEvent
         _data = data;
     }
 
-    public void Consume(TargetContext ctx)
+    public void Consume(
+        IReadOnlyList<TargetContext> contexts,
+        Action<IReadOnlyList<TargetContext>> completed)
     {
-        ctx.Impactable?.ApplyImpact(_data);
+        foreach (TargetContext context in contexts)
+        {
+            if (context != null &&
+                context.TryGet<IImpactable>(out var impactable))
+            {
+                impactable.ApplyImpact(_data);
+            }
+        }
+
+        completed?.Invoke(contexts);
     }
 }

@@ -16,8 +16,6 @@ public class AttackDefinition : ScriptableObject
 
     [FormerlySerializedAs("Breaks")]
     public bool IsDestructive;
-    public DestructSettings Destruct;
 
     public bool CanSlice;
-    public SliceSettings Slice;
 }

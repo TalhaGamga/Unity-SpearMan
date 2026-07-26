@@ -16,37 +16,53 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
 
     public Observable<IReactiveEvent> Stream()
     {
-        // Always start with damage
         var stream = Observable.Return<IReactiveEvent>(
             new DamageEvent(_attack.Damage)
         );
 
-        // Impact (physics)
+        ImpactData impact = default;
         if (_attack.HasImpact)
         {
-            var impact = new ImpactData
-            {
-                Direction = _hit.Direction,
-                Force = _hit.Speed * _attack.Impact.ForceMultiplier,
-                Point = _hit.Point
-            };
-
+            impact = BuildImpact();
             stream = stream.Concat(
-                Observable.Return<IReactiveEvent>(
-                    new ImpactEvent(impact)
-                )
+                Observable.Return<IReactiveEvent>(new ImpactEvent(impact))
             );
         }
 
-        // Reaction (state machine)
+        if (_attack.IsDestructive)
+        {
+            var destruct = new DestructData(_hit.Direction, _hit.Point);
+            stream = stream.Concat(
+                Observable.Return<IReactiveEvent>(new DestructEvent(destruct))
+            );
+        }
+
+        if (_attack.CanSlice && _hit.SlicePlaneNormal != Vector3.zero)
+        {
+            var slice = new SliceData(_hit.Point, _hit.SlicePlaneNormal);
+            stream = stream.Concat(
+                Observable.Return<IReactiveEvent>(new SliceEvent(slice))
+            );
+        }
+
+        if (_attack.HasImpact &&
+            (_attack.IsDestructive || _attack.CanSlice))
+        {
+            stream = stream.Concat(
+                Observable.Return<IReactiveEvent>(new PieceImpactEvent(impact))
+            );
+        }
+
+        // Reaction ordering is intentionally provisional.
         if (_attack.HasReaction)
         {
             var settings = _attack.Reaction;
+            Vector3 direction = _hit.GetDirection(PhysicsAxes.YZ);
             var reaction = new HitReaction
             {
                 Type = settings.Type,
-                Direction = new Vector2(_hit.Direction.x, _hit.Direction.z),
-                Force = _hit.Speed * settings.ForceMultiplier,
+                Direction = new Vector2(direction.z, direction.y),
+                Force = _hit.GetSpeed(PhysicsAxes.YZ) * settings.ForceMultiplier,
                 Duration = settings.Duration,
                 LocksMovementInput = settings.LocksMovementInput,
                 LocksCombatInput = settings.LocksCombatInput,
@@ -54,45 +70,31 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
             };
 
             stream = stream.Concat(
-                Observable.Return<IReactiveEvent>(
-                    new HitReactionEvent(reaction)
-                )
-            );
-        }
-
-        // Destruct
-        if (_attack.IsDestructive)
-        {
-            var destruct = new DestructData
-            {
-                Direction = _hit.Direction,
-                Force = _hit.Speed * _attack.Destruct.ForceMultiplier,
-                Point = _hit.Point
-            };
-
-            stream = stream.Concat(
-                Observable.Return<IReactiveEvent>(
-                    new DestructEvent(destruct)
-                )
-            );
-        }
-
-        // Slice (geometry)
-        if (_attack.CanSlice && _hit.SlicePlaneNormal != Vector3.zero)
-        {
-            var slice = new SliceData(
-                _hit.Point,
-                _hit.SlicePlaneNormal,
-                _hit.Speed * _attack.Slice.ForceMultiplier
-            );
-
-            stream = stream.Concat(
-                Observable.Return<IReactiveEvent>(
-                    new SliceEvent(slice)
-                )
+                Observable.Return<IReactiveEvent>(new HitReactionEvent(reaction))
             );
         }
 
         return stream;
+    }
+
+    private ImpactData BuildImpact()
+    {
+        PhysicsResponseSettings motion = _attack.Impact.Motion;
+        PhysicsAxes translationAxes = PhysicsAxesUtility.Sanitize(
+            motion.TranslationAxes
+        );
+        PhysicsAxes rotationAxes = PhysicsAxesUtility.Sanitize(
+            motion.RotationAxes
+        );
+        PhysicsAxes motionAxes = translationAxes | rotationAxes;
+
+        return new ImpactData(
+            _hit.GetDirection(motionAxes),
+            _hit.GetSpeed(translationAxes) * motion.LinearMultiplier,
+            _hit.Point,
+            translationAxes,
+            rotationAxes,
+            _hit.GetSpeed(motionAxes) * motion.AngularMultiplier
+        );
     }
 }

@@ -13,8 +13,6 @@ public class AttackReactiveProfile
 
     [FormerlySerializedAs("Breaks")]
     public bool IsDestructive;
-    public DestructSettings Destruct;
 
     public bool CanSlice;
-    public SliceSettings Slice;
 }

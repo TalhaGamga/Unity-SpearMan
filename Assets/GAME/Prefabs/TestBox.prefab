@@ -14,7 +14,8 @@ GameObject:
   - component: {fileID: 1410536192516284439}
   - component: {fileID: 456445161897263020}
   - component: {fileID: 6670988717291834425}
-  - component: {fileID: 8132673170886178561}
+  - component: {fileID: 788897611326377504}
+  - component: {fileID: 549783421089043906}
   - component: {fileID: 9046175815245271861}
   m_Layer: 0
   m_Name: TestBox
@@ -137,7 +138,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 8
+  m_Constraints: 2
   m_CollisionDetection: 0
 --- !u!114 &6670988717291834425
 MonoBehaviour:
@@ -153,7 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _preFractured: {fileID: 0}
   _runtimeFractured: {fileID: 9046175815245271861}
---- !u!114 &8132673170886178561
+--- !u!114 &788897611326377504
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -162,9 +163,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 2954770188572244154}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c7e7af57976f8b0458f54e80f16d604d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: 0722b23f5c884c5886b455a0272b9818, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _logDamage: 1
+--- !u!114 &549783421089043906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2954770188572244154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ca147953b67e99429279ef9dd4ae342, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _rb: {fileID: 456445161897263020}
+  _supportedTranslationAxes: 7
+  _supportedRotationAxes: 7
+  _forceMode: 1
+  _maxAngularSpeed: 20
 --- !u!114 &9046175815245271861
 MonoBehaviour:
   m_ObjectHideFlags: 0
