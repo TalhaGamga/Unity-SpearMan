@@ -44,6 +44,21 @@ public class ReactionIntentMapper : IIntentMapper
 
         if (reaction.State == ReactionType.AirJuggle)
         {
+            if (snapshot.Movement.IsGrounded)
+            {
+                return new ActionIntent
+                {
+                    Movement = new MovementAction
+                    {
+                        ActionType = MovementType.Idle,
+                        Direction = Vector2.zero
+                    },
+                    Combat = new CombatAction
+                    {
+                        ActionType = CombatType.Idle
+                    }
+                };
+            }
             return new ActionIntent
             {
                 Movement = new MovementAction

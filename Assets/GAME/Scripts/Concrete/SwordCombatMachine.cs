@@ -21,7 +21,11 @@ namespace Combat
         private bool _canDealDamage;
         private readonly HashSet<GameObject> _hitTargets = new();
         private bool _isHitWindowOpen;
+        private string _activeHitWindowStateName;
+        private int _activeHitWindowComboStep;
         private Dictionary<int, string> _comboAttackLookup;
+        private Dictionary<AnimationClip, int> _comboStepByClip;
+        private Dictionary<int, string> _comboStateNameLookup;
 
         private Sword _view;
         private readonly Subject<Unit> _snapshotStreamer = new();
@@ -62,9 +66,17 @@ namespace Combat
             var grPA_S3 = new ConcreteState("GrPA_S3");
             var stab = new ConcreteState("DashingAttack");
 
+            _comboStateNameLookup = new Dictionary<int, string>
+            {
+                [1] = grPA_S1.StateName,
+                [2] = grPA_S2.StateName,
+                [3] = grPA_S3.StateName
+            };
+
             #region OnEnter
             idleState.OnEnter.AddListener(() =>
             {
+                resetHitFrame();
                 setContextState(CombatType.Idle);
                 setAttackSequence(false, 0);
                 setCanCombo(false);
@@ -117,6 +129,7 @@ namespace Combat
             #region OnExit
             grPA_S1.OnExit.AddListener(() =>
             {
+                closeHitFrameForState(grPA_S1.StateName);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -125,6 +138,7 @@ namespace Combat
 
             grPA_S2.OnExit.AddListener(() =>
             {
+                closeHitFrameForState(grPA_S2.StateName);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -133,6 +147,7 @@ namespace Combat
 
             grPA_S3.OnExit.AddListener(() =>
             {
+                closeHitFrameForState(grPA_S3.StateName);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -141,6 +156,7 @@ namespace Combat
 
             stab.OnExit.AddListener(() =>
             {
+                closeHitFrameForState(stab.StateName);
                 setCanCombo(false);
                 setCancelable(false);
                 resetVersion();
@@ -193,11 +209,20 @@ namespace Combat
 
         public void OnAnimationFrame(CombatAnimationFrame frame)
         {
-            if (!string.IsNullOrEmpty(frame.StateName) &&
-                !string.Equals(
-                    frame.StateName,
-                    _stateMachine.CurrentStateName,
-                    StringComparison.Ordinal))
+            HitWindowIdentity hitWindow = default;
+            bool isHitWindowEvent =
+                frame.EventKey == "HitFrameOpen" ||
+                frame.EventKey == "HitFrameClose";
+
+            if (isHitWindowEvent)
+            {
+                if (!tryResolveHitWindowIdentity(frame, out hitWindow) ||
+                    !isCurrentState(hitWindow.StateName))
+                {
+                    return;
+                }
+            }
+            else if (!isCurrentState(frame.StateName))
             {
                 return;
             }
@@ -205,11 +230,11 @@ namespace Combat
             switch (frame.EventKey)
             {
                 case "HitFrameOpen":
-                    openHitFrame();
+                    openHitFrame(hitWindow);
                     break;
 
                 case "HitFrameClose":
-                    closeHitFrame();
+                    closeHitFrame(hitWindow);
                     break;
 
                 case "Cancelable":
@@ -229,7 +254,7 @@ namespace Combat
                 case "SlashEnd":
                     setAttackSequence(false);
                     setCanCombo(false);
-                    closeHitFrame();
+                    closeHitFrameForState(frame.StateName);
                     break;
             }
         }
@@ -250,26 +275,113 @@ namespace Combat
 
         public void End()
         {
+            resetHitFrame();
         }
 
-        private void openHitFrame()
+        private void openHitFrame(HitWindowIdentity hitWindow)
         {
-            if (!tryResolveAttackDefinition(out _activeAttack))
+            if (!tryResolveAttackDefinition(
+                hitWindow.ComboStep,
+                out AttackDefinition attack))
             {
-                _isHitWindowOpen = false;
-                _activeAttack = null;
                 return;
             }
 
-            _hitTargets.Clear();
+            resetHitFrame();
+            _activeAttack = attack;
+            _activeHitWindowStateName = hitWindow.StateName;
+            _activeHitWindowComboStep = hitWindow.ComboStep;
             _isHitWindowOpen = true;
         }
 
-        private void closeHitFrame()
+        private void closeHitFrame(HitWindowIdentity hitWindow)
+        {
+            if (!_isHitWindowOpen ||
+                hitWindow.ComboStep != _activeHitWindowComboStep ||
+                !string.Equals(
+                    hitWindow.StateName,
+                    _activeHitWindowStateName,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            resetHitFrame();
+        }
+
+        private void closeHitFrameForState(string stateName)
+        {
+            if (!_isHitWindowOpen ||
+                !string.Equals(
+                    stateName,
+                    _activeHitWindowStateName,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            resetHitFrame();
+        }
+
+        private void resetHitFrame()
         {
             _isHitWindowOpen = false;
             _activeAttack = null;
+            _activeHitWindowStateName = null;
+            _activeHitWindowComboStep = 0;
             _hitTargets.Clear();
+        }
+
+        private bool isCurrentState(string stateName)
+        {
+            return string.IsNullOrEmpty(stateName) ||
+                string.Equals(
+                    stateName,
+                    _stateMachine.CurrentStateName,
+                    StringComparison.Ordinal);
+        }
+
+        private bool tryResolveHitWindowIdentity(
+            CombatAnimationFrame frame,
+            out HitWindowIdentity hitWindow)
+        {
+            hitWindow = default;
+
+            if (_comboAttackLookup == null)
+                buildComboAttackLookup();
+
+            int comboStep = frame.ComboStep;
+            if (comboStep <= 0 &&
+                (frame.SourceClip == null ||
+                 !_comboStepByClip.TryGetValue(
+                     frame.SourceClip,
+                     out comboStep)))
+            {
+                return false;
+            }
+
+            if (_comboStateNameLookup == null ||
+                !_comboStateNameLookup.TryGetValue(
+                    comboStep,
+                    out string stateName))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(frame.StateName) &&
+                !string.Equals(
+                    frame.StateName,
+                    stateName,
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            hitWindow = new HitWindowIdentity(
+                stateName,
+                comboStep
+            );
+            return true;
         }
 
         private void setContextState(CombatType combatType)
@@ -317,6 +429,7 @@ namespace Combat
         private void buildComboAttackLookup()
         {
             _comboAttackLookup = new Dictionary<int, string>();
+            _comboStepByClip = new Dictionary<AnimationClip, int>();
 
             if (_comboAttackKeys == null)
                 return;
@@ -327,10 +440,18 @@ namespace Combat
                     continue;
 
                 _comboAttackLookup[entry.ComboStep] = entry.AttackKey;
+
+                if (entry.HitWindowClip != null)
+                {
+                    _comboStepByClip[entry.HitWindowClip] =
+                        entry.ComboStep;
+                }
             }
         }
 
-        private bool tryResolveAttackDefinition(out AttackDefinition attack)
+        private bool tryResolveAttackDefinition(
+            int comboStep,
+            out AttackDefinition attack)
         {
             attack = null;
 
@@ -342,7 +463,7 @@ namespace Combat
             if (_comboAttackLookup == null)
                 buildComboAttackLookup();
 
-            if (!_comboAttackLookup.TryGetValue(_context.ComboStep, out var key))
+            if (!_comboAttackLookup.TryGetValue(comboStep, out var key))
             {
                 return false;
             }
@@ -357,9 +478,6 @@ namespace Combat
 
         private void processHitFrame()
         {
-            //if (!tryResolveAttackDefinition(out var attack))
-            //    return;
-
             _view.ProcessHitWindow(_activeAttack, _hitTargets);
         }
 
@@ -375,11 +493,26 @@ namespace Combat
         }
 
 
+        private readonly struct HitWindowIdentity
+        {
+            public string StateName { get; }
+            public int ComboStep { get; }
+
+            public HitWindowIdentity(
+                string stateName,
+                int comboStep)
+            {
+                StateName = stateName;
+                ComboStep = comboStep;
+            }
+        }
+
         [Serializable]
         private struct ComboAttackKey
         {
             public int ComboStep;
             public string AttackKey;
+            public AnimationClip HitWindowClip;
         }
     }
 }

@@ -120,6 +120,10 @@ PrefabInstance:
       value: Sword_Light_1
       objectReference: {fileID: 0}
     - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[0].HitWindowClip
+      value:
+      objectReference: {fileID: 7400000, guid: 115a54a9967cae84e91133f4349c7a3d, type: 2}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[0].ComboStep
       value: 1
       objectReference: {fileID: 0}
@@ -128,6 +132,10 @@ PrefabInstance:
       value: Sword_Light_2
       objectReference: {fileID: 0}
     - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[1].HitWindowClip
+      value:
+      objectReference: {fileID: 7400000, guid: e98efa217b335574f8c2158ddbd0bcf9, type: 2}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[1].ComboStep
       value: 2
       objectReference: {fileID: 0}
@@ -135,6 +143,10 @@ PrefabInstance:
       propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[2].AttackKey
       value: Sword_Heavy
       objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[2].HitWindowClip
+      value:
+      objectReference: {fileID: 7400000, guid: 862415ae0828abb4d9c6661c5fdf142e, type: 2}
     - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: _swordCombatMachine._comboAttackKeys.Array.data[2].ComboStep
       value: 3

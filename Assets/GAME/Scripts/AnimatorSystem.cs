@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using R3;
 using System.Collections.Generic;
 using System.Collections;
@@ -52,9 +52,17 @@ public sealed class AnimatorSystem : MonoBehaviour
         }
     }
 
-    public void OnAnimationEvent(string eventString)
+    public void OnAnimationEvent(AnimationEvent animationEvent)
     {
-        var parsed = AnimationEventParser.Parse(eventString);
+        if (animationEvent == null)
+            return;
+
+        var parsed = AnimationEventParser.Parse(
+            animationEvent.stringParameter
+        );
+        AnimationClip sourceClip = animationEvent.isFiredByAnimator
+            ? animationEvent.animatorClipInfo.clip
+            : null;
         string system = parsed.TryGetValue("System", out var s) ? s : "";
 
         if (!string.IsNullOrEmpty(system))
@@ -69,6 +77,7 @@ public sealed class AnimatorSystem : MonoBehaviour
                 case "CombatSystem":
                     //Debug.Log("Combat Animation Frame");
                     var combatFrame = AnimationEventParser.ToCombatAnimationFrame(parsed);
+                    combatFrame.SourceClip = sourceClip;
                     _combatAnimationStream.OnNext(combatFrame);
                     break;
                 default:

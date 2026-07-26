@@ -90,14 +90,10 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
             motion
         );
         Vector3 angularDirection = _hit.GetDirection(rotationAxes);
-        float linearForce = Mathf.Max(
-            _hit.GetSpeed(translationAxes) * motion.LinearMultiplier,
-            motion.MinimumLinearForce
-        );
 
         return new ImpactData(
             linearDirection,
-            linearForce,
+            motion.LinearForce,
             _hit.Point,
             translationAxes,
             rotationAxes,

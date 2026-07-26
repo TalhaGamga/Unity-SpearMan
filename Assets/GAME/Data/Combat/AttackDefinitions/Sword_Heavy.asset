@@ -19,11 +19,10 @@ MonoBehaviour:
     Motion:
       TranslationAxes: 6
       RotationAxes: -1
-      LinearMultiplier: 1.7
+      LinearForce: 14
       AngularMultiplier: 0.7
       VerticalMode: 2
       MinimumVerticalRatio: 0.65
-      MinimumLinearForce: 0
   HasReaction: 1
   Reaction:
     Type: 1

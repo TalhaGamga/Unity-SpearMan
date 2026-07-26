@@ -31,7 +31,6 @@ namespace Movement.Mover
         private ImpactData _impact;
         private float _deltaTime;
         private float _physicsDeltaTime;
-        private Vector3 _rootMotionVelocity;
 
         public void Init(IMovementManager movementManager, Subject<MovementSnapshot> snapshotStream, Subject<MovementTransition> transitionStream)
         {
@@ -73,14 +72,12 @@ namespace Movement.Mover
             moveState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Move);
-                settleGroundedMotion();
                 submitSnapshot();
             });
 
             idleState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Idle);
-                settleGroundedMotion();
                 submitSnapshot();
             });
 
@@ -110,7 +107,7 @@ namespace Movement.Mover
             neutralState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Neutral);
-                settleGroundedMotion();
+                resetForcedMotion();
                 submitSnapshot();
             });
 
@@ -185,6 +182,12 @@ namespace Movement.Mover
                 submitSnapshot();
             });
 
+            neutralState.OnUpdate.AddListener(() =>
+            {
+                blendSpeed();
+                submitSnapshot();
+            });
+
             jumpState.OnUpdate.AddListener(() =>
             {
                 setCharacterOrientator();
@@ -233,12 +236,19 @@ namespace Movement.Mover
             #region OnPhysicsUpdate
             moveState.OnPhysicsUpdate.AddListener(() =>
             {
+                maintainGroundedMotion();
                 applyRootMotionAsVelocity();
             });
 
             idleState.OnPhysicsUpdate.AddListener(() =>
             {
+                maintainGroundedMotion();
                 applyRootMotionAsVelocity();
+            });
+
+            neutralState.OnPhysicsUpdate.AddListener(() =>
+            {
+                stopGroundedMotion();
             });
 
             jumpState.OnPhysicsUpdate.AddListener(() =>
@@ -291,6 +301,12 @@ namespace Movement.Mover
             var forcedFallToNeutral = new StateTransition<MovementType>(forcedFallState, neutralState, MovementType.Neutral,
                 () => isGrounded(),
                 () => Debug.Log("Transitioning to Neutral from forced fall"));
+            var neutralToIdle = new StateTransition<MovementType>(
+                neutralState,
+                idleState,
+                MovementType.Idle,
+                () => isGrounded(),
+                () => Debug.Log("Transitioning to Idle from Neutral"));
             var fallToNeutral = new StateTransition<MovementType>(fallState, neutralState, MovementType.Neutral, () => isGrounded(), () => Debug.Log("Transitioning to Neutral"));
             var dashToJump = new StateTransition<MovementType>(dashState, jumpState, MovementType.Jump, onTransition: () =>
             {
@@ -324,6 +340,7 @@ namespace Movement.Mover
             _stateMachine.AddAutonomicTransition(jumpToFall);
             _stateMachine.AddAutonomicTransition(launchedToForcedFall);
             _stateMachine.AddAutonomicTransition(forcedFallToNeutral);
+            _stateMachine.AddAutonomicTransition(neutralToIdle);
             _stateMachine.AddAutonomicTransition(dashToNeutral);
 
             setContextGravity();
@@ -363,13 +380,8 @@ namespace Movement.Mover
 
         public void HandleRootMotion(RootMotionFrame rootMotion)
         {
-            _context.RootMotionDeltaPosition = rootMotion.DeltaPosition;
-
-            if (Time.deltaTime > Mathf.Epsilon)
-            {
-                _rootMotionVelocity =
-                    rootMotion.DeltaPosition / Time.deltaTime;
-            }
+            _context.RootMotionDeltaPosition +=
+                rootMotion.DeltaPosition;
         }
 
         public void UpdateMover(float deltaTime)
@@ -459,14 +471,17 @@ namespace Movement.Mover
             if (_physicsDeltaTime <= Mathf.Epsilon)
                 return;
 
-            Vector3 velocity = PhysicsAxesUtility.Project(
-                _rootMotionVelocity,
+            Vector3 delta = PhysicsAxesUtility.Project(
+                _context.RootMotionDeltaPosition,
                 PhysicsAxes.Z
             );
-
-            _context.Rb.linearVelocity = velocity;
-
             _context.RootMotionDeltaPosition = Vector3.zero;
+
+            _context.Rb.linearVelocity = new Vector3(
+                0f,
+                0f,
+                delta.z / _physicsDeltaTime
+            );
         }
 
         private void stab(Vector3 stabPoint)
@@ -541,18 +556,24 @@ namespace Movement.Mover
             );
         }
 
-        private void settleGroundedMotion()
+        private void maintainGroundedMotion()
         {
             snapToGroundSurface();
-
             _context.VerticalVelocity = 0f;
             _context.Rb.linearVelocity = new Vector3(
                 0f,
                 0f,
                 _context.Rb.linearVelocity.z
             );
-            _context.RootMotionDeltaPosition = Vector3.zero;
             setMovementConstraints(true);
+        }
+
+        private void stopGroundedMotion()
+        {
+            maintainGroundedMotion();
+            _context.HorizontalSpeed = 0f;
+            _context.Rb.linearVelocity = Vector3.zero;
+            _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
         private void snapToGroundSurface()
@@ -638,6 +659,11 @@ namespace Movement.Mover
         private void resetForcedMotion()
         {
             _isForcedMotionActive = false;
+            _context.MoveInput = Vector2.zero;
+            _context.MovementBlend = 0f;
+            _context.HorizontalSpeed = 0f;
+            _context.VerticalVelocity = 0f;
+            _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
         private void handleAirborneMovement()

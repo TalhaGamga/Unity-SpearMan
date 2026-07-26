@@ -7,7 +7,7 @@ public struct PhysicsResponseSettings
     public PhysicsAxes RotationAxes;
 
     [Min(0f)]
-    public float LinearMultiplier;
+    public float LinearForce;
 
     [Min(0f)]
     public float AngularMultiplier;
@@ -16,7 +16,4 @@ public struct PhysicsResponseSettings
 
     [Range(0f, 1f)]
     public float MinimumVerticalRatio;
-
-    [Min(0f)]
-    public float MinimumLinearForce;
 }

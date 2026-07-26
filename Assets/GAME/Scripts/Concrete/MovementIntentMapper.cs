@@ -26,7 +26,7 @@ public class MovementIntentMapper : IIntentMapper
             };
         }
 
-        if (!(snapshot.Combat.IsAttacking || snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame && !snapshot.Movement.State.Equals(MovementType.Neutral))
+        if (!(snapshot.Combat.IsAttacking || snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame)
         {
             return new ActionIntent
             {

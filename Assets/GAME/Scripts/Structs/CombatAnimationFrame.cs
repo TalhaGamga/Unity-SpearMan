@@ -9,6 +9,7 @@ public struct CombatAnimationFrame
     public string StateName;
     public int ComboStep;      // New!
     public string ComboType;   // New!
+    public AnimationClip SourceClip;
 
     public CombatAnimationFrame(
         string action,
@@ -26,5 +27,6 @@ public struct CombatAnimationFrame
         StateName = stateName;
         ComboStep = comboStep;
         ComboType = comboType;
+        SourceClip = null;
     }
 }
