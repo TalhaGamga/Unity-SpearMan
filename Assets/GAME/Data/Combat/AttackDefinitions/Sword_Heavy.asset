@@ -21,7 +21,7 @@ MonoBehaviour:
       RotationAxes: -1
       LinearForce: 14
       AngularMultiplier: 0.7
-      VerticalMode: 2
+      VerticalMode: 1
       MinimumVerticalRatio: 0.65
   HasReaction: 1
   Reaction:

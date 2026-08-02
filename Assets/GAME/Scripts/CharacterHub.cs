@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class CharacterHub : MonoBehaviour
 {
+    private const string LaunchLyingStateName = "Knockdown_LyingFront 1";
+    private const string GetUpTriggerName = "GetUp";
+
     [SerializeField] private MonoBehaviour _inputHandlerSource;
     [SerializeField] private AnimatorSystem _animatorSystem;
     [SerializeField] private MovementManager _movementManager;
@@ -14,6 +17,7 @@ public class CharacterHub : MonoBehaviour
 
     public ActionSystem _actionSystem;
     private CompositeDisposable _disposables = new();
+    private bool _awaitingLaunchLandingRecovery;
 
     private void Awake()
     {
@@ -45,6 +49,14 @@ public class CharacterHub : MonoBehaviour
 
     private void WireIntentTriggers()
     {
+        _reactionManager.TransitionStream
+            .Subscribe(TrackLaunchLandingRecovery)
+            .AddTo(_disposables);
+
+        _movementManager.TransitionStream
+            .Subscribe(HandleLandingAnimatorTransition)
+            .AddTo(_disposables);
+
         _inputHandler.InputSnapshotStream
             .Subscribe(_ => _actionSystem.ProcessIntent())
             .AddTo(_disposables);
@@ -80,6 +92,40 @@ public class CharacterHub : MonoBehaviour
             .Select(AnimationParameterMapper.ReactionAnimatorMapper)
             .Subscribe(_animatorSystem.HandleAnimatorUpdates)
             .AddTo(_disposables);
+    }
+
+    private void TrackLaunchLandingRecovery(ReactionTransition transition)
+    {
+        switch (transition.To)
+        {
+            case ReactionType.Launch:
+            case ReactionType.AirJuggle:
+                _animatorSystem.CancelPendingStateCompletionTrigger();
+                _awaitingLaunchLandingRecovery = true;
+                break;
+            case ReactionType.LightHit:
+            case ReactionType.Knockdown:
+            case ReactionType.Dead:
+                _awaitingLaunchLandingRecovery = false;
+                _animatorSystem.CancelPendingStateCompletionTrigger();
+                break;
+        }
+    }
+
+    private void HandleLandingAnimatorTransition(MovementTransition transition)
+    {
+        if (!_awaitingLaunchLandingRecovery ||
+            transition.From != MovementType.ForcedFall ||
+            transition.To != MovementType.Neutral)
+        {
+            return;
+        }
+
+        _awaitingLaunchLandingRecovery = false;
+        _animatorSystem.TriggerAfterStateCompletes(
+            LaunchLyingStateName,
+            GetUpTriggerName
+        );
     }
 
     private void WireActionOutputs()

@@ -7,6 +7,7 @@ public sealed class AnimatorSystem : MonoBehaviour
 {
     private Animator _anim;
     private readonly CompositeDisposable _disposables = new();
+    private Coroutine _pendingStateCompletionTrigger;
 
     public Observable<RootMotionFrame> RootMotionStream => _rootMotionSubject;
     public Observable<CombatAnimationFrame> CombatAnimationFrameStream => _combatAnimationStream;
@@ -19,6 +20,7 @@ public sealed class AnimatorSystem : MonoBehaviour
     private Dictionary<string, float> _pendingTriggerResets = new();
 
     private const float TRIGGER_RESET_TIME = 0.1f;
+    private const float STATE_ENTRY_TIMEOUT = 2f;
 
     void Awake() => _anim = GetComponentInChildren<Animator>();
 
@@ -124,7 +126,109 @@ public sealed class AnimatorSystem : MonoBehaviour
         //CameraManager.Shake();
     }
 
-    void OnDestroy() => _disposables.Dispose();
+    public void TriggerAfterStateCompletes(
+        string stateName,
+        string triggerName)
+    {
+        if (string.IsNullOrWhiteSpace(stateName) ||
+            string.IsNullOrWhiteSpace(triggerName))
+        {
+            Debug.LogWarning(
+                $"{name}: Cannot schedule an Animator trigger without " +
+                "both a state and trigger name.",
+                this
+            );
+            return;
+        }
+
+        CancelPendingStateCompletionTrigger();
+        _pendingStateCompletionTrigger = StartCoroutine(
+            IETriggerAfterStateCompletes(stateName, triggerName)
+        );
+    }
+
+    public void CancelPendingStateCompletionTrigger()
+    {
+        if (_pendingStateCompletionTrigger == null)
+            return;
+
+        StopCoroutine(_pendingStateCompletionTrigger);
+        _pendingStateCompletionTrigger = null;
+    }
+
+    private void OnDestroy()
+    {
+        CancelPendingStateCompletionTrigger();
+        _disposables.Dispose();
+    }
+
+    private IEnumerator IETriggerAfterStateCompletes(
+        string stateName,
+        string triggerName)
+    {
+        int stateHash = Animator.StringToHash(stateName);
+        float entryDeadline = Time.time + STATE_ENTRY_TIMEOUT;
+        int layerIndex = -1;
+
+        while (Time.time <= entryDeadline)
+        {
+            layerIndex = FindCurrentStateLayer(stateHash);
+            if (layerIndex >= 0)
+                break;
+
+            yield return null;
+        }
+
+        if (layerIndex < 0)
+        {
+            Debug.LogWarning(
+                $"{name}: Animator state '{stateName}' was not entered " +
+                $"within {STATE_ENTRY_TIMEOUT:0.##} seconds.",
+                this
+            );
+            _pendingStateCompletionTrigger = null;
+            yield break;
+        }
+
+        while (true)
+        {
+            AnimatorStateInfo stateInfo =
+                _anim.GetCurrentAnimatorStateInfo(layerIndex);
+
+            if (stateInfo.shortNameHash != stateHash)
+            {
+                _pendingStateCompletionTrigger = null;
+                yield break;
+            }
+
+            if (stateInfo.normalizedTime >= 1f &&
+                !_anim.IsInTransition(layerIndex))
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        _pendingStateCompletionTrigger = null;
+        StartCoroutine(IESetTrigger(triggerName));
+    }
+
+    private int FindCurrentStateLayer(int stateHash)
+    {
+        for (int layerIndex = 0;
+            layerIndex < _anim.layerCount;
+            layerIndex++)
+        {
+            AnimatorStateInfo stateInfo =
+                _anim.GetCurrentAnimatorStateInfo(layerIndex);
+
+            if (stateInfo.shortNameHash == stateHash)
+                return layerIndex;
+        }
+
+        return -1;
+    }
 
     private IEnumerator IESetTrigger(string trigger)
     {

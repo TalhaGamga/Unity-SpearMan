@@ -17,12 +17,12 @@ MonoBehaviour:
   HasImpact: 1
   Impact:
     Motion:
-      TranslationAxes: 2
+      TranslationAxes: 6
       RotationAxes: 1
-      LinearForce: 12
+      LinearForce: 16
       AngularMultiplier: 0.4
       VerticalMode: 1
-      MinimumVerticalRatio: 0.65
+      MinimumVerticalRatio: 0.989
   HasReaction: 1
   Reaction:
     Type: 2
