@@ -123,7 +123,7 @@ public sealed class AnimatorSystem : MonoBehaviour
 
     public void ShakeCamera()
     {
-        //CameraManager.Shake();
+        CameraManager.Shake();
     }
 
     public void TriggerAfterStateCompletes(
