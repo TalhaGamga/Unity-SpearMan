@@ -26,6 +26,8 @@ public interface IMovementManager
     public LayerMask GroundLayer { get; }
     public float GroundCheckDistance { get; }
     public Transform[] GroundCheckPoints { get; }
+    public bool HasGroundContact { get; }
+    public Vector3 GroundNormal { get; }
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     void SetMover(IMover newMover);

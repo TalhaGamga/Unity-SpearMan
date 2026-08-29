@@ -23,6 +23,9 @@ MonoBehaviour:
       AngularMultiplier: 0.4
       VerticalMode: 1
       MinimumVerticalRatio: 0.989
+      ClampToForwardArc: 1
+      MinimumForwardAngle: 60
+      MaximumForwardAngle: 85
   HasReaction: 1
   Reaction:
     Type: 2

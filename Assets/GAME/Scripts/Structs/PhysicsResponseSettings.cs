@@ -16,4 +16,12 @@ public struct PhysicsResponseSettings
 
     [Range(0f, 1f)]
     public float MinimumVerticalRatio;
+
+    public bool ClampToForwardArc;
+
+    [Range(0f, 90f)]
+    public float MinimumForwardAngle;
+
+    [Range(0f, 90f)]
+    public float MaximumForwardAngle;
 }

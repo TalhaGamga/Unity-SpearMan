@@ -17,9 +17,6 @@ namespace Movement.Mover
         private CompositeDisposable _disposables = new();
         private IMovementManager _manager;
 
-        private Transform[] _groundCheckPoints;
-        private float _groundCheckDistance;
-
         private Transform _characterOrientator;
         private Subject<Unit> _snapshotStreamer = new();
         private BehaviorSubject<MovementType> _transitionStreamer = new(MovementType.Idle);
@@ -36,10 +33,9 @@ namespace Movement.Mover
         {
             _stateMachine = new StateMachine<MovementType>();
             _manager = movementManager;
-            _groundCheckPoints = _manager.GroundCheckPoints;
-            _groundCheckDistance = _manager.GroundCheckDistance;
             _context.PlatformLayer = _manager.GroundLayer;
             _characterOrientator = _manager.CharacterOrientator;
+            configureBodyConstraints();
 
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
@@ -84,7 +80,6 @@ namespace Movement.Mover
             launchedState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Launched);
-                setMovementConstraints(false);
                 configureImpactMotion(_impact);
                 submitSnapshot();
             });
@@ -92,14 +87,12 @@ namespace Movement.Mover
             forcedFallState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.ForcedFall);
-                setMovementConstraints(false);
                 submitSnapshot();
             });
 
             fallState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Fall);
-                setMovementConstraints(false);
                 setHorizontalSpeed(_context.AirborneMovementSpeed);
                 submitSnapshot();
             });
@@ -114,14 +107,12 @@ namespace Movement.Mover
             jumpState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Jump);
-                setMovementConstraints(false);
                 submitSnapshot();
             });
 
             dashState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Dash);
-                setMovementConstraints(true);
                 dash();
                 submitSnapshot();
             });
@@ -129,23 +120,12 @@ namespace Movement.Mover
             stabState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.Stab);
-                setMovementConstraints(true);
                 _context.Rb.linearVelocity = Vector3.zero;
                 submitSnapshot();
             });
             #endregion
 
             #region OnExit
-            dashState.OnExit.AddListener(() =>
-            {
-                setMovementConstraints(false);
-            });
-
-            moveState.OnExit.AddListener(() =>
-            {
-                setMovementConstraints(false);
-            });
-
             jumpState.OnExit.AddListener(() =>
             {
                 setComboType(MovementComboType.None);
@@ -253,26 +233,22 @@ namespace Movement.Mover
 
             jumpState.OnPhysicsUpdate.AddListener(() =>
             {
-                handleGravity();
-                handleAirborneMovement();
+                simulateAirborneMotion();
             });
 
             launchedState.OnPhysicsUpdate.AddListener(() =>
             {
-                handleGravity();
-                handleAirborneMovement();
+                simulateAirborneMotion();
             });
 
             forcedFallState.OnPhysicsUpdate.AddListener(() =>
             {
-                handleGravity();
-                handleAirborneMovement();
+                simulateAirborneMotion();
             });
 
             fallState.OnPhysicsUpdate.AddListener(() =>
             {
-                handleGravity();
-                handleAirborneMovement();
+                simulateAirborneMotion();
             });
             #endregion
 
@@ -297,6 +273,12 @@ namespace Movement.Mover
             });
 
             var jumpToFall = new StateTransition<MovementType>(jumpState, fallState, MovementType.Fall, () => _context.Rb.linearVelocity.y < 0, () => Debug.Log("Transitioning to fall from jump"));
+            var jumpToNeutral = new StateTransition<MovementType>(
+                jumpState,
+                neutralState,
+                MovementType.Neutral,
+                () => _context.VerticalVelocity <= 0f && isGrounded(),
+                () => Debug.Log("Transitioning to Neutral from jump"));
             var launchedToForcedFall = new StateTransition<MovementType>(launchedState, forcedFallState, MovementType.ForcedFall, () => _context.VerticalVelocity <= 0f, () => Debug.Log("Transitioning to forced fall from launch"));
             var forcedFallToNeutral = new StateTransition<MovementType>(forcedFallState, neutralState, MovementType.Neutral,
                 () => isGrounded(),
@@ -337,6 +319,7 @@ namespace Movement.Mover
             _stateMachine.AddAutonomicTransition(fallToNeutral);
             _stateMachine.AddAutonomicTransition(stabToNeutral);
             _stateMachine.AddAutonomicTransition(toFall);
+            _stateMachine.AddAutonomicTransition(jumpToNeutral);
             _stateMachine.AddAutonomicTransition(jumpToFall);
             _stateMachine.AddAutonomicTransition(launchedToForcedFall);
             _stateMachine.AddAutonomicTransition(forcedFallToNeutral);
@@ -387,13 +370,16 @@ namespace Movement.Mover
         public void UpdateMover(float deltaTime)
         {
             _deltaTime = deltaTime;
-            _stateMachine.Update();
+            // Movement transitions depend on Rigidbody and ground-query state.
+            // Evaluate them in the physics step so landing cannot be delayed by
+            // a render frame.
+            _stateMachine.Update(checkTransitions: false);
         }
 
         public void PhysicsUpdateMover(float deltaTime)
         {
             _physicsDeltaTime = deltaTime;
-            _stateMachine.PhysicsUpdate();
+            _stateMachine.PhysicsUpdate(checkTransitions: true);
         }
 
         public void OnAnimationFrame(MovementAnimationFrame animationFrame)
@@ -419,26 +405,13 @@ namespace Movement.Mover
 
         private bool isGrounded()
         {
-            if (_context.VerticalVelocity >
+            if (_context.Rb.linearVelocity.y >
                 GroundedUpwardVelocityThreshold)
             {
                 return false;
             }
 
-            foreach (var checkPoint in _groundCheckPoints)
-            {
-                if (checkPoint != null && Physics.CheckSphere(
-                    checkPoint.position,
-                    _groundCheckDistance,
-                    _context.PlatformLayer,
-                    QueryTriggerInteraction.Ignore
-                ))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return _manager.HasGroundContact;
         }
 
         private void setContextState(MovementType movementType)
@@ -479,7 +452,7 @@ namespace Movement.Mover
 
             _context.Rb.linearVelocity = new Vector3(
                 0f,
-                0f,
+                _context.Rb.linearVelocity.y,
                 delta.z / _physicsDeltaTime
             );
         }
@@ -491,7 +464,12 @@ namespace Movement.Mover
                 _context.MoverTransform.position,
                 PhysicsAxes.YZ
             );
-            _context.MoverTransform.DOMove(planarPoint, _context.StabDuration).SetEase(_context.StabEase);
+            _context.Rb.DOMove(
+                planarPoint,
+                _context.StabDuration
+            )
+                .SetEase(_context.StabEase)
+                .SetUpdate(UpdateType.Fixed);
         }
 
         private Vector3 findStabDirection()
@@ -558,79 +536,55 @@ namespace Movement.Mover
 
         private void maintainGroundedMotion()
         {
-            snapToGroundSurface();
+            if (!isGrounded())
+            {
+                handleGravity();
+                handleAirborneMovement();
+                return;
+            }
+
             _context.VerticalVelocity = 0f;
             _context.Rb.linearVelocity = new Vector3(
                 0f,
                 0f,
                 _context.Rb.linearVelocity.z
             );
-            setMovementConstraints(true);
         }
 
         private void stopGroundedMotion()
         {
             maintainGroundedMotion();
             _context.HorizontalSpeed = 0f;
-            _context.Rb.linearVelocity = Vector3.zero;
+            _context.Rb.linearVelocity = new Vector3(
+                0f,
+                _context.Rb.linearVelocity.y,
+                0f
+            );
             _context.RootMotionDeltaPosition = Vector3.zero;
         }
 
-        private void snapToGroundSurface()
+        private void simulateAirborneMotion()
         {
-            float probeDistance = Mathf.Max(
-                _context.GroundSnapDistance,
-                _groundCheckDistance
-            );
-            bool foundGround = false;
-            float highestCorrection = float.NegativeInfinity;
-
-            foreach (Transform checkPoint in _groundCheckPoints)
+            if (isGrounded())
             {
-                if (checkPoint == null)
-                    continue;
-
-                Vector3 origin = checkPoint.position +
-                    Vector3.up * probeDistance;
-
-                if (!Physics.Raycast(
-                    origin,
-                    Vector3.down,
-                    out RaycastHit hit,
-                    probeDistance * 2f,
-                    _context.PlatformLayer,
-                    QueryTriggerInteraction.Ignore
-                ))
-                {
-                    continue;
-                }
-
-                float correction = hit.point.y - checkPoint.position.y;
-                highestCorrection = Mathf.Max(
-                    highestCorrection,
-                    correction
+                _context.VerticalVelocity = 0f;
+                _context.Rb.linearVelocity = new Vector3(
+                    0f,
+                    0f,
+                    _context.Rb.linearVelocity.z
                 );
-                foundGround = true;
+                return;
             }
 
-            if (!foundGround)
-                return;
-
-            Vector3 position = _context.Rb.position;
-            position.y += highestCorrection;
-            _context.Rb.position = position;
+            handleGravity();
+            handleAirborneMovement();
         }
 
-        private void setMovementConstraints(bool freezeVerticalPosition)
+        private void configureBodyConstraints()
         {
-            RigidbodyConstraints constraints =
+            _context.Rb.constraints =
                 RigidbodyConstraints.FreezeRotation |
                 RigidbodyConstraints.FreezePositionX;
-
-            if (freezeVerticalPosition)
-                constraints |= RigidbodyConstraints.FreezePositionY;
-
-            _context.Rb.constraints = constraints;
         }
 
         private void dash()
@@ -677,13 +631,8 @@ namespace Movement.Mover
 
         private void handleGravity()
         {
-            if (_context.VerticalVelocity <= 0f && isGrounded())
-            {
-                _context.VerticalVelocity = 0f;
-                return;
-            }
-
-            _context.VerticalVelocity -=
+            _context.VerticalVelocity =
+                _context.Rb.linearVelocity.y -
                 _context.Gravity * _physicsDeltaTime;
         }
 
@@ -695,6 +644,11 @@ namespace Movement.Mover
         private void setVerticalVelocity(float velocity)
         {
             _context.VerticalVelocity = velocity;
+            _context.Rb.linearVelocity = new Vector3(
+                0f,
+                velocity,
+                _context.Rb.linearVelocity.z
+            );
         }
 
         private float calculateJumpVelocity()

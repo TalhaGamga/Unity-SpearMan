@@ -24,15 +24,20 @@ namespace DevVorpian
             _currentState = new ConcreteState();
         }
 
-        public void Update()
+        public void Update(bool checkTransitions = true)
         {
             _currentState?.Update();
-            checkTransition();
+
+            if (checkTransitions)
+                checkTransition();
         }
 
-        public void PhysicsUpdate()
+        public void PhysicsUpdate(bool checkTransitions = false)
         {
             _currentState?.PhysicsUpdate();
+
+            if (checkTransitions)
+                checkTransition();
         }
 
         public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)

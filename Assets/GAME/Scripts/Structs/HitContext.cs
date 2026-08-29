@@ -6,23 +6,41 @@ public readonly struct HitContext
     private readonly Vector3 _fallbackDirection;
 
     public Vector3 Velocity { get; }
-    public Vector3 Direction => GetDirection(PhysicsAxes.XYZ);
+    public Vector3 Direction => GetDirection(PhysicsAxes.YZ);
     public Vector3 Point { get; }
     public Vector3 SlicePlaneNormal { get; }
-    public float Speed => GetSpeed(PhysicsAxes.XYZ);
+    public Vector3 AttackerForward { get; }
+    public float Speed => GetSpeed(PhysicsAxes.YZ);
 
     public HitContext(
         Vector3 velocity,
         Vector3 point,
         Vector3 fallbackDirection,
-        Vector3 bladeDirection)
+        Vector3 bladeDirection,
+        Vector3 attackerForward)
     {
-        Velocity = velocity;
-        _fallbackDirection = fallbackDirection;
+        Velocity = PhysicsAxesUtility.Project(
+            velocity,
+            PhysicsAxes.YZ
+        );
+        _fallbackDirection = PhysicsAxesUtility.Project(
+            fallbackDirection,
+            PhysicsAxes.YZ
+        );
         Point = point;
+        AttackerForward = PhysicsAxesUtility.Direction(
+            attackerForward,
+            PhysicsAxes.YZ
+        );
 
-        // Slicing is visual geometry, so its plane can still use full 3D blade motion.
-        Vector3 planeNormal = Vector3.Cross(velocity, bladeDirection);
+        Vector3 planarBladeDirection = PhysicsAxesUtility.Project(
+            bladeDirection,
+            PhysicsAxes.YZ
+        );
+        Vector3 planeNormal = Vector3.Cross(
+            Velocity,
+            planarBladeDirection
+        );
         SlicePlaneNormal = planeNormal.sqrMagnitude > MinMotionSqrMagnitude
             ? planeNormal.normalized
             : Vector3.zero;

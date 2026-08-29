@@ -89,7 +89,12 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
             _hit.GetDirection(translationAxes),
             motion
         );
-        Vector3 angularDirection = _hit.GetDirection(rotationAxes);
+        linearDirection = ClampToForwardArc(
+            linearDirection,
+            _hit.AttackerForward,
+            motion
+        );
+        Vector3 angularDirection = _hit.GetDirection(translationAxes);
 
         return new ImpactData(
             linearDirection,
@@ -136,5 +141,66 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
 
         return horizontal.normalized * horizontalRatio +
             Vector3.up * (verticalSign * minimumVertical);
+    }
+
+    private static Vector3 ClampToForwardArc(
+        Vector3 runtimeDirection,
+        Vector3 attackerForward,
+        PhysicsResponseSettings motion)
+    {
+        if (!motion.ClampToForwardArc ||
+            (motion.TranslationAxes & PhysicsAxes.YZ) != PhysicsAxes.YZ)
+        {
+            return runtimeDirection;
+        }
+
+        Vector3 forward = PhysicsAxesUtility.Project(
+            attackerForward,
+            PhysicsAxes.YZ
+        );
+        forward.y = 0f;
+
+        if (forward.sqrMagnitude <= Mathf.Epsilon)
+            return runtimeDirection;
+
+        forward.Normalize();
+
+        float minimumAngle = Mathf.Clamp(
+            Mathf.Min(
+                motion.MinimumForwardAngle,
+                motion.MaximumForwardAngle
+            ),
+            0f,
+            90f
+        );
+        float maximumAngle = Mathf.Clamp(
+            Mathf.Max(
+                motion.MinimumForwardAngle,
+                motion.MaximumForwardAngle
+            ),
+            minimumAngle,
+            90f
+        );
+        Vector3 planarDirection = PhysicsAxesUtility.Project(
+            runtimeDirection,
+            PhysicsAxes.YZ
+        );
+        float forwardMagnitude = Mathf.Abs(
+            Vector3.Dot(planarDirection, forward)
+        );
+        float upwardMagnitude = Mathf.Max(0f, planarDirection.y);
+        float elevation = Mathf.Atan2(
+            upwardMagnitude,
+            forwardMagnitude
+        ) * Mathf.Rad2Deg;
+        elevation = Mathf.Clamp(
+            elevation,
+            minimumAngle,
+            maximumAngle
+        );
+
+        float elevationRadians = elevation * Mathf.Deg2Rad;
+        return forward * Mathf.Cos(elevationRadians) +
+            Vector3.up * Mathf.Sin(elevationRadians);
     }
 }
