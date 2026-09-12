@@ -45,7 +45,7 @@ namespace Combat
             _stateMachine = new StateMachine<CombatType>();
 
             _snapshotStreamer
-                .Select(_ => new CombatSnapshot(_context.State, _context.Version, _context.IsCancelable, _context.ComboStep, _context.IsAttacking))
+                .Select(_ => new CombatSnapshot(_context.State, _context.Version, _context.IsCancelable, _context.ComboStep, _context.IsAttacking, resolveLocomotion()))
                 .DistinctUntilChanged()
                 .Subscribe(snapshotStream.OnNext)
                 .AddTo(_disposables);
@@ -447,6 +447,24 @@ namespace Combat
                         entry.ComboStep;
                 }
             }
+        }
+
+        /// <summary>
+        /// Locomotion ownership for the combat state currently running, read
+        /// straight off the attack definition. Resolved per snapshot rather
+        /// than cached, because the combo step is the only thing that decides
+        /// it and the context already tracks that.
+        /// </summary>
+        private LocomotionSource resolveLocomotion()
+        {
+            if (!_context.IsAttacking)
+                return LocomotionSource.Simulated;
+
+            return tryResolveAttackDefinition(
+                _context.ComboStep,
+                out AttackDefinition attack) && attack != null
+                    ? attack.Locomotion
+                    : LocomotionSource.RootMotion;
         }
 
         private bool tryResolveAttackDefinition(

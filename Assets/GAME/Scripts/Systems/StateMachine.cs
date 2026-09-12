@@ -32,12 +32,23 @@ namespace DevVorpian
                 checkTransition();
         }
 
+        /// <summary>
+        /// Transitions are evaluated BEFORE the state ticks, deliberately.
+        ///
+        /// Evaluating them afterwards costs a whole physics step: the frame
+        /// that detects a landing has already run the airborne state's physics,
+        /// so the grounded state does not get to move the body until the next
+        /// step. Conditions read the same Rigidbody data either way - they were
+        /// already looking at the previous step's result - so moving the check
+        /// to the front changes nothing about when a transition is detected and
+        /// everything about when the new state gets to act on it.
+        /// </summary>
         public void PhysicsUpdate(bool checkTransitions = false)
         {
-            _currentState?.PhysicsUpdate();
-
             if (checkTransitions)
                 checkTransition();
+
+            _currentState?.PhysicsUpdate();
         }
 
         public void AddIntentBasedTransition(StateTransition<StateType> stateTransition)

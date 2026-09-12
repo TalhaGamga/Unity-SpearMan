@@ -15,7 +15,8 @@ public class ReactionIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     ActionType = MovementType.Idle,
-                    Direction = Vector2.zero
+                    Direction = Vector2.zero,
+                    JumpHold = JumpInputReader.ReadHold(inputSnapshot)
                 },
                 Combat = new CombatAction
                 {
@@ -33,7 +34,8 @@ public class ReactionIntentMapper : IIntentMapper
                 Movement = new MovementAction
                 {
                     ActionType = MovementType.Idle,
-                    Direction = Vector2.zero
+                    Direction = Vector2.zero,
+                    JumpHold = JumpInputReader.ReadHold(inputSnapshot)
                 },
                 Combat = new CombatAction
                 {
@@ -51,7 +53,8 @@ public class ReactionIntentMapper : IIntentMapper
                     Movement = new MovementAction
                     {
                         ActionType = MovementType.Idle,
-                        Direction = Vector2.zero
+                        Direction = Vector2.zero,
+                        JumpHold = JumpInputReader.ReadHold(inputSnapshot)
                     },
                     Combat = new CombatAction
                     {
@@ -68,7 +71,8 @@ public class ReactionIntentMapper : IIntentMapper
                         : MovementType.None,
                     Direction = reaction.AllowsAirDrift
                         ? TryReadMove(inputSnapshot)
-                        : Vector2.zero
+                        : Vector2.zero,
+                    JumpHold = JumpInputReader.ReadHold(inputSnapshot)
                 },
                 Combat = new CombatAction
                 {

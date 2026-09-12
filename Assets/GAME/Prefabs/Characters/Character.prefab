@@ -297,7 +297,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 114
   m_CollisionDetection: 2
 --- !u!136 &1039437672387605739
@@ -363,8 +363,10 @@ MonoBehaviour:
   _groundCheckDistance: 0.1
   _rbMoverMachine:
     _context:
+      Design: {fileID: 11400000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a15, type: 2}
       State: 0
       ComboType: 0
+      Locomotion: 0
       StabPoint: {fileID: 6279414225275308866}
       PlatformLayer:
         serializedVersion: 2
@@ -376,10 +378,6 @@ MonoBehaviour:
       BlendAcceleration: 7.5
       MovementBlend: 1
       JumpRight: 0
-      JumpHeight: 5
-      AirborneMovementSpeed: 8
-      JumpTimeToPeak: 0.5
-      GroundSnapDistance: 0.25
       StabDuration: 0.1
       IsStabStarted: 0
       IsStabbing: 0
@@ -387,7 +385,6 @@ MonoBehaviour:
       FaceTurnSpeedInDegree: 2000
       FaceDeadzone: 0.05
       LastFaceX: 1
-      DashSpeed: 15
       IsDashEnded: 0
       IsStabEnded: 0
       StabRange: 10
@@ -396,9 +393,15 @@ MonoBehaviour:
       CharacterMouseSensor:
         serializedVersion: 2
         m_Bits: 2048
-      Gravity: 0
       VerticalVelocity: 0
       HorizontalSpeed: 0
+      AirHorizontalVelocity: 0
+      CoyoteTimer: 0
+      JumpBufferTimer: 0
+      JumpCount: 0
+      JumpCutApplied: 0
+      JumpPressLatched: 0
+      JumpHold: 0
     _stateMachine:
       OnTransitionedAutonomously:
         m_PersistentCalls:

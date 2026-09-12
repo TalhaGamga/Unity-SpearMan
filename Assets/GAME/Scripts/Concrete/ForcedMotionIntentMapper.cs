@@ -17,7 +17,11 @@ public sealed class ForcedMotionIntentMapper : IIntentMapper
             Movement = new MovementAction
             {
                 ActionType = MovementType.None,
-                Direction = Vector2.zero
+                Direction = Vector2.zero,
+                // Forced motion ignores input, but the jump button's release
+                // still has to land or the mover keeps the press latched and
+                // eats the player's next jump after recovery.
+                JumpHold = JumpInputReader.ReadHold(inputSnapshot)
             },
             Combat = new CombatAction
             {

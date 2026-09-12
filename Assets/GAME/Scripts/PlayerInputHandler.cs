@@ -78,8 +78,17 @@ public class PlayerInputHandler : MonoBehaviour, IInputHandler
         }
         else // Stateful
         {
-            input.WasPresseedThisFrame = isHeld && !wasHeld; // Optionally track, but mainly use IsHeld
+            // IsHeld stays truthful for as long as the button is down, while
+            // the press and release edges live for exactly one frame. Consumers
+            // that need an edge (jump) and consumers that need the hold (jump
+            // cut, air control) both read the same snapshot.
+            input.WasPresseedThisFrame = isHeld && !wasHeld;
+            input.WasReleasedThisFrame = !isHeld && wasHeld;
+
             UpdateInput(action, input);
+
+            if (input.WasPresseedThisFrame || input.WasReleasedThisFrame)
+                StartCoroutine(ClearEdgeFlagsNextFrame(action));
         }
     }
 
@@ -87,6 +96,26 @@ public class PlayerInputHandler : MonoBehaviour, IInputHandler
     {
         yield return null;
         UpdateInput(action, resetInput);
+    }
+
+    /// <summary>
+    /// Clears only the one-frame edge flags and re-reads the rest of the input
+    /// from the live dictionary, so a value that changed in the meantime (a
+    /// move direction, say) is never clobbered by a stale captured copy.
+    /// </summary>
+    private System.Collections.IEnumerator ClearEdgeFlagsNextFrame(PlayerAction action)
+    {
+        yield return null;
+
+        if (!_currentInputs.TryGetValue(action, out var current))
+            yield break;
+
+        if (!current.WasPresseedThisFrame && !current.WasReleasedThisFrame)
+            yield break;
+
+        current.WasPresseedThisFrame = false;
+        current.WasReleasedThisFrame = false;
+        UpdateInput(action, current);
     }
 
     /// <summary>
@@ -137,6 +166,7 @@ public class PlayerInputHandler : MonoBehaviour, IInputHandler
         return a.IsHeld == b.IsHeld &&
                a.Value == b.Value &&
                //a.Direction == b.Direction &&
-               a.WasPresseedThisFrame == b.WasPresseedThisFrame;
+               a.WasPresseedThisFrame == b.WasPresseedThisFrame &&
+               a.WasReleasedThisFrame == b.WasReleasedThisFrame;
     }
 }

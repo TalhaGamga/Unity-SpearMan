@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Key: Sword_Heavy
   Damage: 25
+  Locomotion: 1
   HasImpact: 1
   Impact:
     Motion:

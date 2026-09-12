@@ -18,6 +18,18 @@ public static class AnimationParameterMapper
             Value = snapshot.Movement.Speed
         };
 
+        // Which jump of the chain the mover is currently spending. The animator
+        // needs it to tell a ground jump from an air jump, because MoveState
+        // reports both as Jump - the mechanic owns the count, the visual reads
+        // it. A level, not an edge: no trigger to get consumed at the wrong
+        // moment or re-fire on the next snapshot.
+        yield return new AnimatorParamUpdate
+        {
+            ParamName = "JumpCount",
+            ParamType = AnimatorParamUpdateType.Int,
+            Value = snapshot.Movement.JumpRight
+        };
+
         yield return new AnimatorParamUpdate
         {
             ParamName = CombatType.GroundedPrimaryAttack.ToString(),

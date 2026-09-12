@@ -6,7 +6,10 @@ public static class InputBehaviorMap
     {
         {PlayerAction.MouseDelta,InputBehavior.Stateful },
         { PlayerAction.Move, InputBehavior.Stateful },
-        { PlayerAction.Jump, InputBehavior.Eventful },
+        // Stateful, not eventful: variable jump height needs the release edge,
+        // and an eventful action never reports one - it collapses back to
+        // "not held" before the release can be observed.
+        { PlayerAction.Jump, InputBehavior.Stateful },
         { PlayerAction.PrimaryAttack, InputBehavior.Eventful },
         {PlayerAction.Dash, InputBehavior.Eventful },
         // Extend...

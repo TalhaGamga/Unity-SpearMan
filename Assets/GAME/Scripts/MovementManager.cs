@@ -16,7 +16,20 @@ namespace Movement
         public Transform[] GroundCheckPoints => _groundCheckPoints;
         public float GroundCheckDistance => _groundCheckDistance;
         public LayerMask GroundLayer => _groundLayer;
-        public bool HasGroundContact => _groundContacts.Count > 0;
+        /// <summary>
+        /// Contacts first, probe second.
+        ///
+        /// Collision contacts alone are not a reliable ground test: crossing the
+        /// seam between two butted colliders can report Exit on the old one
+        /// before Enter on the new one, and a single dropped frame is enough to
+        /// throw the mover into Fall in the middle of a flat run. The probe
+        /// covers that gap using the foot transforms the prefab has always
+        /// carried for exactly this purpose.
+        /// </summary>
+        public bool HasGroundContact =>
+            _groundContacts.Count > 0 || probeGround();
+        public float SpeedModifier => _speedModifier;
+        public float JumpModifier => _jumpModifier;
         public Vector3 GroundNormal
         {
             get
@@ -130,8 +143,11 @@ namespace Movement
             SnapshotStream.AddTo(_disposables);
         }
 
-        public void SetSpeedModifier(float newModifier) => _speedModifier = newModifier;
-        public void SetJumpModifier(float newModifier) => _jumpModifier = newModifier;
+        public void SetSpeedModifier(float newModifier) =>
+            _speedModifier = Mathf.Max(0f, newModifier);
+
+        public void SetJumpModifier(float newModifier) =>
+            _jumpModifier = Mathf.Max(0f, newModifier);
 
         public void HandleAction(MovementAction action)
         {
@@ -151,6 +167,44 @@ namespace Movement
         public bool GetIsGrounded()
         {
             return HasGroundContact;
+        }
+
+        /// <summary>
+        /// Casts down from each foot point. Starts slightly above the foot so
+        /// the ray is never fired from inside the floor the character is
+        /// already pressing into, which would return nothing.
+        /// </summary>
+        private bool probeGround()
+        {
+            if (_groundCheckPoints == null)
+                return false;
+
+            float lift = _groundCheckDistance;
+            float reach = lift + _groundCheckDistance;
+
+            foreach (Transform checkPoint in _groundCheckPoints)
+            {
+                if (checkPoint == null)
+                    continue;
+
+                Vector3 origin = checkPoint.position + Vector3.up * lift;
+
+                if (!Physics.Raycast(
+                        origin,
+                        Vector3.down,
+                        out RaycastHit hit,
+                        reach,
+                        _groundLayer,
+                        QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
+                if (hit.normal.y >= _minGroundNormalY)
+                    return true;
+            }
+
+            return false;
         }
 
         private void updateGroundContact(Collision collision)

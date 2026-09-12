@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a11, type: 3}
+  m_Name: MovementDesign_Hero
+  m_EditorClassIdentifier: 
+  BodyHeight: 1.8
+  TileUnit: 1
+  JumpHeightInBodies: 1.8
+  JumpApexTime: 0.38
+  FallGravityMultiplier: 1.45
+  JumpCutMultiplier: 0.45
+  TerminalFallSpeed: 26
+  ApexVelocityWindow: 3
+  ApexGravityMultiplier: 0.45
+  MaxJumpCount: 2
+  AirJumpHeightRatio: 0.85
+  CoyoteTime: 0.1
+  JumpBufferTime: 0.12
+  GroundSpeed: 8
+  GroundAccelerationTime: 0.08
+  GroundBrakeTime: 0.1
+  GroundStickSpeed: 2
+  AirSpeedRatio: 1
+  AirAccelerationTime: 0.06
+  AirBrakeTime: 0.1
+  DashDistanceInTiles: 4
+  DashDuration: 0.25
+  DashJumpHeightRatio: 0.66
+  HardLandDistanceInBodies: 2.5
+  _readout: Select this asset in the Inspector to refresh.

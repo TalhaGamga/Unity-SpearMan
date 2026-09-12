@@ -52,7 +52,12 @@ public class SwordIntentMapper : IIntentMapper
             Movement = new MovementAction
             {
                 Direction = moveDirection,
-                ActionType = MovementType.Idle
+                ActionType = MovementType.Idle,
+                // The attack starts this frame; the combat snapshot
+                // only says so on the next one. Hand the mover the
+                // right owner immediately so the first physics step
+                // cannot slide the body out from under the clip.
+                Locomotion = LocomotionSource.RootMotion
             },
             Combat = new CombatAction
             {
@@ -71,7 +76,8 @@ public class SwordIntentMapper : IIntentMapper
             Movement = new MovementAction
             {
                 Direction = moveDirection,
-                ActionType = movementType
+                ActionType = movementType,
+                Locomotion = LocomotionSource.RootMotion
             },
             Combat = new CombatAction
             {

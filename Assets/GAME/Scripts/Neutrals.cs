@@ -28,6 +28,13 @@ public interface IMovementManager
     public Transform[] GroundCheckPoints { get; }
     public bool HasGroundContact { get; }
     public Vector3 GroundNormal { get; }
+
+    /// <summary>Run/air speed multiplier applied by run upgrades and status effects.</summary>
+    public float SpeedModifier { get; }
+
+    /// <summary>Launch velocity multiplier applied by run upgrades and status effects.</summary>
+    public float JumpModifier { get; }
+
     void SetSpeedModifier(float newModifier);
     void SetJumpModifier(float newModifier);
     void SetMover(IMover newMover);
