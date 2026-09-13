@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a26, type: 3}
+  m_Name: Sword_VisualPack
+  m_EditorClassIdentifier: 
+  _cues:
+  - CueKey: SlashLight
+    Prefab: {fileID: 1648509489993130, guid: 8a0c2ade089d4c44fbdf861f7bcd7be6, type: 3}
+    Anchor: 0
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ScaleBy: 1
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.8, y: 1.2}
+    Lifetime: 0
+  - CueKey: SlashRising
+    Prefab: {fileID: 1648509489993130, guid: 8a0c2ade089d4c44fbdf861f7bcd7be6, type: 3}
+    Anchor: 0
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1.15, y: 1.15, z: 1.15}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ScaleBy: 1
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.8, y: 1.2}
+    Lifetime: 0
+  - CueKey: SlashHeavy
+    Prefab: {fileID: 1427184144938852, guid: dc97aa01df27d194d8e5911051209943, type: 3}
+    Anchor: 0
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: -90, z: 0}
+    Scale: {x: 1.3, y: 1.3, z: 1.3}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ScaleBy: 1
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 16}
+    SwingStrengthRange: {x: 0.85, y: 1.25}
+    Lifetime: 0

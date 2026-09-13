@@ -1,21 +1,34 @@
 using System.Collections.Generic;
 using Combat;
+using R3;
 using Movement;
 using UnityEngine;
 
-public class Sword : MonoBehaviour, IWeapon
+public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
 {
     private const string LaunchAttackKey = "Sword_Light_2";
     private const int LaunchArcSegments = 16;
 
     [SerializeField] private WeaponHitboxSensor _hitbox;
     [SerializeField] private SwordCombatMachine _swordCombatMachine;
+    [SerializeField] private WeaponVisualizer _visualizer;
     [SerializeField] private AttackDatabase _attackDatabase;
     [SerializeField] private ReactiveEventDispatcher _dispatcher;
+
+    [Header("Visual Anchors")]
+    [Tooltip("Far end of the blade. Falls back to the hitbox centre when unset.")]
+    [SerializeField] private Transform _bladeTip;
+
+    [Tooltip("Grip point. Falls back to this weapon's own transform when unset.")]
+    [SerializeField] private Transform _handAnchor;
 
     private Transform _owner;
     private Transform _forwardSource;
     private Vector3 _lastPlanarForward = Vector3.forward;
+
+    // Null-guarded: a weapon whose visual strategy was never authored should
+    // simply show nothing, not fail to equip.
+    public Observable<VFXPlaySignal> VisualPlayStream => _visualizer?.PlayStream;
 
     public ICombat CreateCombat(ICombatManager combatManager)
     {
@@ -28,10 +41,56 @@ public class Sword : MonoBehaviour, IWeapon
             : _owner;
         updatePlanarForward();
 
+        // The weapon is the composition root for everything weapon-specific:
+        // it builds its own combat strategy and its own visual strategy, and
+        // hands each the rig data it needs.
+        _visualizer?.Init(this);
+
         var logic = _swordCombatMachine;
         logic.SetSwordView(this);
         return logic;
     }
+
+    /// <summary>
+    /// Combat and visuals read the same animation signal for different reasons.
+    /// This is the visual half; the combat half arrives through ICombat.
+    /// </summary>
+    public void OnAnimationFrame(CombatAnimationFrame frame)
+    {
+        _visualizer?.HandleAnimationFrame(frame);
+    }
+
+    #region IWeaponVisualSource
+
+    public Vector3 BladeDirection => _hitbox != null
+        ? _hitbox.BladeDirection
+        : getPlanarForward();
+
+    public Vector3 SwingVelocity => _hitbox != null
+        ? _hitbox.Velocity
+        : Vector3.zero;
+
+    public Vector3 PlanarForward => getPlanarForward();
+
+    public bool TryGetAnchor(VisualAnchor anchor, out Transform anchorTransform)
+    {
+        anchorTransform = anchor switch
+        {
+            VisualAnchor.BladeTip => _bladeTip != null ? _bladeTip : hitboxTransform(),
+            VisualAnchor.Hand => _handAnchor != null ? _handAnchor : transform,
+            VisualAnchor.Root => _owner != null ? _owner : transform.root,
+            _ => hitboxTransform()
+        };
+
+        return anchorTransform != null;
+    }
+
+    private Transform hitboxTransform()
+    {
+        return _hitbox != null ? _hitbox.Center : transform;
+    }
+
+    #endregion
 
     public bool TryGetAttackDefinition(string key, out AttackDefinition attack)
     {

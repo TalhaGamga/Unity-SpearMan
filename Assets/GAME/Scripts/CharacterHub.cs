@@ -45,6 +45,7 @@ public class CharacterHub : MonoBehaviour
         WireAnimatorTriggers();
         WireActionOutputs();
         WireAnimationOutputs();
+        WireVisualOutputs();
     }
 
     private void WireIntentTriggers()
@@ -136,6 +137,26 @@ public class CharacterHub : MonoBehaviour
 
         _actionSystem.CombatIntentStream
             .Subscribe(_combatManager.HandleAction)
+            .AddTo(_disposables);
+    }
+
+    /// <summary>
+    /// The only place visuals are connected to the effect pool.
+    ///
+    /// The weapon decides what a cue looks like, the pool decides how it is
+    /// realized, and this line is the whole seam between them - so redirecting
+    /// effects through a future character-wide visual layer means editing one
+    /// subscription, not the weapon.
+    /// </summary>
+    private void WireVisualOutputs()
+    {
+        _combatManager.VFXPlayStream
+            .Subscribe(signal =>
+            {
+                VFXManager pool = VFXManager.TryGetInstance();
+                if (pool != null)
+                    pool.HandlePlayVFXSignal(signal);
+            })
             .AddTo(_disposables);
     }
 

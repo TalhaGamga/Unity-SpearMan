@@ -25,6 +25,13 @@ public class WeaponHitboxSensor : MonoBehaviour
     );
     public Vector3 Velocity { get; private set; }
 
+    /// <summary>
+    /// The transform the damage volume is actually centred on. Effects anchor
+    /// here rather than on this component's own object, which may sit anywhere
+    /// on the weapon.
+    /// </summary>
+    public Transform Center => _hitboxCenter != null ? _hitboxCenter : transform;
+
     [SerializeField] private Transform _hitboxCenter;
     [SerializeField] private Vector3 _halfExtents =
         new Vector3(0.5f, 0.5f, 0.5f);

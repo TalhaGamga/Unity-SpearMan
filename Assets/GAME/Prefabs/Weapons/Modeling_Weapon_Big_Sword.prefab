@@ -101,6 +101,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _hitbox: {fileID: 1540310618824532766}
+  _visualizer:
+    _pack: {fileID: 11400000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a28, type: 2}
+    _warnOnUnknownCue: 1
+  _bladeTip: {fileID: 0}
+  _handAnchor: {fileID: 0}
 --- !u!114 &1540310618824532766
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -25,6 +25,7 @@ public static class AnimationEventParser
         int stage = parsed.TryGetValue("Stage", out var s) && int.TryParse(s, out var st) ? st : 0;
         int comboStep = parsed.TryGetValue("ComboStep", out var cs) && int.TryParse(cs, out var csInt) ? csInt : 0;
         string comboType = parsed.TryGetValue("ComboType", out var ct) ? ct : "";
+        string cue = parsed.TryGetValue("Cue", out var cu) ? cu : "";
         bool isCancelable = parsed.TryGetValue("Cancelable", out var c) && bool.TryParse(c, out var b) && b;
         string stateName = parsed.TryGetValue("StateName", out var sn)
             ? sn
@@ -39,7 +40,8 @@ public static class AnimationEventParser
             isCancelable,
             stateName,
             comboStep,
-            comboType
+            comboType,
+            cue
         );
     }
 

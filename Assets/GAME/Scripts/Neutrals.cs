@@ -72,7 +72,38 @@ public interface IWeapon
 {
     ICombat CreateCombat(ICombatManager combatManager);
 
+    /// <summary>
+    /// Raw animation signal, forwarded verbatim. The weapon decides what, if
+    /// anything, it means visually - the same cue is a slash arc on a sword and
+    /// nothing at all on a rifle.
+    /// </summary>
+    void OnAnimationFrame(CombatAnimationFrame frame);
+
+    /// <summary>
+    /// Effect requests this weapon wants realized. Who listens is a wiring
+    /// decision made where the weapon is plugged in, not the weapon's business.
+    /// </summary>
+    Observable<VFXPlaySignal> VisualPlayStream { get; }
+
     //bool TryGetAttackDefinition(string key, out AttackDefinition attack);
+}
+
+/// <summary>
+/// Live rig data a weapon exposes to its own visualizer: where effects attach
+/// and which way the blade is travelling right now.
+/// </summary>
+public interface IWeaponVisualSource
+{
+    bool TryGetAnchor(VisualAnchor anchor, out Transform anchorTransform);
+
+    /// <summary>Planar facing of the blade itself.</summary>
+    Vector3 BladeDirection { get; }
+
+    /// <summary>Planar velocity of the hitbox, i.e. how hard the swing is.</summary>
+    Vector3 SwingVelocity { get; }
+
+    /// <summary>Which way the character is facing, on the movement plane.</summary>
+    Vector3 PlanarForward { get; }
 }
 
 public interface IMover

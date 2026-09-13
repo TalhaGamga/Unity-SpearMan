@@ -18,6 +18,15 @@ public readonly struct VFXPlaySignal
     public readonly float PlaybackRate;
     public readonly float StartDelay;
 
+    /// <summary>
+    /// Already-resolved prefab. Set by callers that own their own effect
+    /// catalogue - a weapon's visual pack, say - so they do not have to push
+    /// their prefabs into the scene-wide <see cref="VFXSet"/> and collide with
+    /// every other actor using the same <see cref="SystemType"/>.
+    /// Left null, the manager falls back to the VFXType lookup.
+    /// </summary>
+    public readonly GameObject Prefab;
+
     public VFXPlaySignal(
         SystemType systemType,
         VFXType vfxType,
@@ -32,8 +41,10 @@ public readonly struct VFXPlaySignal
         float lifetime = 0f,
         int instanceId = 0,
         float playbackRate = 1f,
-        float startDelay = 0f)
+        float startDelay = 0f,
+        GameObject prefab = null)
     {
+        Prefab = prefab;
         SystemType = systemType;
         VFXType = vfxType;
         Position = position;

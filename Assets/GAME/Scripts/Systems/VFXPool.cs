@@ -3,6 +3,8 @@ using UnityEngine;
 
 public sealed class VFXPool
 {
+    private const int MaxRevivalAttempts = 8;
+
     private readonly Transform _poolRoot;
     private readonly int _maxPerPrefab;
     private readonly Dictionary<int, GenericPool<GameObject>> _pools = new();
@@ -29,7 +31,18 @@ public sealed class VFXPool
             _pools[prefabId] = pool;
         }
 
-        var instance = pool.Get();
+        // An instance parented outside the pool root - a trail following a
+        // weapon, say - dies with whatever it was attached to, while the pool
+        // still believes it holds it. Discard corpses until a live one turns
+        // up; Get() creates a fresh instance once the stack runs dry, so this
+        // always terminates.
+        GameObject instance = null;
+        for (int attempt = 0; attempt < MaxRevivalAttempts && instance == null; attempt++)
+            instance = pool.Get();
+
+        if (instance == null)
+            return null;
+
         if (parent != null)
         {
             instance.transform.SetParent(parent, false);

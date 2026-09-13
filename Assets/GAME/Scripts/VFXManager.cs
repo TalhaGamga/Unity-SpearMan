@@ -2,7 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class VFXManager : MonoBehaviour
+/// <summary>
+/// Scene-wide effect spawner: pools by prefab, tracks live instances, returns
+/// them when they are done.
+///
+/// Deliberately knows nothing about weapons, attacks or characters. It decides
+/// HOW a request is realized - pooled or fresh, how long it lives, when it goes
+/// back. WHAT deserves an effect is decided upstream, by whoever owns the
+/// gameplay meaning.
+/// </summary>
+public sealed class VFXManager : PersistentSingleton<VFXManager>
 {
     [System.Serializable]
     public struct SystemSetEntry
@@ -30,16 +39,17 @@ public sealed class VFXManager : MonoBehaviour
     private class PendingHandle { public bool Cancelled; }
     private readonly Dictionary<int, List<PendingHandle>> _pendingByInstance = new();
 
-    private void Awake()
+    protected override void Awake()
     {
-        if (_poolRoot == null)
-        {
-            var root = GameObject.Find("PoolRoot").transform;
-            if (root != null)
-            {
-                _poolRoot = root;
-            }
-        }
+        base.Awake();
+
+        // base.Awake destroys duplicates, but the destruction is deferred to
+        // the end of the frame - so the loser must not go on to build a second
+        // pool and register itself as a live set owner.
+        if (Instance != this)
+            return;
+
+        ensurePoolRoot();
 
         _sets.Clear();
         for (int i = 0; i < _initialSets.Count; i++)
@@ -55,6 +65,25 @@ public sealed class VFXManager : MonoBehaviour
             _fallbackSet.Initialize();
 
         _pool = new VFXPool(_poolRoot, Mathf.Max(1, _poolMaxPerPrefab));
+    }
+
+    /// <summary>
+    /// The pool root has to live under this object.
+    ///
+    /// This manager survives scene loads; a root found in the scene does not.
+    /// Pointing the pool at scene geometry means every pooled instance is
+    /// destroyed out from under the pool on the next load, and the pool keeps
+    /// handing out corpses. Owning the root removes the scene dependency
+    /// entirely.
+    /// </summary>
+    private void ensurePoolRoot()
+    {
+        if (_poolRoot != null && _poolRoot.IsChildOf(transform))
+            return;
+
+        var root = new GameObject("VFXPoolRoot");
+        root.transform.SetParent(transform, false);
+        _poolRoot = root.transform;
     }
 
     private void OnDisable()
@@ -104,11 +133,13 @@ public sealed class VFXManager : MonoBehaviour
 
     public void HandlePlayVFXSignal(VFXPlaySignal signal)
     {
-        if (signal.VFXType == VFXType.None)
-            return;
+        // A caller that resolved its own prefab - a weapon's visual pack -
+        // skips the shared set entirely, so two actors can play different
+        // effects under the same SystemType without fighting over one lookup.
+        var prefab = signal.Prefab != null
+            ? signal.Prefab
+            : GetVFXSet(signal.SystemType)?.GetPrefab(signal.VFXType);
 
-        var set = GetVFXSet(signal.SystemType);
-        var prefab = set?.GetPrefab(signal.VFXType);
         if (prefab == null)
             return;
 
