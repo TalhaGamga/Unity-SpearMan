@@ -25,39 +25,48 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Additive: 0
+    - _Additive: 0.3
     - _AlphaNoise: 0
     - _Anchor: 1
+    - _BoundaryStrength: 0
     - _Bristle: 0.6
     - _BristleThreshold: 0.66
-    - _BurnWidth: 0.015
+    - _BurnWidth: 0
     - _DissolveBias: 0
-    - _DissolveInner: 0.3
+    - _DissolveInner: 0.9
     - _DissolveNoise: 0.6
-    - _DissolveSoft: 0.012
+    - _DissolveSoft: 0.05
     - _DissolveTail: 0.9
     - _EdgeSkew: 0.4
     - _EdgeSoft: 0.015
+    - _FadeOpacity: 0.7
     - _HeadCap: 0
     - _HeadCapWidth: 0.5
     - _HeadFray: 0.035
     - _HeadHot: 0
+    - _HeadHotAcross: 1
     - _HeadHotPower: 5
     - _HeadSoft: 0.02
     - _HeadU: 1
     - _HeadWidth: 0.95
     - _HighlightRibbon: 0
+    - _Hot: 1
+    - _HotCoverage: 0.45
     - _InnerRough: 0.45
     - _InnerShade: 0.45
     - _InnerShadePower: 1.2
     - _Intensity: 1
     - _Life: 1
+    - _LifeDim: 0.5
     - _MarbleTone: 0
     - _MidPoint: 0.7
     - _NoiseScroll: 0
     - _NoiseWarp: 0.9
-    - _Opacity: 1
+    - _Opacity: 0.55
     - _OuterRough: 0.15
+    - _OutsideLayer: 0
+    - _OutsideOpacity: 1
+    - _OutsideWidth: 1
     - _Posterize: 3
     - _RimDark: 0
     - _RimDarkWidth: 0.12
@@ -67,32 +76,38 @@ Material:
     - _RimTail: 0.12
     - _RimWidth: 0
     - _Seed: 7
+    - _SilhouetteDepth: 1
+    - _SilhouetteFade: 0.9
+    - _SilhouetteHold: 0.45
+    - _SilhouetteRimCool: 0
     - _StreakBias: -0.35
     - _StreakBright: 0.4
     - _StreakBrightThreshold: 0.8
     - _StreakDark: 1
     - _StreakDarkThreshold: 0.38
     - _StreakSoft: 0.008
-    - _TailCut: 0
-    - _TailDrift: 0.16
+    - _TailCut: 0.2
+    - _TailDrift: 0.24
     - _TailFray: 0.35
-    - _TailWidth: 0.12
-    - _TaperPower: 0.7
+    - _TailWidth: 0.1
+    - _TaperPower: 1.5
+    - _UseHitMask: 0
     - _WarpScroll: 1
-    - _WidthPeak: 0.45
+    - _WidthPeak: 0.75
     m_Colors:
-    - _Across: {r: 0, g: 0.72, b: 0, a: 0}
-    - _BurnColor: {r: 0.03, g: 0.5, b: 0.6, a: 1}
+    - _Across: {r: 0.4, g: 0.72, b: 0, a: 0}
+    - _BoundaryColor: {r: 0.6, g: 0.25, b: 1, a: 1}
+    - _BurnColor: {r: 0.05, g: 0.3, b: 0.2, a: 1}
     - _DissolveNoiseScale: {r: 6, g: 10, b: 0, a: 0}
     - _EdgeNoiseScale: {r: 9, g: 6, b: 0, a: 0}
-    - _HeadColor: {r: 0.05, g: 0.08, b: 1.2, a: 1}
-    - _HighlightColor: {r: 0.1, g: 0.45, b: 0.6, a: 1}
-    - _MidColor: {r: 0, g: 0.27, b: 0.55, a: 1}
+    - _HeadColor: {r: 0.02, g: 0.1, b: 0.5, a: 1}
+    - _HighlightColor: {r: 0.08, g: 0.42, b: 0.3, a: 1}
+    - _MidColor: {r: 0, g: 0.22, b: 0.16, a: 1}
     - _NoiseScale: {r: 2, g: 4.5, b: 0, a: 0}
     - _RimColor: {r: 6, g: 5, b: 7, a: 1}
-    - _ShadowColor: {r: 0, g: 0.17, b: 0.24, a: 1}
-    - _StreakDarkColor: {r: 0.03, g: 0.2, b: 1.15, a: 1}
-    - _TailColor: {r: 0, g: 0.28, b: 0.37, a: 1}
+    - _ShadowColor: {r: 0, g: 0.08, b: 0.07, a: 1}
+    - _StreakDarkColor: {r: 0.03, g: 0.1, b: 0.5, a: 1}
+    - _TailColor: {r: 0, g: 0.18, b: 0.13, a: 1}
     - _WarpScale: {r: 1.5, g: 0.5, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

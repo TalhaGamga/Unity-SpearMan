@@ -22,6 +22,15 @@ Shader "Game/Slash Spark"
     // they are meant to contrast with. One blend mode, one material setup,
     // both kinds of particle.
     //
+    // A ring radius turns the dot into a hollow ring of the same falloff, for
+    // the shock ring of a hit: light only where the edge of the impact is, so
+    // the target stays visible through the middle of it. The core is still
+    // added the same way, so a ring material sets its core size to zero.
+    //
+    // The silhouette fade is Slash Layered's: it thins a particle that sits
+    // right in front of an opaque surface, so a spray over a fighter does not
+    // paint out the outline the player is reading. Off at zero.
+    //
     // uv0 = the billboard quad's (0..1, 0..1); the dot is centred on it.
     // colour = the particle's colour over lifetime: rgb tints, a fades.
     Properties
@@ -43,6 +52,19 @@ Shader "Game/Slash Spark"
 
         // One adds light only; zero blends over the background like paint.
         _Additive ("Additive", Range(0, 1)) = 1
+
+        // Where the ring sits, as a fraction of the dot's radius, and how far
+        // its falloff reaches either side of that. Zero radius is the dot.
+        _Ring ("Ring Radius (0 = dot)", Range(0, 1)) = 0
+        _RingWidth ("Ring Width", Range(0.01, 1)) = 0.2
+
+        // As on Slash Layered: how much of the particle to take away on
+        // contact with a surface behind it, the eye distance behind it that
+        // still counts as contact, and the share of that distance faded in
+        // full before the fade ramps off.
+        _SilhouetteFade ("Silhouette Fade", Range(0, 1)) = 0
+        _SilhouetteDepth ("Silhouette Depth", Float) = 0.8
+        _SilhouetteHold ("Silhouette Hold", Range(0, 0.95)) = 0
     }
 
     SubShader
@@ -71,6 +93,7 @@ Shader "Game/Slash Spark"
             #pragma vertex vert
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             // In the particle system's stream order - Position, Color, UV - so
             // the colour is read from where the particle system put it; a
@@ -92,6 +115,9 @@ Shader "Game/Slash Spark"
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR;
+
+                // This point's eye depth, for the silhouette fade.
+                float eyeDepth : TEXCOORD1;
             };
 
             // Full-precision scalars throughout, mirroring the Properties
@@ -103,7 +129,36 @@ Shader "Game/Slash Spark"
                 float _Falloff;
                 float _Intensity;
                 float _Additive;
+                float _Ring;
+                float _RingWidth;
+                float _SilhouetteFade;
+                float _SilhouetteDepth;
+                float _SilhouetteHold;
             CBUFFER_END
+
+            // Slash Layered's silhouette fade, kept word for word so a spray and
+            // the sheet it comes off thin over a body the same way. Less of the
+            // particle the closer an opaque surface sits behind it; a scene
+            // depth clearly in front of the particle can only be a missing or
+            // stale depth texture (it would have failed the depth test), and
+            // then the particle is left whole.
+            float silhouetteKeep(float4 positionCS, float fragEye)
+            {
+                if (_SilhouetteFade <= 0.0)
+                    return 1.0;
+
+                float rawDepth = SampleSceneDepth(GetNormalizedScreenSpaceUV(positionCS));
+                float sceneEye = IsPerspectiveProjection()
+                    ? LinearEyeDepth(rawDepth, _ZBufferParams)
+                    : LinearDepthToEyeDepth(rawDepth);
+
+                float gap = sceneEye - fragEye;
+                float depthRange = max(_SilhouetteDepth, 1e-3);
+                float hold = _SilhouetteHold * depthRange;
+                float near = 1.0 - saturate((gap - hold) / max(depthRange - hold, 1e-3));
+                near *= step(-0.05, gap);
+                return 1.0 - _SilhouetteFade * near;
+            }
 
             Varyings vert(Attributes input)
             {
@@ -111,6 +166,10 @@ Shader "Game/Slash Spark"
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv.xy;
                 output.color = input.color;
+
+                // From the view matrix, not the depth buffer value: right for
+                // either projection, and linear across the quad.
+                output.eyeDepth = LinearEyeDepth(TransformObjectToWorld(input.positionOS.xyz), GetWorldToViewMatrix());
                 return output;
             }
 
@@ -120,7 +179,16 @@ Shader "Game/Slash Spark"
                 // beyond one in the corners, which the saturate below empties.
                 float d = length(input.uv * 2.0 - 1.0);
 
-                float shape = pow(saturate(1.0 - d), _Falloff);
+                float dotShape = pow(saturate(1.0 - d), _Falloff);
+
+                // The same falloff, measured from a circle instead of the
+                // centre. Cut at the inscribed circle, which the dot never
+                // reaches past on its own: a wide ring would otherwise run on
+                // into the quad's corners and show its square. The cut ramps
+                // over a pixel so the ring's outside does not stair-step.
+                float ringShape = pow(saturate(1.0 - abs(d - _Ring) / max(_RingWidth, 1e-3)), _Falloff)
+                    * saturate((1.0 - d) / max(fwidth(d), 1e-4));
+                float shape = _Ring > 0.0 ? ringShape : dotShape;
 
                 // The divide is kept safe rather than branched around: the
                 // size is clamped off zero so the division is always finite,
@@ -135,6 +203,9 @@ Shader "Game/Slash Spark"
                     * input.color.rgb * _Intensity;
 
                 float alpha = shape * input.color.a * _Color.a;
+
+                // Before the premultiply, so an additive spark thins too.
+                alpha *= silhouetteKeep(input.positionCS, input.eyeDepth);
 
                 return half4(rgb * alpha, alpha * (1.0 - _Additive));
             }

@@ -29,6 +29,11 @@ Material:
     - _CoreSize: 0
     - _Falloff: 3.5
     - _Intensity: 1
+    - _Ring: 0
+    - _RingWidth: 0.2
+    - _SilhouetteDepth: 1
+    - _SilhouetteFade: 0.8
+    - _SilhouetteHold: 0.45
     m_Colors:
     - _Color: {r: 0.05, g: 0.02, b: 0.2, a: 1}
     - _CoreColor: {r: 0.05, g: 0.02, b: 0.2, a: 1}

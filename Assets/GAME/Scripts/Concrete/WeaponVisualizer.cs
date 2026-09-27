@@ -41,6 +41,65 @@ namespace Combat
         private const string LegacyCueEventKey = "VisualCue";
 
         /// <summary>
+        /// Pack key for the burst on a confirmed hit. "Hit.&lt;AttackKey&gt;"
+        /// overrides it for one attack, so a heavy finisher can land harder
+        /// than a jab without the pack needing an entry for every attack.
+        /// </summary>
+        private const string HitCueKey = "Hit";
+
+        /// <summary>
+        /// How far in front of the struck body an impact is drawn, in world
+        /// units along the plane normal. The contact itself lies on the plane,
+        /// inside the body, where the body's own mesh would depth-hide it;
+        /// just past the camera-facing side of its bounds it sits on the
+        /// silhouette instead.
+        /// </summary>
+        private const float ImpactTowardCamera = 0.06f;
+
+        /// <summary>
+        /// How far from the struck body's spine an impact may sit, towards
+        /// the contact, in world units. Enough to show which side the blade
+        /// came in from; little enough that an overhead cut's burst stays on
+        /// the chest, well below the chin, instead of on the head.
+        /// </summary>
+        private const float ImpactTorsoReach = 0.12f;
+
+        /// <summary>
+        /// The lowest the impact may sit on the hips-to-chest segment, as a
+        /// fraction from the hips: never below mid-spine. The hips are where
+        /// the attacker's own legs and blade are on a low cut or a cut into a
+        /// body lying at their feet, and a burst there lands on the hero's
+        /// shin rather than on the target.
+        /// </summary>
+        private const float ImpactSpineLow = 0.5f;
+
+        /// <summary>
+        /// How far, in degrees, the impact's direction may be turned from the
+        /// sensor's reading towards the swing's own tangent at the point it is
+        /// drawn. The sensor reads the edge at first contact - the top of an
+        /// upright body on an overhead cut, where the edge still runs level -
+        /// and the burst is then moved down to the torso, where the blade is
+        /// already coming down. Capped, so a bad lever never spins the cut
+        /// round.
+        /// </summary>
+        private const float ImpactLeanDegrees = 45f;
+
+        /// <summary>
+        /// Turn rate, radians per second, below which the blade's rotation
+        /// says nothing reliable about the swing's tangent - the same floor
+        /// the sword applies to its own reading.
+        /// </summary>
+        private const float ImpactMinTurnRate = 0.5f;
+
+        /// <summary>
+        /// For a target with no humanoid rig: the band of its bounds' height,
+        /// as fractions from the bottom, the contact is held to - the torso of
+        /// a body, never its top.
+        /// </summary>
+        private const float ImpactTorsoLow = 0.3f;
+        private const float ImpactTorsoHigh = 0.62f;
+
+        /// <summary>
         /// Enough strokes for a combo to overlap without any of them being cut
         /// short, and few enough that a stuck cue cannot flood the scene.
         /// </summary>
@@ -69,6 +128,12 @@ namespace Combat
         private IWeaponVisualSource _source;
         private int _nextSlash;
 
+        /// <summary>
+        /// The stroke whose damage window combat currently has open, if any -
+        /// the one a confirmed hit belongs to.
+        /// </summary>
+        private SlashEffect _windowSlash;
+
         public Observable<VFXPlaySignal> PlayStream => _play;
 
         public void Init(IWeaponVisualSource source)
@@ -89,6 +154,66 @@ namespace Combat
 
             _slashes.Clear();
             _nextSlash = 0;
+            _windowSlash = null;
+        }
+
+        /// <summary>
+        /// Combat opened or closed its hit scan for the named state.
+        /// </summary>
+        /// <remarks>
+        /// Driven by the combat machine rather than by the clip's own
+        /// HitFrameOpen/HitFrameClose events, because the two disagree exactly
+        /// when it matters. Combat checks a window's clip against the state it
+        /// is in and closes the scan when it leaves that state; a clip being
+        /// crossfaded out keeps firing its events regardless. Cancel the
+        /// rising cut into the finisher before its window opens and the old
+        /// clip still fires HitFrameOpen - a window combat throws away, which
+        /// on the raw event would have drawn a swing that cannot hurt anything
+        /// as the thick, hot band that says it does.
+        ///
+        /// The stroke is matched by the state that started it, so a window
+        /// lights only the swing it belongs to, and only while it is still
+        /// being drawn.
+        /// </remarks>
+        public void HandleHitWindow(bool open, string stateName)
+        {
+            if (!open)
+            {
+                if (_windowSlash != null)
+                    _windowSlash.SetHitWindow(false);
+
+                _windowSlash = null;
+                return;
+            }
+
+            if (_windowSlash != null)
+                _windowSlash.SetHitWindow(false);
+
+            _windowSlash = findEmittingSlash(stateName);
+
+            if (_windowSlash != null)
+                _windowSlash.SetHitWindow(true);
+        }
+
+        /// <summary>
+        /// The stroke still being drawn for the named state, newest first.
+        /// </summary>
+        private SlashEffect findEmittingSlash(string stateName)
+        {
+            SlashEffect found = null;
+
+            for (int i = 0; i < _slashes.Count; i++)
+            {
+                SlashEffect effect = _slashes[i];
+
+                if (effect == null || !effect.IsEmitting || !matches(effect.StateName, stateName))
+                    continue;
+
+                if (found == null || effect.StartedAt > found.StartedAt)
+                    found = effect;
+            }
+
+            return found;
         }
 
         /// <summary>
@@ -292,6 +417,296 @@ namespace Combat
 
         #endregion
 
+        #region Hit
+
+        /// <summary>
+        /// Second entry point, for a hit the weapon has just confirmed.
+        ///
+        /// Driven by the hit scan rather than by a clip, which is the whole
+        /// point: a clip fires the same frames whether or not the swing
+        /// connected, so an impact hung off an animation event would burst on
+        /// every whiff. This fires only for a target the rules are about to
+        /// act on, which is also what lets a miss show no impact at all.
+        ///
+        /// A pack with no hit cue simply shows nothing. The lookup stays
+        /// silent, unlike a clip cue, because nothing was mistyped - the pack
+        /// has just not been given an impact yet.
+        /// </summary>
+        public void HandleHit(in WeaponHit hit)
+        {
+            if (_pack == null || _source == null)
+                return;
+
+            if (!tryGetHitCue(hit.Attack, out VisualCueEntry cue) ||
+                cue.Prefab == null)
+            {
+                return;
+            }
+
+            Vector3 scale = cue.Scale;
+            if (cue.ScaleBy == VisualScalar.SwingSpeed)
+                scale *= swingStrengthAt(cue, hit.SwingSpeed);
+
+            // The impact is about to take the frame, so the stroke that landed
+            // it steps its edge down. Only here, past the cue check: a pack
+            // with no impact keeps the hot edge, which is then the only thing
+            // saying the cut connected.
+            if (_windowSlash != null)
+                _windowSlash.ConfirmHit();
+
+            // Placed first, so the direction can be read where it is drawn.
+            Vector3 position = resolveImpactPosition(hit);
+
+            // An impact tuned to last longer than the one its cue was timed
+            // for would be taken back mid-fade, and the pool clears whatever
+            // is still on screen when it takes an instance back - so the hold
+            // stretches to fit. Never shorter: the cue's own time is a floor.
+            float lifetime = cue.Lifetime;
+            if (lifetime > 0f && cue.Prefab.TryGetComponent(out ImpactTuning tuning))
+                lifetime = Mathf.Max(lifetime, tuning.SecondsNeeded());
+
+            _play.OnNext(new VFXPlaySignal(
+                systemType: SystemType.Combat,
+                // Tag only: the prefab below is authoritative, so this never
+                // depends on the scene having a VFXSet that lists HitSpark.
+                vfxType: VFXType.HitSpark,
+                position: position,
+                rotation: resolveImpactRotation(hit, position),
+                // Unparented, so the manager adds this in world space.
+                positionOffset: cue.PositionOffset,
+                // Applied by the manager after the rotation, so the prefab
+                // ends up at LookRotation(...) * Euler(RotationOffset).
+                rotationOffset: cue.RotationOffset,
+                scale: scale,
+                // Left where it was struck: the target may be launched,
+                // knocked down or sliced in half the same frame, and a burst
+                // that followed it would smear across the screen.
+                parent: null,
+                followParent: false,
+                oneShot: true,
+                lifetime: lifetime,
+                instanceId: 0,
+                playbackRate: 1f,
+                startDelay: 0f,
+                prefab: cue.Prefab));
+        }
+
+        /// <summary>
+        /// The attack's own impact if the pack has one, otherwise the shared
+        /// one.
+        /// </summary>
+        private bool tryGetHitCue(AttackDefinition attack, out VisualCueEntry cue)
+        {
+            if (attack != null &&
+                !string.IsNullOrWhiteSpace(attack.Key) &&
+                _pack.TryGetCue($"{HitCueKey}.{attack.Key}", out cue))
+            {
+                return true;
+            }
+
+            return _pack.TryGetCue(HitCueKey, out cue);
+        }
+
+        /// <summary>
+        /// The contact on the plane, brought out along the plane normal to
+        /// just past the struck collider's camera-facing side.
+        ///
+        /// The contact is computed on the plane, which runs through the middle
+        /// of the body, so drawn where it is the body's own mesh would hide it.
+        /// The collider's bounds give the side facing the camera without
+        /// assuming anything about its shape. Read along PlaneNormal rather
+        /// than off world X directly, so the camera moving to the other side
+        /// still only means changing that one constant.
+        /// </summary>
+        private static Vector3 resolveImpactPosition(in WeaponHit hit)
+        {
+            Vector3 position = resolveImpactAnchor(hit);
+
+            if (hit.Collider == null)
+                return position;
+
+            Bounds bounds = hit.Collider.bounds;
+            Vector3 reach = new Vector3(
+                Mathf.Abs(PlaneNormal.x),
+                Mathf.Abs(PlaneNormal.y),
+                Mathf.Abs(PlaneNormal.z));
+
+            // Support of the box along the normal: how far out its face on
+            // the camera side lies.
+            float face = Vector3.Dot(bounds.center, PlaneNormal) +
+                Vector3.Dot(bounds.extents, reach);
+            float depth = Vector3.Dot(position, PlaneNormal);
+
+            return position + PlaneNormal * (face + ImpactTowardCamera - depth);
+        }
+
+        /// <summary>
+        /// Where on the plane the impact goes: on the struck body's torso, as
+        /// near to the contact as <see cref="ImpactTorsoReach"/> allows.
+        ///
+        /// The contact itself is the first point of the target's collider the
+        /// blade reached, and for a character that is the wrong place to draw
+        /// anything. An overhead cut meets the top of an upright capsule, so
+        /// the burst sat on the head and erased it; and the capsule stays
+        /// upright while the model is launched or knocked flat, so on a downed
+        /// enemy the burst hung in the air where the capsule's top was. The
+        /// rig's own spine is where the body really is, in whatever pose it
+        /// is in, and the short reach keeps a hint of where the blade came in.
+        /// Only its upper half (<see cref="ImpactSpineLow"/>): a low cut, or a
+        /// cut into a body lying at the attacker's feet, would otherwise put
+        /// the burst on the hips, right against the attacker's own legs.
+        ///
+        /// A target with no humanoid rig falls back to its bounds - the posed
+        /// meshes' if it has any, which follow a body lying down, otherwise
+        /// the collider's - with the contact held to the band between the
+        /// hips and the chest, never the top.
+        /// </summary>
+        private static Vector3 resolveImpactAnchor(in WeaponHit hit)
+        {
+            Vector3 point = hit.Point;
+            GameObject target = hit.Target;
+
+            if (target != null)
+            {
+                Animator animator = target.GetComponentInChildren<Animator>();
+
+                if (animator != null && animator.isHuman &&
+                    tryTorso(animator, out Vector3 low, out Vector3 high))
+                {
+                    // Nearest point of the upper half of the hips-to-chest
+                    // segment, then back out towards the contact by no more
+                    // than the reach.
+                    Vector3 contact = GameplayPlane.Flatten(point);
+                    Vector3 spine = high - low;
+                    float t = Mathf.Clamp(
+                        Vector3.Dot(contact - low, spine) / Mathf.Max(spine.sqrMagnitude, 1e-6f),
+                        ImpactSpineLow,
+                        1f);
+                    Vector3 onSpine = low + spine * t;
+
+                    Vector3 anchored = onSpine + Vector3.ClampMagnitude(contact - onSpine, ImpactTorsoReach);
+                    anchored.x = point.x;
+                    return anchored;
+                }
+            }
+
+            if (!tryBodyBounds(hit, out Bounds body))
+                return point;
+
+            point.y = Mathf.Clamp(
+                point.y,
+                body.min.y + ImpactTorsoLow * body.size.y,
+                body.min.y + ImpactTorsoHigh * body.size.y);
+            return point;
+        }
+
+        /// <summary>The rig's hips and chest (or spine), on the plane.</summary>
+        private static bool tryTorso(Animator animator, out Vector3 low, out Vector3 high)
+        {
+            low = high = Vector3.zero;
+
+            Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            Transform chest = animator.GetBoneTransform(HumanBodyBones.Chest);
+
+            if (chest == null)
+                chest = animator.GetBoneTransform(HumanBodyBones.Spine);
+
+            if (hips == null || chest == null)
+                return false;
+
+            low = GameplayPlane.Flatten(hips.position);
+            high = GameplayPlane.Flatten(chest.position);
+            return true;
+        }
+
+        /// <summary>
+        /// The bounds of what the player sees of the target: its enabled
+        /// skinned meshes if it has any, otherwise the struck collider.
+        /// </summary>
+        private static bool tryBodyBounds(in WeaponHit hit, out Bounds body)
+        {
+            body = default;
+            bool found = false;
+
+            if (hit.Target != null)
+            {
+                foreach (SkinnedMeshRenderer skin in hit.Target.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    if (!skin.enabled || !skin.gameObject.activeInHierarchy)
+                        continue;
+
+                    if (found)
+                    {
+                        body.Encapsulate(skin.bounds);
+                    }
+                    else
+                    {
+                        body = skin.bounds;
+                        found = true;
+                    }
+                }
+            }
+
+            if (!found && hit.Collider != null)
+            {
+                body = hit.Collider.bounds;
+                found = true;
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// The same framing as PlanarSwingArc: facing the camera, local +Y
+        /// along the cut, so an impact authored with its streak along +Y lies
+        /// across the target the way the blade went through it.
+        ///
+        /// The sensor's direction is the edge's at first contact, and the
+        /// burst is drawn somewhere else - on the torso, not where the blade
+        /// first touched the body. So the direction is leaned, by no more
+        /// than <see cref="ImpactLeanDegrees"/>, towards the way a point of
+        /// the swing at <paramref name="at"/> is travelling: the edge rotated
+        /// a quarter turn about the grip, the same convention the sword reads
+        /// its edge with. An overhead cut then marks the chest along the
+        /// downward stroke the arc shows beside it, instead of level across
+        /// it. A turn too slow to trust, a grip that cannot be read, or a
+        /// tangent that points back against the sensor leaves the sensor's
+        /// direction as it was.
+        /// </summary>
+        private Quaternion resolveImpactRotation(in WeaponHit hit, Vector3 at)
+        {
+            Vector3 along = flatten(hit.SlashDirection);
+
+            if (along.sqrMagnitude < 1e-6f)
+                along = flatten(_source.PlanarForward);
+
+            float turn = _source.SwingAngularVelocity;
+
+            if (along.sqrMagnitude > 1e-6f &&
+                Mathf.Abs(turn) > ImpactMinTurnRate &&
+                _source.TryGetAnchorPosition(VisualAnchor.Hand, out Vector3 grip))
+            {
+                Vector3 lever = flatten(at - grip);
+                Vector3 tangent = new Vector3(0f, lever.z, -lever.y) * Mathf.Sign(turn);
+
+                if (tangent.sqrMagnitude > 1e-4f &&
+                    Vector3.Dot(tangent.normalized, along.normalized) > -0.9f)
+                {
+                    along = Vector3.RotateTowards(
+                        along.normalized,
+                        tangent.normalized,
+                        ImpactLeanDegrees * Mathf.Deg2Rad,
+                        0f);
+                }
+            }
+
+            return along.sqrMagnitude > 1e-6f
+                ? Quaternion.LookRotation(PlaneNormal, along.normalized)
+                : Quaternion.identity;
+        }
+
+        #endregion
+
         #region Prefab
 
         private VFXPlaySignal buildSignal(VisualCueEntry cue, Transform anchor)
@@ -453,8 +868,16 @@ namespace Combat
                 return 1f;
             }
 
-            float speed = _source.SwingVelocity.magnitude;
+            return swingStrengthAt(cue, _source.SwingVelocity.magnitude);
+        }
 
+        /// <summary>
+        /// The mapping itself, for a speed already in hand - a hit carries the
+        /// speed sampled at the contact, which is the one that should decide
+        /// how hard it looks.
+        /// </summary>
+        private static float swingStrengthAt(VisualCueEntry cue, float speed)
+        {
             float min = Mathf.Min(cue.SwingSpeedRange.x, cue.SwingSpeedRange.y);
             float max = Mathf.Max(cue.SwingSpeedRange.x, cue.SwingSpeedRange.y);
             float t = Mathf.Approximately(max, min)

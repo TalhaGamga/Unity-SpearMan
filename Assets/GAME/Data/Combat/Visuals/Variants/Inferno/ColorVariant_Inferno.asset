@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6239283515c08d54ba8810dcf08fc8dd, type: 3}
+  m_Name: ColorVariant_Inferno
+  m_EditorClassIdentifier: 
+  VariantName: Inferno
+  SourcePack: {fileID: 11400000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a28, type: 2}
+  Mode: 0
+  Primary: {r: 1, g: 0.36, b: 0.08, a: 1}
+  Secondary: {r: 1, g: 0.78, b: 0.15, a: 1}
+  HueShift: 0
+  Saturation: 1
+  OutputPack: {fileID: 11400000, guid: 2090b40b080106e4cb0ca26892b285f1, type: 2}
+  Outputs:
+  - {fileID: 2100000, guid: 2f1c0e9606cb0b94c9c185f208e5682d, type: 2}
+  - {fileID: 2100000, guid: 4c69a0167e21bc741a0444ada57007fc, type: 2}
+  - {fileID: 2100000, guid: 9b07df7b5c21c054f904c09feb26e096, type: 2}
+  - {fileID: 2100000, guid: beeab4cd820460b4c80e4718c1ea38dc, type: 2}
+  - {fileID: 2100000, guid: 71548953e14b54b43afeb9586ef98ce7, type: 2}
+  - {fileID: 3286147184510438545, guid: c719db30a2774d0488af2a5c0f132dd0, type: 3}
+  - {fileID: 2100000, guid: ebb304d81316cdc47b8c9f519c4a33ba, type: 2}
+  - {fileID: 2100000, guid: be372d06b396a34448bb3f2a16d8474b, type: 2}
+  - {fileID: 2100000, guid: db0d5615510cf534b83f5c014492374b, type: 2}
+  - {fileID: 2100000, guid: a1c405988c76bc748af4ff389fed2a2b, type: 2}
+  - {fileID: 2100000, guid: 924927d68a460b14c813515e56944aa8, type: 2}
+  - {fileID: 2100000, guid: ac337e8b356842c4f95580d74e2fb03e, type: 2}
+  - {fileID: 2100000, guid: 6bc7fa45aa715524ca07d97fe55f1825, type: 2}
+  - {fileID: 1312969176563267170, guid: 4015875c29da53b4bb7cb03a96cc166d, type: 3}
+  - {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
+  - {fileID: 11400000, guid: 2090b40b080106e4cb0ca26892b285f1, type: 2}

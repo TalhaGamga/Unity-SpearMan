@@ -53,18 +53,51 @@ MonoBehaviour:
   CircleTextureFrames: 1
   CircleTextureFrame: 0
   CircleTextureFlip: 0
+  UseHitWindow: 1
+  OutsideHitWidth: 0.18
+  OutsideHitOpacity: 0.6
+  HotDecaySeconds: 0.08
+  HotBeforeWindow: 0
+  HotAfterHit: 0.2
+  StopAfterWindow: 1
+  StopAfterWindowSeconds: 0
   Particles: {fileID: 1240720513078555319, guid: f45be71e3d43f2440ae2816cf00755a0, type: 3}
-  ParticlesPerUnit: 3.5
-  ParticleSpeedScale: 0.035
-  ParticleSpread: 0.3
-  ParticleSizeScale: 1.3
+  ParticlesPerUnit: 1.2
+  ParticleSpeedScale: 0.03
+  ParticleSpread: 0.25
+  ParticleSizeScale: 0.8
   ShapeBurstCount: 4
-  ShapeInnerAlongBlade: 0.4
-  ShapeOuterAlongBlade: 1.4
+  ShapeInnerAlongBlade: 0.5
+  ShapeOuterAlongBlade: 1
   ShapeArcLength: 4.5
-  ShapeFadeSeconds: 0.34
+  ShapeFadeSeconds: 0.24
+  ShapeFadeAfterHitSeconds: 0.18
+  ShapeFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   ParticleOpacity: 1
-  ParticleLifetime: 0
+  ParticleLifetime: 0.1
   AlignParticlesToSweep: 1
   ParticleRotationOffset: {x: 0, y: 0, z: 0}
   Material: {fileID: 0}

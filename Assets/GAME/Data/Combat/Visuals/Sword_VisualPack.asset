@@ -16,7 +16,7 @@ MonoBehaviour:
   - CueKey: SlashLight
     Kind: 1
     Prefab: {fileID: 0}
-    SlashProfile: {fileID: 11400000, guid: 1f32171aeb42adf419d3ec216c50314d, type: 2}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
     Anchor: 2
     Alignment: 4
     PositionOffset: {x: 0, y: 0, z: 0}
@@ -36,7 +36,7 @@ MonoBehaviour:
   - CueKey: SlashRising
     Kind: 1
     Prefab: {fileID: 0}
-    SlashProfile: {fileID: 11400000, guid: 1f32171aeb42adf419d3ec216c50314d, type: 2}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
     Anchor: 2
     Alignment: 4
     PositionOffset: {x: 0, y: 0, z: 0}
@@ -56,7 +56,7 @@ MonoBehaviour:
   - CueKey: SlashHeavy
     Kind: 1
     Prefab: {fileID: 0}
-    SlashProfile: {fileID: 11400000, guid: 1f32171aeb42adf419d3ec216c50314d, type: 2}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
     Anchor: 2
     Alignment: 4
     PositionOffset: {x: 0, y: 0, z: 0}
@@ -73,3 +73,43 @@ MonoBehaviour:
     SwingSpeedRange: {x: 2, y: 14}
     SwingStrengthRange: {x: 0.8, y: 1.2}
     Lifetime: 0
+  - CueKey: Hit
+    Kind: 0
+    Prefab: {fileID: 4173029721652636481, guid: d7d6a95263470664e90b713158608bee, type: 3}
+    SlashProfile: {fileID: 0}
+    Anchor: 1
+    Alignment: 2
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 1
+    RateBy: 1
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.75, y: 1.25}
+    Lifetime: 0.2
+  - CueKey: Hit.Sword_Heavy
+    Kind: 0
+    Prefab: {fileID: 4173029721652636481, guid: d7d6a95263470664e90b713158608bee, type: 3}
+    SlashProfile: {fileID: 0}
+    Anchor: 1
+    Alignment: 2
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1.5, y: 1.5, z: 1.5}
+    FollowAnchor: 1
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 1
+    RateBy: 1
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.75, y: 1.25}
+    Lifetime: 0.2

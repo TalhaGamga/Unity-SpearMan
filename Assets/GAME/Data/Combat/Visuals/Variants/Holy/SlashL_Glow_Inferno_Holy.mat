@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SlashL_Glow_Inferno_Holy
+  m_Shader: {fileID: 4800000, guid: c976170dae5cfd74cbf81d778ba63f6f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Additive: 1
+    - _AlphaNoise: 0.15
+    - _Anchor: 1
+    - _BoundaryStrength: 0
+    - _Bristle: 0
+    - _BristleThreshold: 0.66
+    - _BurnWidth: 0
+    - _DissolveBias: 0.3
+    - _DissolveInner: 0
+    - _DissolveNoise: 0.15
+    - _DissolveSoft: 0.15
+    - _DissolveTail: 1
+    - _EdgeSkew: 0
+    - _EdgeSoft: 0.3
+    - _FadeOpacity: 0.4
+    - _HeadCap: 0.07
+    - _HeadCapWidth: 1
+    - _HeadFray: 0
+    - _HeadHot: 0.6
+    - _HeadHotAcross: 1
+    - _HeadHotPower: 14
+    - _HeadSoft: 0.02
+    - _HeadU: 1
+    - _HeadWidth: 1
+    - _HighlightRibbon: 0
+    - _Hot: 1
+    - _HotCoverage: 1
+    - _InnerRough: 0
+    - _InnerShade: 0
+    - _InnerShadePower: 1.6
+    - _Intensity: 0.8
+    - _Life: 1
+    - _LifeDim: 1
+    - _MarbleTone: 0
+    - _MidPoint: 0.55
+    - _NoiseScroll: 0.5
+    - _NoiseWarp: 0.4
+    - _Opacity: 0.25
+    - _OuterRough: 0
+    - _OutsideLayer: 0
+    - _OutsideOpacity: 1
+    - _OutsideWidth: 1
+    - _Posterize: 0
+    - _RimDark: 0
+    - _RimDarkWidth: 0.12
+    - _RimMinWidth: 0
+    - _RimPower: 1.2
+    - _RimSoft: 0.04
+    - _RimTail: 0.12
+    - _RimWidth: 0
+    - _Seed: 3
+    - _SilhouetteDepth: 1
+    - _SilhouetteFade: 0.9
+    - _SilhouetteHold: 0.45
+    - _SilhouetteRimCool: 0
+    - _StreakBias: 0
+    - _StreakBright: 0
+    - _StreakBrightThreshold: 0.65
+    - _StreakDark: 0
+    - _StreakDarkThreshold: 0.38
+    - _StreakSoft: 0.07
+    - _TailCut: 0.9
+    - _TailDrift: 0
+    - _TailFray: 0.2
+    - _TailWidth: 0.4
+    - _TaperPower: 1
+    - _UseHitMask: 0
+    - _WarpScroll: 1
+    - _WidthPeak: 0.8
+    m_Colors:
+    - _Across: {r: 0.84, g: 1, b: 0, a: 0}
+    - _BoundaryColor: {r: 1, g: 0.7671117, b: 0.3103187, a: 1}
+    - _BurnColor: {r: 4, g: 3.1475468, b: 1.6672021, a: 1}
+    - _DissolveNoiseScale: {r: 1.5, g: 4, b: 0, a: 0}
+    - _EdgeNoiseScale: {r: 7, g: 3, b: 0, a: 0}
+    - _HeadColor: {r: 2, g: 1.5650449, b: 0.6821311, a: 1}
+    - _HighlightColor: {r: 3, g: 2.539167, b: 1.6097491, a: 1}
+    - _MidColor: {r: 1.6, g: 1.137266, b: 0.28587648, a: 1}
+    - _NoiseScale: {r: 1.6, g: 5, b: 0, a: 0}
+    - _RimColor: {r: 2.2, g: 1.8882031, b: 1.1582702, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _StreakDarkColor: {r: 0.4, g: 0.2984781, b: 0.08404743, a: 1}
+    - _TailColor: {r: 1.3, g: 1.0060428, b: 0.32113272, a: 1}
+    - _WarpScale: {r: 0.5, g: 0.7, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -20,6 +20,10 @@ Shader "Game/Slash Layered"
     // uv0    = (u along the stroke, v across it 0 inner -> 1 outer, hide, seed)
     //          zw are the particle's Custom1 stream. The meshes write zeros, so
     //          zero has to mean "left alone": fully revealed, default pattern.
+    // uv1    = (hot, 0): only the band writes it - one where the attack's
+    //          damage window was open when that stretch was laid. Read only
+    //          while _UseHitMask is on, because the particle mesh and the ring
+    //          leave the channel to whatever the engine fills a missing one with.
     // colour = rgb tint, and a is life - not opacity (see below)
     //
     // u runs from the tail. On the band it is distance travelled and is not
@@ -39,6 +43,19 @@ Shader "Game/Slash Layered"
     // tail and the inner edge are eaten first and a burning edge runs ahead of
     // the erosion. Fading alpha instead turns a hard, readable cut into a
     // smear, which is the one thing a stylised slash must never do.
+    //
+    // Readability. In play the slash shares the screen with the fighters it
+    // is about, so a sheet that is loud for its whole length buries the very
+    // blade and body the player is reading. The hit mask narrows and dims the
+    // stretches laid outside the damage window, which with the body anchored
+    // outside leaves them a thin line along the outer edge: the reach is
+    // still drawn, just not as a wall. _Hot is the leading edge's heat, one
+    // while the window is open and dying quickly after, so the white rim and
+    // head flash only while the cut can actually land; the cold boundary
+    // colour keeps the rim's line without its light. The silhouette fade
+    // thins the sheet where it lies right over a body, so a head, a guard or
+    // a raised weapon keeps its outline under the stroke. Every one of these
+    // defaults to leaving the layer exactly as it was.
     Properties
     {
         [Header(Window)]
@@ -109,6 +126,10 @@ Shader "Game/Slash Layered"
         _RimPower ("Rim Power", Range(0.2, 6)) = 1.2
         _HeadHot ("Head Hot Spot", Range(0, 4)) = 1.2
         _HeadHotPower ("Head Hot Power", Range(0.5, 16)) = 5
+        // How tightly the head's hot spot hugs the outer edge across the
+        // layer: 1 lights the whole width towards the rim, higher keeps it to
+        // the outer corner, where the blade's tip is.
+        _HeadHotAcross ("Head Hot Across Power", Range(1, 8)) = 1
         _RimDark ("Rim Dark Band", Range(0, 1)) = 0
         _RimDarkWidth ("Rim Dark Width", Range(0, 0.4)) = 0.12
 
@@ -127,13 +148,54 @@ Shader "Game/Slash Layered"
         _BurnWidth ("Burn Width", Range(0, 0.3)) = 0.06
         _DissolveNoiseScale ("Dissolve Noise Scale (x along, y across)", Vector) = (3, 16, 0, 0)
         _DissolveBias ("Dissolve Bias (+ goes earlier)", Range(-0.5, 0.5)) = 0
+        // How much of the disappearance is a plain fade rather than erosion.
+        // 0 is erosion alone - pieces stand at full strength until the
+        // threshold takes them, which reads crisp but ends on a hard frame.
+        // Raised, what is still standing also thins as life runs out, so the
+        // last pieces fade away instead of blinking off.
+        _FadeOpacity ("Fade Opacity (0 erosion only)", Range(0, 1)) = 0
+
+        // All off at their defaults. The boundary is a cold line drawn by the
+        // rim mask along the whole arc, under the hot rim, so the range stays
+        // visible after the heat is gone. Hot coverage ties a whole layer to
+        // the heat (the glow halo exists only while the cut is live). The
+        // silhouette fade reads the camera's depth texture; depth is in eye
+        // units, the distance behind the slash still counted as "on" a body.
+        // The hold is the share of that depth faded in full before the fade
+        // ramps off - a body's own thickness, so a fighter standing a little
+        // behind the stroke is cleared as fully as one touching it. Rim cool
+        // takes the heat out of the rim and the head where the fade is at
+        // work: the rim line is spared the fade, so without it the white edge
+        // lies along a fighter's contour like rim light on the fighter; with
+        // it that stretch drops to the cold boundary colour. Outside layer
+        // opacity is how much of this layer is drawn where the band was laid
+        // outside the damage window: one sheet can keep the boundary there
+        // while the others leave it to that one line. Life dim is the value
+        // the layer's colour falls to as it erodes, so the remnant cools
+        // towards the floor instead of staying as light as the live stroke.
+        [Header(Readability)]
+        [HDR] _BoundaryColor ("Boundary Colour", Color) = (0.6, 0.25, 1.0, 1)
+        _BoundaryStrength ("Boundary Strength", Range(0, 1)) = 0
+        _HotCoverage ("Hot Coverage", Range(0, 1)) = 0
+        _SilhouetteFade ("Silhouette Fade", Range(0, 1)) = 0
+        _SilhouetteDepth ("Silhouette Depth", Float) = 0.8
+        _SilhouetteHold ("Silhouette Hold", Range(0, 0.95)) = 0
+        _SilhouetteRimCool ("Silhouette Rim Cool", Range(0, 1)) = 0
+        _OutsideLayer ("Outside Hit Layer Opacity", Range(0, 1)) = 1
+        _LifeDim ("Life Dim (value at zero life)", Range(0, 1)) = 1
 
         // Pushed per frame by SlashEffect on the band and ring; left at their
         // defaults under a particle system, where colour alpha and the hide
-        // channel do the same jobs.
+        // channel do the same jobs. The last four are the hit window: their
+        // defaults are "no mask, always hot", which is what every material
+        // and the standalone prefab had before there was a window to follow.
         [Header(Runtime)]
         _Life ("Life", Range(0, 1)) = 1
         _HeadU ("Head U", Float) = 1
+        _UseHitMask ("Use Hit Mask", Float) = 0
+        _Hot ("Hot", Range(0, 1)) = 1
+        _OutsideWidth ("Outside Hit Width", Range(0, 1)) = 1
+        _OutsideOpacity ("Outside Hit Opacity", Range(0, 1)) = 1
     }
 
     SubShader
@@ -162,6 +224,7 @@ Shader "Game/Slash Layered"
             #pragma vertex vert
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             // In the particle system's stream order - Position, Color, UV,
             // Custom1XY - and not merely with the right semantics. A mesh
@@ -177,6 +240,10 @@ Shader "Game/Slash Layered"
                 // Four channels: the particle system packs its UV stream into
                 // xy and Custom1.xy into zw. The band and ring leave zw at zero.
                 float4 uv : TEXCOORD0;
+
+                // After TEXCOORD0, so the particle streams above keep the slots
+                // they were laid out for. Only the band writes it (x = hot).
+                float2 uv1 : TEXCOORD1;
             };
 
             struct Varyings
@@ -184,6 +251,11 @@ Shader "Game/Slash Layered"
                 float4 positionCS : SV_POSITION;
                 float4 uv : TEXCOORD0;
                 float4 color : COLOR;
+
+                // x: the hit mask, already resolved against _UseHitMask so the
+                // fragment never looks at a channel nobody wrote.
+                // y: this point's eye depth, for the silhouette fade.
+                float2 extra : TEXCOORD1;
             };
 
             // Full precision and nothing but the properties: the SRP batcher
@@ -248,6 +320,7 @@ Shader "Game/Slash Layered"
                 float _RimPower;
                 float _HeadHot;
                 float _HeadHotPower;
+                float _HeadHotAcross;
                 float _RimDark;
                 float _RimDarkWidth;
 
@@ -264,9 +337,24 @@ Shader "Game/Slash Layered"
                 float _BurnWidth;
                 float4 _DissolveNoiseScale;
                 float _DissolveBias;
+                float _FadeOpacity;
+
+                float4 _BoundaryColor;
+                float _BoundaryStrength;
+                float _HotCoverage;
+                float _SilhouetteFade;
+                float _SilhouetteDepth;
+                float _SilhouetteHold;
+                float _SilhouetteRimCool;
+                float _OutsideLayer;
+                float _LifeDim;
 
                 float _Life;
                 float _HeadU;
+                float _UseHitMask;
+                float _Hot;
+                float _OutsideWidth;
+                float _OutsideOpacity;
             CBUFFER_END
 
             // ---------------------------------------------------------------
@@ -363,12 +451,57 @@ Shader "Game/Slash Layered"
                 return t * t * (3.0 - 2.0 * t);
             }
 
+            // How much of the layer to keep over what lies behind it: less the
+            // closer an opaque surface sits behind the slash, down to
+            // 1 - _SilhouetteFade on contact. A fighter is right behind the
+            // stroke while the wall is metres back, so this thins the sheet over
+            // bodies and weapons and nowhere else - the outline a player reads
+            // survives the effect instead of being painted over.
+            //
+            // The camera's depth texture only ever holds surfaces at or behind
+            // a fragment that passed the depth test, so a scene depth clearly in
+            // FRONT of this one means there is no real depth to read - a camera
+            // that did not ask for the texture, a preview, a stale or default
+            // binding - and the layer is then left whole rather than faded
+            // everywhere. Eye depth on both sides, so the distance is in world
+            // units whatever the projection; orthographic depth is linear and
+            // needs its own conversion, as URP's soft particles do it.
+            float silhouetteKeep(float4 positionCS, float fragEye)
+            {
+                if (_SilhouetteFade <= 0.0)
+                    return 1.0;
+
+                float rawDepth = SampleSceneDepth(GetNormalizedScreenSpaceUV(positionCS));
+                float sceneEye = IsPerspectiveProjection()
+                    ? LinearEyeDepth(rawDepth, _ZBufferParams)
+                    : LinearDepthToEyeDepth(rawDepth);
+
+                // Full fade over the held share of the depth, then a straight
+                // ramp to none at _SilhouetteDepth. A hold of zero is the plain
+                // ramp from contact this always was.
+                float gap = sceneEye - fragEye;
+                float depthRange = max(_SilhouetteDepth, 1e-3);
+                float hold = _SilhouetteHold * depthRange;
+                float near = 1.0 - saturate((gap - hold) / max(depthRange - hold, 1e-3));
+                near *= step(-0.05, gap);
+                return 1.0 - _SilhouetteFade * near;
+            }
+
             Varyings vert (Attributes input)
             {
                 Varyings output = (Varyings)0;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
                 output.color = input.color;
+
+                // Resolved here so the fragment cannot read the channel unless
+                // SlashEffect said the band wrote it; one everywhere else.
+                output.extra.x = _UseHitMask > 0.5 ? saturate(input.uv1.x) : 1.0;
+
+                // From the view matrix rather than the depth buffer value, so it
+                // holds for either projection and interpolates exactly: eye
+                // depth is linear across the triangle in world space.
+                output.extra.y = LinearEyeDepth(TransformObjectToWorld(input.positionOS.xyz), GetWorldToViewMatrix());
                 return output;
             }
 
@@ -378,6 +511,10 @@ Shader "Game/Slash Layered"
                 float v = input.uv.y;
                 float hide = saturate(input.uv.z);
                 float seed = input.uv.w;
+
+                // One where the damage window was open when this stretch of band
+                // was laid, and everywhere the mask is off.
+                float hitMask = input.extra.x;
 
                 // ---- Where along the stroke ----------------------------------
 
@@ -408,8 +545,12 @@ Shader "Game/Slash Layered"
                     saturate((along - _WidthPeak) / max(1.0 - _WidthPeak, 1e-3)));
                 float widthProfile = along <= _WidthPeak ? rise : fall;
 
+                // Outside the hit window the window itself narrows, before the
+                // anchor places it: with the body anchored outside, the swing's
+                // wind-up and follow-through shrink onto the outer edge as a thin
+                // line, so the arc's reach is still drawn where it cannot cut.
                 float full = _Across.y - _Across.x;
-                float width = full * widthProfile;
+                float width = full * widthProfile * lerp(_OutsideWidth, 1.0, hitMask);
 
                 // The taper closes onto the anchor edge, not the middle: the
                 // body keeps its clean outer rim all the way to a point while
@@ -512,6 +653,14 @@ Shader "Game/Slash Layered"
                 float coverage = maskInner * maskOuter * maskTail * maskHead * front
                     * _Opacity * lerp(1.0, marble, _AlphaNoise);
 
+                // Dimmer outside the window as well as thinner, and - for a layer
+                // that asks for it - only there at all while the cut is hot. A
+                // layer can also drop out of the outside stretches entirely, so
+                // the wind-up and follow-through keep one boundary line rather
+                // than a parallel line per sheet.
+                coverage *= lerp(_OutsideOpacity * _OutsideLayer, 1.0, hitMask);
+                coverage *= lerp(1.0, _Hot, _HotCoverage);
+
                 // ---- Colour --------------------------------------------------
 
                 // Warm where the blade is now, cool where it was.
@@ -608,13 +757,40 @@ Shader "Game/Slash Layered"
                 float rim = smoothstepSafe(rimIn - _RimSoft, rimIn + _RimSoft * 0.25,
                     x - edgeNoiseOuter * _OuterRough * 0.5);
                 rim *= saturate(max(_RimWidth, _RimMinWidth) * 100.0);
-                c = lerp(c, _RimColor.rgb, saturate(rim * rimWeight));
+
+                // How much of the layer survives over what lies just behind it
+                // (see silhouetteKeep). Read here as well as on alpha below:
+                // the rim is spared that fade, so over a body its heat is
+                // what has to give instead. The rim cool scales the heat by
+                // the same keep, which turns the white edge into the cold
+                // boundary where it crosses a fighter - a line passing in
+                // front, not rim light on the fighter's contour - and leaves
+                // it white over open ground. At zero cool this is _Hot.
+                float keep = silhouetteKeep(input.positionCS, input.extra.y);
+                float hotHere = _Hot * lerp(1.0, keep, _SilhouetteRimCool);
+
+                // The same line twice: first the cold boundary along the whole
+                // arc, which stays after the heat has gone and marks the reach,
+                // then the hot rim over it, scaled by the heat. At full heat and
+                // no boundary this is the rim the layer always had.
+                c = lerp(c, _BoundaryColor.rgb, saturate(rim * _BoundaryStrength));
+                c = lerp(c, _RimColor.rgb, saturate(rim * rimWeight * hotHere));
 
                 // The head is where the energy is, and brightest towards the
-                // outside, where the blade's tip is.
-                c += _RimColor.rgb * _HeadHot * pow(a, _HeadHotPower) * saturate(x);
+                // outside, where the blade's tip is - but only while the cut is
+                // live, so the flare cannot outshine the blade after the hit.
+                c += _RimColor.rgb * _HeadHot * pow(a, _HeadHotPower)
+                    * pow(saturate(x), _HeadHotAcross) * hotHere;
 
                 c *= input.color.rgb * _Intensity;
+
+                // Cooler as it erodes: the value slides towards _LifeDim with
+                // life, so a stopped stroke steps back behind the blade and
+                // the reacting target instead of holding the live stroke's
+                // light until the dissolve cuts it. Life is one while the
+                // band is drawing, so the live stroke is untouched; at the
+                // default of one nothing changes at all.
+                c *= lerp(_LifeDim, 1.0, life);
 
                 // ---- Dissolve ------------------------------------------------
 
@@ -648,6 +824,22 @@ Shader "Game/Slash Layered"
                 c += _BurnColor.rgb * burn;
 
                 float alpha = coverage * visible;
+
+                // The share of the fade spent thinning rather than eroding.
+                // On life itself, so whatever shape the profile's fade curve
+                // gives life is the shape the opacity follows too.
+                alpha *= lerp(1.0, life, _FadeOpacity);
+
+                // On alpha, before the premultiply, so the light the layer adds
+                // thins with it: an additive layer over a face would otherwise
+                // still wash the face out. The rim line itself is spared - the
+                // cold boundary, and the hot edge while it burns: a line that
+                // thin never hides an outline, and over a body it is exactly
+                // what shows where the edge went through and how far it reached.
+                // On _Hot rather than the cooled heat, so the spared line keeps
+                // its width and cover over a body; only its colour cools.
+                float edgeLine = saturate(rim * max(_BoundaryStrength, rimWeight * _Hot));
+                alpha *= lerp(keep, 1.0, edgeLine);
 
                 // Premultiplied. Alpha is what this layer covers of what is
                 // behind it; at _Additive 1 it covers nothing and only adds.

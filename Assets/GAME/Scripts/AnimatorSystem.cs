@@ -5,6 +5,12 @@ using System.Collections;
 
 public sealed class AnimatorSystem : MonoBehaviour
 {
+    [Tooltip("Let the ShakeCamera event authored on attack clips shake the " +
+        "camera. Off by default: the sword now shakes on confirmed hits, and " +
+        "the clip events fire on every swing, so they would shake on whiffs " +
+        "too and make a miss read exactly like a hit.")]
+    [SerializeField] private bool _shakeFromClipEvents = false;
+
     private Animator _anim;
     private readonly CompositeDisposable _disposables = new();
     private Coroutine _pendingStateCompletionTrigger;
@@ -126,8 +132,18 @@ public sealed class AnimatorSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called by name from the attack clips' own animation events, which sit
+    /// in third-party clips and fire whether or not the swing connected.
+    /// Kept as a receiver - removing it would make every such event log a
+    /// missing-method error - but silent unless explicitly re-enabled, since
+    /// the weapon now shakes the camera itself on the first confirmed hit.
+    /// </summary>
     public void ShakeCamera()
     {
+        if (!_shakeFromClipEvents)
+            return;
+
         CameraManager.Shake();
     }
 

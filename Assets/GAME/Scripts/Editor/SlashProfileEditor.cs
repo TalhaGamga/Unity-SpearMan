@@ -15,7 +15,7 @@ public sealed class SlashProfileEditor : Editor
 {
     private static readonly System.Collections.Generic.HashSet<string> RibbonOnly = new()
     {
-        "StartAlongBlade", "TaperSharpness", "MinStep", "Smoothing",
+        "StartAlongBlade", "TaperSharpness",
         "HighlightShape", "HighlightWidth", "HighlightStart", "HighlightLength",
         "HighlightBias", "HighlightSharpness", "HighlightOffset", "HighlightOpacity",
         "AccentCount", "AccentWidth", "AccentGap", "AccentSpacing",
@@ -25,6 +25,12 @@ public sealed class SlashProfileEditor : Editor
         "Brightness", "CoreSharpness", "GlowIntensity",
         "EdgeFalloff", "HighlightFalloff",
         "DepthOffset", "LayerSeparation",
+
+        // The ribbon's own clocks. They sit under Timing next to the cut's
+        // and read like the knobs for how the effect fades, which is exactly
+        // why they have to go when there is no ribbon: turned with the ribbon
+        // off they change nothing on screen - the cut fades on Shape Fade.
+        "TrailSeconds", "FadeSeconds",
     };
 
     /// <summary>
@@ -93,12 +99,43 @@ public sealed class SlashProfileEditor : Editor
             case "CircleTextureFrame":
                 return count("CircleTextureFrames") > 1;
 
+            // The window's highlight is read by whatever draws the cut, band
+            // or ring, so it only goes dead once there is no cut at all.
+            case "UseHitWindow":
+            case "HotDecaySeconds":
+            case "HotBeforeWindow":
+            case "HotAfterHit":
+            case "StopAfterWindow":
+                return count("ShapeMode") != (int)SlashShapeMode.None;
+
+            case "StopAfterWindowSeconds":
+                return count("ShapeMode") != (int)SlashShapeMode.None
+                    && flag("StopAfterWindow");
+
+            // Thinning the band outside the window is carried on the band's
+            // own vertices, which the ring does not have.
+            case "OutsideHitWidth":
+            case "OutsideHitOpacity":
+                return count("ShapeMode") == (int)SlashShapeMode.Band;
+
+            // The band is sampled and subdivided by the ribbon's own rule, so
+            // these two stay live for as long as either is drawn.
+            case "MinStep":
+            case "Smoothing":
+                return flag("DrawRibbon") || band();
+
+            case "ArcSmoothing":
+            case "ArcSegmentDegrees":
+                return band();
+
             // The ring reads these as its inner and outer radius, so they are
             // live whether or not a particle prefab is assigned - the band is
             // the one that only exists when there is one.
             case "ShapeInnerAlongBlade":
             case "ShapeOuterAlongBlade":
             case "ShapeFadeSeconds":
+            case "ShapeFadeAfterHitSeconds":
+            case "ShapeFadeCurve":
                 return circle || reference("Particles");
 
             // The named shapes write these six, so they only mean anything
@@ -140,6 +177,10 @@ public sealed class SlashProfileEditor : Editor
                 return true;
         }
     }
+
+    /// <summary>True when the cut is swept as a band, which needs a prefab to dress it.</summary>
+    private bool band() =>
+        count("ShapeMode") == (int)SlashShapeMode.Band && reference("Particles");
 
     /// <summary>True when an object reference is assigned.</summary>
     private bool reference(string name)

@@ -49,11 +49,14 @@ public class SlashProfile : ScriptableObject
     [Range(0.3f, 4f)] public float TaperSharpness = 1.2f;
 
     [Tooltip("Tip travel in world units before the trail lays down another " +
-        "vertebra. Lower is smoother and heavier.")]
+        "vertebra. Lower is smoother and heavier. The cut's band is sampled " +
+        "by the same rule.")]
     [Range(0.005f, 0.2f)] public float MinStep = 0.02f;
 
     [Tooltip("Curve subdivisions between vertebrae. This is what takes the " +
-        "frame-rate steps out of the stroke's edges.")]
+        "frame-rate steps out of the stroke's edges. For the cut's band it is " +
+        "the fewest a frame is cut into; Arc Segment Degrees adds more where " +
+        "the blade turned further.")]
     [Range(1, 8)] public int Smoothing = 4;
 
     [Header("Highlight")]
@@ -218,6 +221,63 @@ public class SlashProfile : ScriptableObject
         "end would otherwise land at the tail instead of on the blade.")]
     public bool CircleTextureFlip;
 
+    [Header("Hit Window")]
+    [Tooltip("Shade the band by the attack's own damage window, as the clip's " +
+        "hit frames open and close it.\n\n" +
+        "The cut is otherwise one even surface from the first frame of the " +
+        "swing to the last, which says the whole sweep is dangerous when only " +
+        "part of it is. With this on, the part laid while the weapon could " +
+        "actually hit stays full, everything laid either side of it thins to " +
+        "a line, and the bright edge only burns while the window is open. " +
+        "Off, the stroke looks exactly as it always has.")]
+    public bool UseHitWindow = false;
+
+    [Tooltip("Width of the band laid outside the damage window, as a fraction " +
+        "of its full width. Small is right: the wind-up and follow-through " +
+        "still show the reach as a thin boundary, without the mass that says " +
+        "'this hits'.")]
+    [Range(0f, 1f)] public float OutsideHitWidth = 0.18f;
+
+    [Tooltip("Opacity of the band laid outside the damage window, against 1 " +
+        "inside it.")]
+    [Range(0f, 1f)] public float OutsideHitOpacity = 0.55f;
+
+    [Tooltip("Seconds the leading edge's highlight takes to die once the " +
+        "window closes. Short, so the brightest thing on screen is only ever " +
+        "the moment the weapon can hit - a highlight that lingers through the " +
+        "follow-through draws the eye away from the target.")]
+    [Range(0.01f, 0.5f)] public float HotDecaySeconds = 0.08f;
+
+    [Tooltip("How bright that highlight is before the window has opened, " +
+        "against 1 while it is open. Above zero the wind-up still has an " +
+        "edge to follow; at zero the stroke only lights up on the frames " +
+        "that can hit.")]
+    [Range(0f, 1f)] public float HotBeforeWindow = 0.2f;
+
+    [Tooltip("How bright that highlight may be once the swing has confirmed a " +
+        "hit, against 1 while the window is open. A hit spawns its own impact " +
+        "on the target, and that is what the eye has to find first; an edge " +
+        "still burning at full beside it competes for the same frames. 1 " +
+        "leaves the edge alone, which is also what a weapon with no impact " +
+        "gets.")]
+    [Range(0f, 1f)] public float HotAfterHit = 1f;
+
+    [Tooltip("Stop drawing shortly after the damage window closes, instead " +
+        "of following the blade until the clip's end cue.\n\n" +
+        "The end cue usually comes a few frames after the window, and " +
+        "everything laid in between is follow-through that cannot hit: on a " +
+        "rising cut it closes the arc into a dome round the attacker, and on " +
+        "every cut it holds a full, still stroke after the blade has moved " +
+        "on. Off, the stroke draws until its end cue as it always has.")]
+    public bool StopAfterWindow = false;
+
+    [Tooltip("Seconds the band keeps following the blade after the window " +
+        "closes, before it stops growing and starts to fade. 0 stops on the " +
+        "close frame itself, which still counts as inside the window, so the " +
+        "stroke ends on its full head at the blade; a couple of frames more " +
+        "adds a thin exit taper.")]
+    [Range(0f, 0.3f)] public float StopAfterWindowSeconds = 0.03f;
+
     [Header("Particles")]
     [Tooltip("Particles laid down along the blade's path. Every particle system " +
         "under this prefab is driven, and each one's own emission and shape are " +
@@ -287,10 +347,54 @@ public class SlashProfile : ScriptableObject
         "reached.")]
     [Range(0.2f, 12f)] public float ShapeArcLength = 2.4f;
 
+    [Tooltip("How much the band rounds off the corners in the blade's own " +
+        "path. 0 follows the tip exactly; 1 is the smoothest.\n\n" +
+        "A keyframed arm moves in straight runs between its keys, so the tip " +
+        "it carries turns a corner on every key, and a band that follows it " +
+        "faithfully has a facet for each. This averages every frame of the " +
+        "swing towards its neighbours - the blade's direction as a " +
+        "direction, so the arc keeps its radius and only loses the corners. " +
+        "The head stays on the blade and the tail where the swing began " +
+        "whatever it is set to.\n\n" +
+        "Because the head is held, the few frames just behind the blade are " +
+        "smoothed as they fall behind it: at 0.5 they settle within about " +
+        "three frames, at 1 within five, and nothing further back moves.\n\n" +
+        "Raise it when the cut reads as a polygon; lower it when a swing " +
+        "that really does change direction - a hook, a flick at the end - " +
+        "comes out rounded into a plain arc.")]
+    [Range(0f, 1f)] public float ArcSmoothing = 0.5f;
+
+    [Tooltip("The most the blade may turn across one facet of the band, in " +
+        "degrees.\n\n" +
+        "A fast swing turns tens of degrees between two frames. The band " +
+        "fills that in as a turn round the grip, cut into as many facets as " +
+        "this asks for, so a lower number is a rounder edge on the fastest " +
+        "swings for a few more triangles; Smoothing is still the fewest a " +
+        "frame is ever cut into. Below about 3 there is nothing left to see.")]
+    [Range(0.5f, 15f)] public float ArcSegmentDegrees = 2f;
+
     [Tooltip("How long the cut takes to erode away once the swing is over, in " +
         "seconds. It dissolves rather than fading, through the same noise the " +
         "shape was drawn with.")]
     [Range(0.05f, 3f)] public float ShapeFadeSeconds = 0.35f;
+
+    [Tooltip("How long the cut takes to erode once a swing that landed a hit " +
+        "is over, in seconds. A hit shows its own impact on the target, which " +
+        "already says what happened, and the target is reacting through the " +
+        "still stroke meanwhile - so a hit can clear the frame sooner than a " +
+        "whiff, whose remnant is the only record of how far it reached. 0 " +
+        "uses Shape Fade Seconds for hits too.")]
+    [Range(0f, 3f)] public float ShapeFadeAfterHitSeconds = 0f;
+
+    [Tooltip("How the cut's life falls over its fade: left to right is the " +
+        "fade's own time, from the swing ending to the cut being gone; top to " +
+        "bottom is whole to gone. It shapes both fade clocks above.\n\n" +
+        "The straight line erodes evenly and stops dead. A curve that leaves " +
+        "the top gently and lands flat on the bottom - ease in and out - lets " +
+        "the cut settle before it breaks up and trail off instead of " +
+        "vanishing on a hard last frame. Its materials' Fade Opacity decides " +
+        "how much of that life is spent fading rather than eroding.")]
+    public AnimationCurve ShapeFadeCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
 
     [Tooltip("Multiplies the spray's opacity. Only the spray: the slash's own " +
         "shape reads its alpha as a dissolve threshold rather than an opacity, " +
@@ -361,9 +465,10 @@ public class SlashProfile : ScriptableObject
         "it above the longest swing that uses this profile.")]
     [Range(0.05f, 1.5f)] public float FollowSeconds = 0.45f;
 
-    [Tooltip("Seconds the stroke takes to fade once the swing is over. It is " +
-        "also shortening from the tail at the same time, so this only has to " +
-        "cover what is left.")]
+    [Tooltip("Generated ribbon only (Draw Ribbon). Seconds the ribbon takes to " +
+        "fade once the swing is over; it is also shortening from the tail at " +
+        "the same time, so this only has to cover what is left. The cut's own " +
+        "fade is Shape Fade Seconds, and this does nothing to it.")]
     [Range(0.02f, 1f)] public float FadeSeconds = 0.16f;
 
     [Header("Placement")]

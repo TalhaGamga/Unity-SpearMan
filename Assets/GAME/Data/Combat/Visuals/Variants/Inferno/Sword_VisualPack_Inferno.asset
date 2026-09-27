@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a26, type: 3}
+  m_Name: Sword_VisualPack_Inferno
+  m_EditorClassIdentifier: 
+  _cues:
+  - CueKey: SlashLight
+    Kind: 1
+    Prefab: {fileID: 0}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
+    Anchor: 2
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 0
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.8, y: 1.2}
+    Lifetime: 0
+  - CueKey: SlashRising
+    Kind: 1
+    Prefab: {fileID: 0}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
+    Anchor: 2
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 0
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.8, y: 1.2}
+    Lifetime: 0
+  - CueKey: SlashHeavy
+    Kind: 1
+    Prefab: {fileID: 0}
+    SlashProfile: {fileID: 11400000, guid: 512fc86364e14a245a3cf003a9247613, type: 2}
+    Anchor: 2
+    Alignment: 4
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 0
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.8, y: 1.2}
+    Lifetime: 0
+  - CueKey: Hit
+    Kind: 0
+    Prefab: {fileID: 3286147184510438545, guid: c719db30a2774d0488af2a5c0f132dd0, type: 3}
+    SlashProfile: {fileID: 0}
+    Anchor: 1
+    Alignment: 2
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1, y: 1, z: 1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 0
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.75, y: 1.25}
+    Lifetime: 0.2
+  - CueKey: Hit.Sword_Heavy
+    Kind: 0
+    Prefab: {fileID: 3286147184510438545, guid: c719db30a2774d0488af2a5c0f132dd0, type: 3}
+    SlashProfile: {fileID: 0}
+    Anchor: 1
+    Alignment: 2
+    PositionOffset: {x: 0, y: 0, z: 0}
+    RotationOffset: {x: 0, y: 0, z: 0}
+    Scale: {x: 1.1, y: 1.1, z: 1.1}
+    FollowAnchor: 0
+    MirrorOnFacing: 0
+    ArcTip: 1
+    ArcRadius: 1
+    ArcLeadAngle: 90
+    ArcWinding: 0
+    ScaleBy: 0
+    RateBy: 0
+    SwingSpeedRange: {x: 2, y: 14}
+    SwingStrengthRange: {x: 0.75, y: 1.25}
+    Lifetime: 0.2

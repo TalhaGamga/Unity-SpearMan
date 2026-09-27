@@ -29,8 +29,13 @@ Material:
     - _CoreSize: 0
     - _Falloff: 0.35
     - _Intensity: 1
+    - _Ring: 0
+    - _RingWidth: 0.2
+    - _SilhouetteDepth: 1
+    - _SilhouetteFade: 0.8
+    - _SilhouetteHold: 0.45
     m_Colors:
-    - _Color: {r: 0.03, g: 0.42, b: 0.54, a: 1}
-    - _CoreColor: {r: 0.03, g: 0.42, b: 0.54, a: 1}
+    - _Color: {r: 0.02, g: 0.2, b: 0.14, a: 1}
+    - _CoreColor: {r: 0.02, g: 0.2, b: 0.14, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

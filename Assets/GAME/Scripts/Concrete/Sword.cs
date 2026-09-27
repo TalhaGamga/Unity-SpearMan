@@ -28,6 +28,30 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
         "wherever that needs it. Found automatically when left empty.")]
     [SerializeField] private MeshFilter _visual;
 
+    [Header("Hit Feedback")]
+    [Tooltip("Impact bursts one swing may spawn. A cut through a crowd - or " +
+        "through the fracture pieces a destructive hit has just made - " +
+        "otherwise carpets the screen and buries the target it was meant " +
+        "to mark.")]
+    [SerializeField, Min(1)] private int _maxImpactsPerSwing = 2;
+
+    [Tooltip("Shake the camera on the first confirmed hit of each swing. The " +
+        "shake used to be fired by the attack clips themselves, on hits and " +
+        "whiffs alike, which made a miss feel exactly like a hit.")]
+    [SerializeField] private bool _shakeOnHit = true;
+
+    /// <summary>
+    /// Turn rate, radians per second, below which the blade's own rotation
+    /// says nothing reliable about which way the edge is moving - a blade
+    /// held still, or a sensor that is not sampling at all.
+    /// </summary>
+    private const float MinTurnRate = 0.5f;
+
+    /// <summary>
+    /// Impacts shown since the current hit window confirmed its first target.
+    /// </summary>
+    private int _impactsThisWindow;
+
     private Transform _owner;
     private Transform _forwardSource;
     private Vector3 _lastPlanarForward = Vector3.forward;
@@ -64,6 +88,17 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     public void OnAnimationFrame(CombatAnimationFrame frame)
     {
         _visualizer?.HandleAnimationFrame(frame);
+    }
+
+    /// <summary>
+    /// Combat opened or closed its hit scan. Reported by the combat machine
+    /// itself, after its own checks, so the visuals mark exactly the window
+    /// that can hurt something - not every HitFrameOpen a crossfading clip
+    /// still fires.
+    /// </summary>
+    public void OnHitWindowChanged(bool open, string stateName)
+    {
+        _visualizer?.HandleHitWindow(open, stateName);
     }
 
     private void OnDestroy()
@@ -262,8 +297,95 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
                 hitContext
             );
 
+            // Presentation before rules. A destructive or slicing attack may
+            // replace this collider over the next few frames, and the impact
+            // needs it whole to find the side of the body facing the camera.
+            // This is also the only place a hit and a miss can be told apart:
+            // a window that closes without ever reaching this line was a
+            // miss, and nothing below fires for it.
+            bool isFirstOfSwing = hitTargets.Count == 1;
+
+            // The hit set is emptied every time a window opens or closes, so
+            // its first entry is also the first moment of a new window.
+            if (isFirstOfSwing)
+                _impactsThisWindow = 0;
+
+            if (shouldShowImpact(target))
+            {
+                // The shake rides the first impact rather than the first
+                // entry in the hit set, so it says what the burst says: that
+                // something which can be hurt was hurt. A cut through leftover
+                // fracture chips is a confirmed overlap, not a hit anyone
+                // should feel.
+                if (_impactsThisWindow == 0 && _shakeOnHit)
+                    CameraManager.Shake();
+
+                _impactsThisWindow++;
+                _visualizer?.HandleHit(new WeaponHit(
+                    attack,
+                    target,
+                    hit,
+                    hitPoint,
+                    targetCenter,
+                    resolveSlashDirection(hitContext),
+                    hitContext.Speed,
+                    isFirstOfSwing));
+            }
+
             _dispatcher.Apply(source, target);
         }
+    }
+
+    /// <summary>
+    /// Whether this hit earns an impact burst.
+    ///
+    /// Capabilities are looked up on the target object itself, the same rule
+    /// TargetContext applies when the rules run, so what sparks is exactly
+    /// what the attack can hurt or stagger: characters (IHitReactable) and
+    /// test boxes (IDamageable) do, scenery and loose fracture pieces - which
+    /// carry nothing but a rigidbody response - do not. The cap counts the
+    /// impacts this window has actually shown, not its place in the hit set:
+    /// fracture pieces left lying in the arc by an earlier finisher join the
+    /// set too, and counting them would let two loose chips use up the
+    /// swing's impacts before the blade ever reached the enemy behind them.
+    /// </summary>
+    private bool shouldShowImpact(GameObject target)
+    {
+        if (target == null || _impactsThisWindow >= _maxImpactsPerSwing)
+            return false;
+
+        return target.GetComponent<IHitReactable>() != null ||
+               target.GetComponent<IDamageable>() != null;
+    }
+
+    /// <summary>
+    /// Which way the edge travelled through the target, on the plane.
+    ///
+    /// Read off the blade's turn first. A positive turn rate rotates the blade
+    /// from +Z toward +Y, so the edge moves along the blade rotated a quarter
+    /// turn the same way in (Z, Y): (0, b.z, -b.y) for blade heading b. The
+    /// linear velocity comes second because a lunge carries the whole
+    /// character, and that travel swamps the sideways sweep a cut shows up in.
+    /// The attacker-to-target direction HitContext falls back to comes after
+    /// that, and facing last, so a sensor that is not sampling still gives an
+    /// impact that points somewhere sensible.
+    /// </summary>
+    private Vector3 resolveSlashDirection(in HitContext hitContext)
+    {
+        if (_hitbox != null && Mathf.Abs(_hitbox.AngularVelocity) > MinTurnRate)
+        {
+            Vector3 blade = _hitbox.BladeDirection;
+            Vector3 edge = new Vector3(0f, blade.z, -blade.y) *
+                Mathf.Sign(_hitbox.AngularVelocity);
+
+            if (edge.sqrMagnitude > 1e-6f)
+                return edge.normalized;
+        }
+
+        Vector3 direction = hitContext.Direction;
+        return direction.sqrMagnitude > 1e-6f
+            ? direction
+            : getPlanarForward();
     }
 
     private Vector3 getPlanarForward()

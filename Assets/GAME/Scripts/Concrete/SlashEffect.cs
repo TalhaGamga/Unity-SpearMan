@@ -46,6 +46,27 @@ namespace Combat
         private static readonly int HeadUId = Shader.PropertyToID("_HeadU");
 
         /// <summary>
+        /// Whether the layered material should read the band's uv1 as the
+        /// damage window. Only the band writes that channel - the ring and the
+        /// pack's particle meshes leave it empty - so the shader is told when
+        /// it is there rather than trusting whatever an unwritten channel holds.
+        /// </summary>
+        private static readonly int UseHitMaskId = Shader.PropertyToID("_UseHitMask");
+
+        /// <summary>
+        /// How hot the leading edge is right now, 0 to 1. This is the one
+        /// thing about the damage window that is about the present rather than
+        /// the swing's history, so it is a property rather than a vertex value.
+        /// </summary>
+        private static readonly int HotId = Shader.PropertyToID("_Hot");
+
+        /// <summary>Width multiplier for band laid outside the damage window.</summary>
+        private static readonly int OutsideWidthId = Shader.PropertyToID("_OutsideWidth");
+
+        /// <summary>Opacity multiplier for band laid outside the damage window.</summary>
+        private static readonly int OutsideOpacityId = Shader.PropertyToID("_OutsideOpacity");
+
+        /// <summary>
         /// Tint on the pack's particle materials. The ring is usually drawn
         /// with one of those, and they have no dissolve to drive, so this is
         /// the only handle its fade has.
@@ -167,6 +188,44 @@ namespace Combat
         private Vector3 _lastTip;
         private float _shapeLife;
 
+        /// <summary>
+        /// Seconds the cut has been fading, so its life can be read off the
+        /// profile's fade curve at a point in the fade rather than stepped
+        /// down by a fixed amount every frame, which only ever makes a line.
+        /// </summary>
+        private float _shapeFadeElapsed;
+
+        /// <summary>
+        /// The attack's damage window as the clip's hit frames last reported
+        /// it. Each sample laid while it is open is marked, so the band can
+        /// tell the part of the swing that could hit from the wind-up and the
+        /// follow-through either side of it.
+        /// </summary>
+        private bool _hitOpen;
+
+        /// <summary>
+        /// Whether the window has opened at all this stroke. Before it has,
+        /// the edge sits at the profile's resting level rather than decaying
+        /// from a close that never happened.
+        /// </summary>
+        private bool _hitEverOpened;
+
+        /// <summary>When the window last closed, for the edge's decay.</summary>
+        private float _hitCloseTime;
+
+        /// <summary>
+        /// Whether this stroke's swing has landed. From then on the impact on
+        /// the target is the thing to look at, and the edge is held down to
+        /// the profile's HotAfterHit so it does not compete with it.
+        /// </summary>
+        private bool _hitConfirmed;
+
+        /// <summary>
+        /// Set on the frame the damage window ends the stroke, so the band is
+        /// built once more with the pose laid on that frame.
+        /// </summary>
+        private bool _buildFinal;
+
         /// <summary>Free to be played again.</summary>
         public bool IsIdle => !gameObject.activeSelf;
 
@@ -187,6 +246,13 @@ namespace Combat
         /// </summary>
         public string StateName { get; private set; }
 
+        /// <summary>
+        /// When this stroke was started, so the newest of several strokes from
+        /// the same state - a combo looping back to its first step - can be
+        /// told from the older one still fading.
+        /// </summary>
+        public float StartedAt { get; private set; }
+
         /// <summary>Still laying down new trail.</summary>
         public bool IsEmitting => _emitting;
 
@@ -202,6 +268,55 @@ namespace Combat
         /// the trail it has already cut.
         /// </remarks>
         public void StopEmitting() => _emitting = false;
+
+        /// <summary>
+        /// Tells the stroke whether the attack can hit right now.
+        /// </summary>
+        /// <remarks>
+        /// The clip's hit frames are what says when the swing is dangerous,
+        /// and the stroke has no other way to know: the blade moves just as
+        /// fast through the wind-up as through the part that connects. Knowing
+        /// it lets the cut put its mass and its brightest edge only where the
+        /// weapon could actually hit, and thin the rest down to a boundary.
+        ///
+        /// Closing is kept as a moment rather than a flag, so the edge can die
+        /// off over a few frames instead of snapping out. Only a window that
+        /// is open can close: a close with no open before it - the end of a
+        /// previous clip's window arriving late - leaves the stroke reading as
+        /// never opened, and a second close for the same window - both clips
+        /// of a crossfade firing their events, or the stroke having already
+        /// closed it itself when it stopped drawing - must not restart the
+        /// decay and flash the edge back to full.
+        /// </remarks>
+        public void SetHitWindow(bool open)
+        {
+            if (open)
+            {
+                _hitOpen = true;
+                _hitEverOpened = true;
+                return;
+            }
+
+            if (!_hitOpen)
+                return;
+
+            _hitOpen = false;
+            _hitCloseTime = Time.time;
+        }
+
+        /// <summary>
+        /// Tells the stroke its swing has just landed a hit that shows an
+        /// impact.
+        /// </summary>
+        /// <remarks>
+        /// Only the edge's heat follows it, and only down to the profile's
+        /// HotAfterHit: the band keeps its shape, its hit mask and its
+        /// boundary, so the reach and the direction read as before while the
+        /// impact takes the brightest spot on screen. Called by whoever
+        /// spawned that impact, so a weapon whose pack has none keeps its hot
+        /// edge on a hit as well as on a whiff.
+        /// </remarks>
+        public void ConfirmHit() => _hitConfirmed = true;
 
         public static SlashEffect Create(string name, Material material)
         {
@@ -264,6 +379,7 @@ namespace Combat
             _profile = profile;
             CueKey = cueKey;
             StateName = stateName;
+            StartedAt = Time.time;
             _source = source;
             _pivotAnchor = pivotAnchor;
             _tipAnchor = tipAnchor;
@@ -284,11 +400,21 @@ namespace Combat
             _spine.Clear();
             _arc.Clear();
             _shapeLife = 1f;
+            _shapeFadeElapsed = 0f;
             _emitting = true;
             _emitTime = 0f;
             _stallTime = 0f;
             _fadeTime = 0f;
             _lastTip = tip;
+
+            // A pooled stroke must not inherit the last swing's window: the
+            // new clip's hit frames have not fired yet, and until they do
+            // nothing about this swing can hit.
+            _hitOpen = false;
+            _hitEverOpened = false;
+            _hitCloseTime = 0f;
+            _hitConfirmed = false;
+            _buildFinal = false;
 
             captureCircle(grip, tip);
             push(grip, tip, Time.time, true);
@@ -309,6 +435,14 @@ namespace Combat
                 emit(now);
             else
                 _fadeTime += Time.deltaTime;
+
+            // A stroke that has stopped drawing has no leading edge left on
+            // the weapon, so a window still open - a swing cancelled before
+            // its close frame, or an end cue that came first - is closed here
+            // rather than holding the edge at full through the whole fade.
+            // The late close, if it ever comes, is then a no-op.
+            if (!_emitting && _hitOpen)
+                SetHitWindow(false);
 
             updateShape();
 
@@ -386,12 +520,32 @@ namespace Combat
                 && _emitTime >= MinEmitSeconds
                 && _stallTime >= StallSeconds;
 
-            bool over = stalled || _emitTime >= _profile.FollowSeconds;
+            // The damage window is the part of the swing the stroke is about.
+            // Once it has closed and the short exit has run, what the blade
+            // does next is follow-through that cannot hit, and drawing it
+            // only piles still band onto the end of the stroke.
+            bool windowDone = _profile.UseHitWindow
+                && _profile.StopAfterWindow
+                && _hitEverOpened
+                && !_hitOpen
+                && now - _hitCloseTime >= _profile.StopAfterWindowSeconds;
+
+            bool over = stalled || windowDone || _emitTime >= _profile.FollowSeconds;
 
             _lastTip = tip;
 
             if (over)
+            {
                 _emitting = false;
+
+                // A stroke ended by its window ends on the pose just laid -
+                // with no exit time, the close frame's, still marked inside
+                // the window - so the band is built once more this frame
+                // and its head is on the blade when it stops. Left unbuilt,
+                // the stopped stroke ended a frame of travel behind the
+                // weapon with its hottest frame of rim hanging off it.
+                _buildFinal = windowDone;
+            }
         }
 
         #region Circle
@@ -639,9 +793,11 @@ namespace Combat
             if (_shapeRoot == null)
                 return;
 
-            if (_emitting)
+            if (_emitting || _buildFinal)
             {
+                _buildFinal = false;
                 _shapeLife = 1f;
+                _shapeFadeElapsed = 0f;
 
                 // The ring needs no history: it was struck whole on the first
                 // frame and only its bright head has moved since, so unlike
@@ -657,11 +813,23 @@ namespace Combat
             {
                 // The band stops growing but is not cut short: what was drawn
                 // stays drawn and erodes on its own, the same promise an end
-                // cue makes to the trail.
-                float fade = Mathf.Max(_profile.ShapeFadeSeconds, 1e-3f);
-                _shapeLife = Mathf.Max(_shapeLife - Time.deltaTime / fade, 0f);
+                // cue makes to the trail. A swing that landed may erode on
+                // its own, shorter clock: its impact already says what
+                // happened, and the target is reacting through the still band.
+                float seconds = _hitConfirmed && _profile.ShapeFadeAfterHitSeconds > 0f
+                    ? _profile.ShapeFadeAfterHitSeconds
+                    : _profile.ShapeFadeSeconds;
+                float fade = Mathf.Max(seconds, 1e-3f);
 
-                if (_shapeLife <= 0f)
+                _shapeFadeElapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(_shapeFadeElapsed / fade);
+                _shapeLife = fadeLife(t);
+
+                // Over when the fade's time is up, not when the curve first
+                // touches zero, so a curve that is drawn to rest on the bottom
+                // early still runs its full length - and one drawn to end above
+                // it still ends.
+                if (t >= 1f || _shapeLife <= 0f)
                 {
                     _shapeRoot.SetActive(false);
                     _shapeMesh.Clear();
@@ -676,6 +844,18 @@ namespace Combat
             _shapeBlock.SetFloat(LifeId, _shapeLife);
             _shapeBlock.SetFloat(HeadUId, _shapeHeadU);
 
+            // Every one of these is set whether or not the profile uses the
+            // window, and set to the value that means "no window" when it
+            // does not. The block overrides the material, so leaving a value
+            // from a previous profile behind would carry its look over.
+            bool useWindow = _profile.UseHitWindow;
+            bool band = _profile.ShapeMode == SlashShapeMode.Band;
+
+            _shapeBlock.SetFloat(UseHitMaskId, useWindow && band ? 1f : 0f);
+            _shapeBlock.SetFloat(HotId, useWindow ? hotLevel() : 1f);
+            _shapeBlock.SetFloat(OutsideWidthId, useWindow ? _profile.OutsideHitWidth : 1f);
+            _shapeBlock.SetFloat(OutsideOpacityId, useWindow ? _profile.OutsideHitOpacity : 1f);
+
             // The pack's particle materials have no dissolve to erode, so the
             // ring fades the only way they can - on the tint they multiply by.
             // Band mode is left alone: an authored layer's own base colour is
@@ -688,6 +868,55 @@ namespace Combat
             }
 
             _shapeRenderer.SetPropertyBlock(_shapeBlock);
+        }
+
+        /// <summary>
+        /// The cut's life at a point in its fade, 0 at the start to 1 at the
+        /// end, read off the profile's curve. A profile with no curve - one
+        /// saved before the curve existed, or one whose keys were all deleted -
+        /// fades in a straight line, which is what every profile did before.
+        /// </summary>
+        private float fadeLife(float t)
+        {
+            AnimationCurve curve = _profile.ShapeFadeCurve;
+
+            if (curve == null || curve.length == 0)
+                return 1f - t;
+
+            return Mathf.Clamp01(curve.Evaluate(t));
+        }
+
+        /// <summary>
+        /// How bright the leading edge should be this frame, 0 to 1.
+        /// </summary>
+        /// <remarks>
+        /// Full while the attack can hit, and falling away quickly once it
+        /// cannot, so the brightest thing on screen is only ever the moment
+        /// of the cut. Before the window has opened it holds at the profile's
+        /// resting level, which keeps the wind-up readable without letting it
+        /// compete with the hit.
+        /// </remarks>
+        private float hotLevel()
+        {
+            float level;
+
+            if (!_hitEverOpened)
+            {
+                level = _profile.HotBeforeWindow;
+            }
+            else if (_hitOpen)
+            {
+                level = 1f;
+            }
+            else
+            {
+                float decay = Mathf.Max(_profile.HotDecaySeconds, 1e-3f);
+                level = Mathf.Max(0f, 1f - (Time.time - _hitCloseTime) / decay);
+            }
+
+            // A landed hit hands the frame to its impact: the edge may go on
+            // dying, but it never burns brighter than the profile allows.
+            return _hitConfirmed ? Mathf.Min(level, _profile.HotAfterHit) : level;
         }
 
         private bool buildCircle()
@@ -900,6 +1129,18 @@ namespace Combat
             if (travel < 1e-5f)
                 return;
 
+            // A band that follows the damage window lays its spray the same
+            // way it lays its heat: sparse through the wind-up, full while the
+            // blade can hit, none once the window has shut. The debris then
+            // marks the dangerous stretch of the swing, and no glint turns up
+            // on the cold end of the arc. Any other profile sprays evenly.
+            float gate = _profile.UseHitWindow && _profile.ShapeMode == SlashShapeMode.Band
+                ? hotLevel()
+                : 1f;
+
+            if (gate <= 0f)
+                return;
+
             Vector3 heading = step / travel;
             float speed = deltaTime > 1e-5f ? travel / deltaTime : 0f;
             Vector3 facing = sweepRotation(to - grip, heading);
@@ -919,7 +1160,7 @@ namespace Combat
                 // a slow frame does not round its particles away and a fast one
                 // does not double up - and a system on a small share still gets
                 // its particle every few frames instead of never.
-                _particleDebt[s] += travel * _profile.ParticlesPerUnit * _particleShare[s];
+                _particleDebt[s] += travel * _profile.ParticlesPerUnit * _particleShare[s] * gate;
 
                 int count = Mathf.FloorToInt(_particleDebt[s]);
                 if (count <= 0)
@@ -1071,7 +1312,23 @@ namespace Combat
                 Time = time
             };
 
-            var reach = new SlashShapeBuilder.Sample { Grip = root, Tip = outer };
+            // Marked with the window as it stands now. The sliding head is
+            // re-marked along with its position, so the frame the window
+            // opens or closes on is decided by the blade that was there then.
+            // The close frame's own pose still counts as inside: the close
+            // arrives with the animator's update, before this frame's blade
+            // is laid, and that pose is the end of the sweep the window
+            // covered. Marked cold, it tapered the stroke's end to the
+            // outside width - every stopped stroke ended in a needle instead
+            // of its head.
+            bool inWindow = _hitOpen || (_hitEverOpened && time <= _hitCloseTime);
+
+            var reach = new SlashShapeBuilder.Sample
+            {
+                Grip = root,
+                Tip = outer,
+                Hot = inWindow ? 1f : 0f
+            };
 
             // The decision is taken on the arc rather than the spine, because
             // the spine loses its oldest samples to the trail's window and a

@@ -322,6 +322,9 @@ namespace Combat
             _activeHitWindowStateName = hitWindow.StateName;
             _activeHitWindowComboStep = hitWindow.ComboStep;
             _isHitWindowOpen = true;
+
+            if (_view != null)
+                _view.OnHitWindowChanged(true, _activeHitWindowStateName);
         }
 
         private void closeHitFrame(HitWindowIdentity hitWindow)
@@ -428,11 +431,20 @@ namespace Combat
 
         private void resetHitFrame()
         {
+            bool wasOpen = _isHitWindowOpen;
+            string stateName = _activeHitWindowStateName;
+
             _isHitWindowOpen = false;
             _activeAttack = null;
             _activeHitWindowStateName = null;
             _activeHitWindowComboStep = 0;
             _hitTargets.Clear();
+
+            // Every way a window ends comes through here - its close event,
+            // leaving the state, SlashEnd, the watchdog, teardown - so the
+            // visuals hear about each of them, not just the clip's own close.
+            if (wasOpen && _view != null)
+                _view.OnHitWindowChanged(false, stateName);
         }
 
         private bool isCurrentState(string stateName)

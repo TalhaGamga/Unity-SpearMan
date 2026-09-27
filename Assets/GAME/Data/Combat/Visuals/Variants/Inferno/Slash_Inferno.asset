@@ -1,0 +1,118 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a31, type: 3}
+  m_Name: Slash_Inferno
+  m_EditorClassIdentifier: 
+  DrawRibbon: 0
+  StartAlongBlade: 0.3
+  TrailSeconds: 0.14
+  TaperSharpness: 1.2
+  MinStep: 0.02
+  Smoothing: 4
+  HighlightShape: 1
+  HighlightWidth: 0.45
+  HighlightStart: 0.05
+  HighlightLength: 0.8
+  HighlightBias: 0.4
+  HighlightSharpness: 1.4
+  HighlightOffset: 0.05
+  HighlightOpacity: 0.95
+  AccentCount: 2
+  AccentWidth: 0.09
+  AccentGap: 0.25
+  AccentSpacing: 0.22
+  AccentStart: 0.05
+  AccentLength: 0.7
+  AccentOpacity: 0.7
+  VolumeShells: 4
+  VolumeSeparation: 0.035
+  VolumeSpread: 0.18
+  VolumeOpacity: 0.4
+  ShapeMode: 0
+  CircleMaterial: {fileID: 0}
+  CircleSpanDegrees: 300
+  CircleRadiusSource: 0
+  CircleFollowSweep: 1
+  CircleHeadFalloff: 1.2
+  CircleTailOpacity: 0.5
+  CircleSquash: 1
+  CircleWobble: 0
+  CircleWobbleLobes: 3
+  CircleTaper: 0
+  CircleSegments: 128
+  CircleDepthOffset: 0.06
+  CircleTextureFrames: 1
+  CircleTextureFrame: 0
+  CircleTextureFlip: 0
+  UseHitWindow: 1
+  OutsideHitWidth: 0.18
+  OutsideHitOpacity: 0.6
+  HotDecaySeconds: 0.08
+  HotBeforeWindow: 0
+  HotAfterHit: 0.2
+  StopAfterWindow: 0
+  StopAfterWindowSeconds: 0
+  Particles: {fileID: 1312969176563267170, guid: 4015875c29da53b4bb7cb03a96cc166d, type: 3}
+  ParticlesPerUnit: 1.2
+  ParticleSpeedScale: 0.03
+  ParticleSpread: 0.25
+  ParticleSizeScale: 0.8
+  ShapeBurstCount: 4
+  ShapeInnerAlongBlade: 0.5
+  ShapeOuterAlongBlade: 1
+  ShapeArcLength: 4.5
+  ArcSmoothing: 0.5
+  ArcSegmentDegrees: 2
+  ShapeFadeSeconds: 0.24
+  ShapeFadeAfterHitSeconds: 0.18
+  ShapeFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  ParticleOpacity: 1
+  ParticleLifetime: 0.1
+  AlignParticlesToSweep: 1
+  ParticleRotationOffset: {x: 0, y: 0, z: 0}
+  Material: {fileID: 0}
+  CoreColor: {r: 1, g: 1, b: 1, a: 1}
+  EdgeColor: {r: 1, g: 0.79150724, b: 0.47581795, a: 1}
+  GlowColor: {r: 1, g: 0.5921363, b: 0.2021627, a: 1}
+  Brightness: 1.6
+  CoreSharpness: 2.2
+  GlowIntensity: 0.45
+  EdgeFalloff: 1.8
+  HighlightFalloff: 2.6
+  AutoStopWhenStill: 1
+  FollowSeconds: 0.45
+  FadeSeconds: 0.16
+  DepthOffset: -0.02
+  LayerSeparation: 0.012
