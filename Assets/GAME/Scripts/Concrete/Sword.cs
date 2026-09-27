@@ -22,6 +22,12 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     [Tooltip("Grip point. Falls back to this weapon's own transform when unset.")]
     [SerializeField] private Transform _handAnchor;
 
+    [Tooltip("The visible weapon. Effects read their reach off this model's " +
+        "own extent, so they land on the blade the player can see rather than " +
+        "on the damage volume, which is sized for hit detection and sits " +
+        "wherever that needs it. Found automatically when left empty.")]
+    [SerializeField] private MeshFilter _visual;
+
     private Transform _owner;
     private Transform _forwardSource;
     private Vector3 _lastPlanarForward = Vector3.forward;
@@ -60,6 +66,11 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
         _visualizer?.HandleAnimationFrame(frame);
     }
 
+    private void OnDestroy()
+    {
+        _visualizer?.End();
+    }
+
     #region IWeaponVisualSource
 
     public Vector3 BladeDirection => _hitbox != null
@@ -69,6 +80,10 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     public Vector3 SwingVelocity => _hitbox != null
         ? _hitbox.Velocity
         : Vector3.zero;
+
+    public float SwingAngularVelocity => _hitbox != null
+        ? _hitbox.AngularVelocity
+        : 0f;
 
     public Vector3 PlanarForward => getPlanarForward();
 
@@ -83,6 +98,94 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
         };
 
         return anchorTransform != null;
+    }
+
+    public bool TryGetAnchorPosition(VisualAnchor anchor, out Vector3 position)
+    {
+        bool wantsTip = anchor == VisualAnchor.BladeTip && _bladeTip == null;
+        bool wantsGrip = anchor == VisualAnchor.Hand && _handAnchor == null;
+
+        // Both ends off the visible model, so effects are drawn along the line
+        // the player can actually see. The hitbox is sized and placed for hit
+        // detection and its ends sit wherever that needs them.
+        if ((wantsTip || wantsGrip) &&
+            tryGetVisualBlade(out Vector3 visualGrip, out Vector3 visualTip))
+        {
+            position = wantsTip ? visualTip : visualGrip;
+            return true;
+        }
+
+        if (wantsTip && _hitbox != null)
+        {
+            position = _hitbox.TipPosition;
+            return true;
+        }
+
+        if (TryGetAnchor(anchor, out Transform anchorTransform))
+        {
+            position = anchorTransform.position;
+            return true;
+        }
+
+        position = Vector3.zero;
+        return false;
+    }
+
+    /// <summary>
+    /// The visible model's two ends, in world space.
+    ///
+    /// Read from the mesh's own bounds along its longest axis, which for any
+    /// weapon is the one it is swung with. The end taken as the tip is the one
+    /// further from the grip, so the same code works whether the model was
+    /// authored pointing forward or back.
+    /// </summary>
+    private bool tryGetVisualBlade(out Vector3 grip, out Vector3 tip)
+    {
+        grip = Vector3.zero;
+        tip = Vector3.zero;
+
+        if (_visual == null)
+            _visual = GetComponentInChildren<MeshFilter>();
+
+        Mesh mesh = _visual != null ? _visual.sharedMesh : null;
+        if (mesh == null)
+            return false;
+
+        Bounds bounds = mesh.bounds;
+        Vector3 extents = bounds.extents;
+
+        Vector3 axis;
+        float half;
+
+        if (extents.z >= extents.x && extents.z >= extents.y)
+        {
+            axis = Vector3.forward;
+            half = extents.z;
+        }
+        else if (extents.y >= extents.x)
+        {
+            axis = Vector3.up;
+            half = extents.y;
+        }
+        else
+        {
+            axis = Vector3.right;
+            half = extents.x;
+        }
+
+        Transform model = _visual.transform;
+        Vector3 low = model.TransformPoint(bounds.center - axis * half);
+        Vector3 high = model.TransformPoint(bounds.center + axis * half);
+
+        // Measured from where the weapon is held rather than from the
+        // character: a weapon held overhead can put its tip nearer the
+        // character's origin than its pommel, and the grip never can.
+        Vector3 held = _handAnchor != null ? _handAnchor.position : transform.position;
+        bool lowIsFar = (low - held).sqrMagnitude >= (high - held).sqrMagnitude;
+
+        tip = lowIsFar ? low : high;
+        grip = lowIsFar ? high : low;
+        return true;
     }
 
     private Transform hitboxTransform()
@@ -130,12 +233,21 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
 
             Vector3 velocity = _hitbox.Velocity;
             Vector3 hitPoint = planarHit.Point;
-            Vector3 targetCenter = hit.attachedRigidbody != null
-                ? hit.attachedRigidbody.worldCenterOfMass
-                : hit.bounds.center;
-            Vector3 attackOrigin = _owner != null
-                ? _owner.position
-                : _hitbox.Position;
+
+            // Both ends of the fallback flattened before they are subtracted.
+            // Taking the difference first and flattening after would give the
+            // same answer here, but only because both happen to be points -
+            // the rule is that a gameplay vector is built out of gameplay
+            // values, so that it stays true when somebody changes one end of
+            // it later.
+            Vector3 targetCenter = GameplayPlane.Flatten(
+                hit.attachedRigidbody != null
+                    ? hit.attachedRigidbody.worldCenterOfMass
+                    : hit.bounds.center);
+            Vector3 attackOrigin = GameplayPlane.Flatten(
+                _owner != null
+                    ? _owner.position
+                    : _hitbox.Position);
             Vector3 fallbackDirection = targetCenter - attackOrigin;
             var hitContext = new HitContext(
                 velocity,

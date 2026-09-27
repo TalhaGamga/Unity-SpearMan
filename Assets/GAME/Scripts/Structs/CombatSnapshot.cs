@@ -4,7 +4,11 @@
     public readonly bool IsCancelable;
     public readonly int ComboStep;
     public readonly bool IsAttacking;
-    public readonly int Version;
+    /// <summary>
+    /// Which attack the animator should be playing. Only meaningful while
+    /// <see cref="IsAttacking"/> is true.
+    /// </summary>
+    public readonly AttackId Attack;
 
     /// <summary>
     /// Who owns horizontal motion while this combat state runs, taken from the
@@ -16,7 +20,7 @@
 
     public CombatSnapshot(
         CombatType state,
-        int version,
+        AttackId attack,
         bool isCancelable,
         int comboStep = 0,
         bool isAttacking = false,
@@ -24,7 +28,7 @@
     )
     {
         State = state;
-        Version = version;
+        Attack = attack;
         IsCancelable = isCancelable;
         ComboStep = comboStep;
         IsAttacking = isAttacking;
@@ -32,6 +36,6 @@
     }
 
     public static CombatSnapshot Default => new CombatSnapshot(
-        CombatType.Idle, 1, false, 0, false
+        CombatType.Idle, AttackId.None, false, 0, false
     );
 }

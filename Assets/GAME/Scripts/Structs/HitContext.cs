@@ -27,7 +27,13 @@ public readonly struct HitContext
             fallbackDirection,
             PhysicsAxes.YZ
         );
-        Point = point;
+        // Flattened again even though the sensor already hands it over on the
+        // plane. This is the boundary every hit crosses on its way into the
+        // rules, and a point that arrived with a depth on it would be carried
+        // straight into a knockback vector, a torque lever arm and a slice
+        // plane before anything noticed - all of them silently wrong, and
+        // wrong along the one axis the camera cannot show.
+        Point = GameplayPlane.Flatten(point);
         AttackerForward = PhysicsAxesUtility.Direction(
             attackerForward,
             PhysicsAxes.YZ

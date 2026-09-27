@@ -36,7 +36,7 @@ public class SwordCombat : ICombat
                 _currentComboStep = 1;
                 _currentSnapshot = new CombatSnapshot(
                     state: CombatType.GroundedPrimaryAttack,
-                    version: 0,
+                    attack: AttackId.None,
                     isCancelable: false,
                     comboStep: _currentComboStep
                 );
@@ -48,7 +48,7 @@ public class SwordCombat : ICombat
                 _currentComboStep++;
                 _currentSnapshot = new CombatSnapshot(
                     state: CombatType.GroundedPrimaryAttack,
-                    version: 0,
+                    attack: AttackId.None,
                     isCancelable: false,
                     comboStep: _currentComboStep
                 );
@@ -89,7 +89,7 @@ public class SwordCombat : ICombat
                 _currentComboStep++;
                 // Issue next step snapshot; will trigger animator update for the next attack
                 _currentSnapshot = new CombatSnapshot(
-                    version: 0,
+                    attack: AttackId.None,
                     state: CombatType.GroundedPrimaryAttack,
                     isCancelable: false,
                     comboStep: _currentComboStep
@@ -107,7 +107,7 @@ public class SwordCombat : ICombat
         if (frame.EventKey == "SlashStart")
         {
             _currentSnapshot = new CombatSnapshot(
-                version: 0,
+                attack: AttackId.None,
                 state: CombatType.InPrimaryAttack,
                 isCancelable: frame.IsCancelable,
                 comboStep: _currentComboStep

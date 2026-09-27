@@ -29,7 +29,7 @@ public class SwordIntentMapper : IIntentMapper
             return CreateStabIntent(
                 moveDirection,
                 MovementType.Stab,
-                version: 2);
+                AttackId.AirDashStab);
         }
 
         if (!snapshot.Movement.IsGrounded ||
@@ -44,7 +44,7 @@ public class SwordIntentMapper : IIntentMapper
             return CreateStabIntent(
                 moveDirection,
                 MovementType.None,
-                version: 1);
+                AttackId.GroundDashStab);
         }
 
         return new ActionIntent
@@ -69,7 +69,7 @@ public class SwordIntentMapper : IIntentMapper
     private static ActionIntent CreateStabIntent(
         Vector2 moveDirection,
         MovementType movementType,
-        int version)
+        AttackId attack)
     {
         return new ActionIntent
         {
@@ -82,7 +82,7 @@ public class SwordIntentMapper : IIntentMapper
             Combat = new CombatAction
             {
                 ActionType = CombatType.Stab,
-                Version = version
+                Attack = attack
             }
         };
     }

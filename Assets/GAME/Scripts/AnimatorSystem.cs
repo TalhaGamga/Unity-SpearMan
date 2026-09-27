@@ -94,14 +94,19 @@ public sealed class AnimatorSystem : MonoBehaviour
         {
             switch (update.ParamType)
             {
+                // Hashed rather than by name. Note the trade that makes: the
+                // string setters log "Parameter does not exist" at run time,
+                // while the hash overloads silently do nothing. The loud
+                // failure moves to AnimatorContractValidator, which catches
+                // the same mistake in the editor rather than in a build.
                 case AnimatorParamUpdateType.Float:
-                    _anim.SetFloat(update.ParamName, (float)update.Value);
+                    _anim.SetFloat(update.ParamHash, update.FloatValue);
                     break;
                 case AnimatorParamUpdateType.Int:
-                    _anim.SetInteger(update.ParamName, (int)update.Value);
+                    _anim.SetInteger(update.ParamHash, update.IntValue);
                     break;
                 case AnimatorParamUpdateType.Bool:
-                    _anim.SetBool(update.ParamName, (bool)update.Value);
+                    _anim.SetBool(update.ParamHash, update.BoolValue);
                     break;
                 case AnimatorParamUpdateType.Trigger:
                     if (update.ResetTrigger)
@@ -115,7 +120,7 @@ public sealed class AnimatorSystem : MonoBehaviour
                     }
                     break;
                 case AnimatorParamUpdateType.RootMotion:
-                    _anim.applyRootMotion = (bool)update.Value;
+                    _anim.applyRootMotion = update.BoolValue;
                     break;
             }
         }

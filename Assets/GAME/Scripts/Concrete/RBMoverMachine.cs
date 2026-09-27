@@ -55,7 +55,7 @@ namespace Movement.Mover
             _stateMachine.OnTransitionedAutonomously.AddListener(submitAutonomicStateTransition);
 
             _snapshotStreamer
-                .Select(_ => new MovementSnapshot(_context.State, _context.ComboType, _context.MovementBlend, _context.JumpRight, isGrounded()))
+                .Select(_ => new MovementSnapshot(_context.State, _context.ComboType, _context.MovementBlend, _context.JumpRight, isGrounded(), _context.IsAirJump))
                 .DistinctUntilChanged()
                 .Subscribe(snapshotStream.OnNext)
                 .AddTo(_disposables);
@@ -533,6 +533,14 @@ namespace Movement.Mover
 
         private void performJump(float launchVelocity)
         {
+            // The mover already decides this a few lines up to pick a launch
+            // velocity, and then throws it away. Keeping it lets the animator
+            // read the mechanic instead of re-deriving it from a counter whose
+            // ceiling lives in a designer asset. Every entry into Jump passes
+            // through here - including the dash-jump, which calls this overload
+            // directly - so this covers them all.
+            _context.IsAirJump = _context.JumpCount > 0;
+
             setJumpCount(_context.JumpCount + 1);
             _context.CoyoteTimer = 0f;
             _context.JumpBufferTimer = 0f;
@@ -1096,6 +1104,13 @@ namespace Movement.Mover
             [HideInInspector] public float CoyoteTimer;
             [HideInInspector] public float JumpBufferTimer;
             [HideInInspector] public int JumpCount;
+
+            /// <summary>
+            /// Whether the jump now being spent left the air rather than the
+            /// ground. Written by performJump, which is the one way into a
+            /// jump, so it needs no reset; only read while State is Jump.
+            /// </summary>
+            [HideInInspector] public bool IsAirJump;
             [HideInInspector] public bool JumpCutApplied;
             [HideInInspector] public bool JumpPressLatched;
             [HideInInspector] public JumpHoldState JumpHold;

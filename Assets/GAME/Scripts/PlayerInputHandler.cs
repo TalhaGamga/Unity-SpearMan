@@ -15,33 +15,61 @@ public class PlayerInputHandler : MonoBehaviour, IInputHandler
 
     private void Start()
     {
-        _input.Move += direction =>
-        {
-            HandleInput(PlayerAction.Move, direction.magnitude > 0, direction);
-        };
-
-        _input.Jump += isPressed =>
-        {
-            HandleInput(PlayerAction.Jump, isPressed);
-        };
-
-        _input.Attack += isPressed =>
-        {
-            HandleInput(PlayerAction.PrimaryAttack, isPressed);
-        };
-
-        _input.Dash += isPressed =>
-        {
-            HandleInput(PlayerAction.Dash, isPressed);
-        };
-
-        _input.MouseDrag += position =>
-        {
-            HandleInput(PlayerAction.MouseDelta, (position.magnitude > 0), position);
-        };
+        _input.Move += onMove;
+        _input.Jump += onJump;
+        _input.Attack += onAttack;
+        _input.Dash += onDash;
+        _input.MouseDrag += onMouseDrag;
 
         _input.Enable();
     }
+
+    /// <summary>
+    /// Takes this handler back off the reader.
+    /// </summary>
+    /// <remarks>
+    /// The reader is a ScriptableObject, so it is an asset rather than a scene
+    /// object: it outlives every reload, and so does anything still subscribed
+    /// to it. Without this, reloading the sandbox leaves the destroyed
+    /// handler's callbacks in the reader's invocation list, and the next key
+    /// press reaches a MonoBehaviour that no longer exists.
+    ///
+    /// That is worse than a stray error in the console. These are multicast
+    /// delegates, and the dead subscriber is the older one, so it runs first
+    /// and throws before the live handler is ever reached - the fresh scene's
+    /// input is dead on arrival, and it looks like the input system broke
+    /// rather than like a leak from the run before.
+    ///
+    /// Named methods rather than the lambdas this used to use, because a
+    /// lambda cannot be unsubscribed: -= needs the same delegate back, and
+    /// every lambda expression is a new one.
+    /// </remarks>
+    private void OnDestroy()
+    {
+        if (_input == null)
+            return;
+
+        _input.Move -= onMove;
+        _input.Jump -= onJump;
+        _input.Attack -= onAttack;
+        _input.Dash -= onDash;
+        _input.MouseDrag -= onMouseDrag;
+    }
+
+    private void onMove(Vector2 direction) =>
+        HandleInput(PlayerAction.Move, direction.magnitude > 0, direction);
+
+    private void onJump(bool isPressed) =>
+        HandleInput(PlayerAction.Jump, isPressed);
+
+    private void onAttack(bool isPressed) =>
+        HandleInput(PlayerAction.PrimaryAttack, isPressed);
+
+    private void onDash(bool isPressed) =>
+        HandleInput(PlayerAction.Dash, isPressed);
+
+    private void onMouseDrag(Vector2 position) =>
+        HandleInput(PlayerAction.MouseDelta, position.magnitude > 0, position);
 
     private void HandleInput(PlayerAction action, bool isHeld, object value = default)
     {

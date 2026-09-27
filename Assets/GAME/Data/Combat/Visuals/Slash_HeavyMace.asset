@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d40e1f42a39b8c7d6e5f403a31, type: 3}
+  m_Name: Slash_HeavyMace
+  m_EditorClassIdentifier: 
+  DrawRibbon: 1
+  StartAlongBlade: 0.15
+  TrailSeconds: 0.2
+  TaperSharpness: 0.9
+  MinStep: 0.02
+  Smoothing: 4
+  HighlightShape: 3
+  HighlightWidth: 0.45
+  HighlightStart: 0.05
+  HighlightLength: 0.8
+  HighlightBias: 0.4
+  HighlightSharpness: 1.4
+  HighlightOffset: 0.05
+  HighlightOpacity: 0.9
+  AccentCount: 4
+  AccentWidth: 0.13
+  AccentGap: 0.2
+  AccentSpacing: 0.22
+  AccentStart: 0.05
+  AccentLength: 0.55
+  AccentOpacity: 0.6
+  VolumeShells: 6
+  VolumeSeparation: 0.05
+  VolumeSpread: 0.28
+  VolumeOpacity: 0.5
+  ShapeMode: 2
+  CircleMaterial: {fileID: 0}
+  CircleSpanDegrees: 360
+  CircleRadiusSource: 0
+  CircleFollowSweep: 1
+  CircleHeadFalloff: 2.2
+  CircleTailOpacity: 0.5
+  CircleSquash: 0.85
+  CircleWobble: 0.06
+  CircleWobbleLobes: 3
+  CircleTaper: 0.6
+  CircleSegments: 96
+  CircleDepthOffset: 0.06
+  CircleTextureFrames: 4
+  CircleTextureFrame: 0
+  CircleTextureFlip: 0
+  Particles: {fileID: 0}
+  ParticlesPerUnit: 14
+  ParticleSpeedScale: 0
+  ParticleSpread: 0.4
+  ParticleSizeScale: 1.25
+  ShapeBurstCount: 4
+  ShapeInnerAlongBlade: 0.45
+  ShapeOuterAlongBlade: 1.25
+  ShapeArcLength: 2.9
+  ShapeFadeSeconds: 0.5
+  ParticleOpacity: 1
+  ParticleLifetime: 0.45
+  AlignParticlesToSweep: 1
+  ParticleRotationOffset: {x: 0, y: 0, z: 0}
+  Material: {fileID: 2100000, guid: da03168089e84555aac646da53cdb746, type: 2}
+  CoreColor: {r: 1, g: 1, b: 1, a: 1}
+  EdgeColor: {r: 1, g: 0.62, b: 0.25, a: 1}
+  GlowColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  Brightness: 1.5
+  CoreSharpness: 1.6
+  GlowIntensity: 0.7
+  EdgeFalloff: 1.3
+  HighlightFalloff: 1.8
+  AutoStopWhenStill: 1
+  FollowSeconds: 0.55
+  FadeSeconds: 0.22
+  DepthOffset: -0.03
+  LayerSeparation: 0.016

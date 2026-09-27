@@ -96,11 +96,26 @@ public interface IWeaponVisualSource
 {
     bool TryGetAnchor(VisualAnchor anchor, out Transform anchorTransform);
 
+    /// <summary>
+    /// World position of a rig point. Unlike <see cref="TryGetAnchor"/> the
+    /// point need not own a transform - a blade tip derived from the hitbox
+    /// extents when no tip object was authored, say.
+    /// </summary>
+    bool TryGetAnchorPosition(VisualAnchor anchor, out Vector3 position);
+
     /// <summary>Planar facing of the blade itself.</summary>
     Vector3 BladeDirection { get; }
 
     /// <summary>Planar velocity of the hitbox, i.e. how hard the swing is.</summary>
     Vector3 SwingVelocity { get; }
+
+    /// <summary>
+    /// Signed rate the blade is turning in the gameplay plane, radians per
+    /// second, positive from +Z toward +Y. This, not the velocity above, is
+    /// what says which way a swing sweeps: the velocity also carries wherever
+    /// the character itself is travelling.
+    /// </summary>
+    float SwingAngularVelocity { get; }
 
     /// <summary>Which way the character is facing, on the movement plane.</summary>
     Vector3 PlanarForward { get; }

@@ -32,6 +32,14 @@ public class WeaponHitboxSensor : MonoBehaviour
     /// </summary>
     public Transform Center => _hitboxCenter != null ? _hitboxCenter : transform;
 
+    /// <summary>
+    /// Far end of the damage volume along the blade, in world space. The
+    /// volume is authored as half extents around its centre with the blade
+    /// running along local Z, so the tip is one half-length out that way.
+    /// </summary>
+    public Vector3 TipPosition =>
+        Center.TransformPoint(new Vector3(0f, 0f, _halfExtents.z));
+
     [SerializeField] private Transform _hitboxCenter;
     [SerializeField] private Vector3 _halfExtents =
         new Vector3(0.5f, 0.5f, 0.5f);
@@ -41,11 +49,47 @@ public class WeaponHitboxSensor : MonoBehaviour
 
     private const float PlanarEpsilon = 1e-6f;
 
+    [Tooltip("How far the blade may travel in one frame and still be treated " +
+        "as having swung there. Beyond this it is taken to have been moved " +
+        "rather than swung - a respawn or a weapon swap - and the sweep is " +
+        "dropped for that frame rather than covering the whole jump.")]
+    [SerializeField, Min(0f)] private float _maxSweepDistance = 4f;
+
     private readonly List<PlanarWeaponHit> _hits = new();
-    private readonly List<Vector2> _projectedCorners = new(8);
+    private readonly List<Vector2> _projectedCorners = new(16);
+    private readonly List<Vector2> _previousCorners = new(8);
+    private Vector3 _previousSweepCenter;
+    private bool _sweepValid;
+    private int _lastScanFrame = -1;
     private readonly List<Vector2> _bladePolygon = new(8);
     private readonly List<Vector2> _clipA = new(12);
     private readonly List<Vector2> _clipB = new(12);
+
+    /// <summary>
+    /// Signed rate the blade is turning in the gameplay plane, radians per
+    /// second. Positive turns from +Z toward +Y.
+    ///
+    /// Deliberately separate from <see cref="Velocity"/>. A lunging attack
+    /// moves the whole character, and that travel swamps the much smaller
+    /// sideways component a sweep shows up in, so reading the swing's
+    /// direction off the linear velocity flips its sign whenever the character
+    /// happens to be moving faster than the blade sweeps sideways. The blade's
+    /// own angle cannot be contaminated that way.
+    /// </summary>
+    public float AngularVelocity { get; private set; }
+
+    /// <summary>
+    /// Frames the turn rate is measured over. One frame is too noisy to decide
+    /// which way a stroke trails; this is about 50ms at 60fps, short enough to
+    /// still be the current swing.
+    /// </summary>
+    private const int AngleWindow = 4;
+
+    private readonly float[] _angleSamples = new float[AngleWindow];
+    private readonly float[] _angleTimes = new float[AngleWindow];
+    private int _angleIndex;
+    private int _angleCount;
+    private float _unwrappedAngle;
 
     private Vector3 _previousPosition;
 
@@ -61,6 +105,14 @@ public class WeaponHitboxSensor : MonoBehaviour
     {
         _previousPosition = Position;
         Velocity = Vector3.zero;
+
+        AngularVelocity = 0f;
+        _angleIndex = 0;
+        _angleCount = 0;
+
+        // A weapon that has just been enabled has no history to sweep from.
+        _sweepValid = false;
+        _lastScanFrame = -1;
     }
 
     private void LateUpdate()
@@ -74,16 +126,73 @@ public class WeaponHitboxSensor : MonoBehaviour
             : Vector3.zero;
 
         _previousPosition = currentPosition;
+
+        sampleTurnRate();
     }
 
-    public IReadOnlyList<PlanarWeaponHit> ScanHits()
+    /// <summary>
+    /// Pushes this frame's blade angle into the window and reads the turn rate
+    /// back out across it.
+    /// </summary>
+    private void sampleTurnRate()
+    {
+        Vector3 blade = BladeDirection;
+
+        // A frame where the blade's heading cannot be read tells us nothing;
+        // keeping the last rate is better than reporting a stop.
+        if (blade.sqrMagnitude < PlanarEpsilon)
+            return;
+
+        float angle = Mathf.Atan2(blade.y, blade.z);
+
+        if (_angleCount == 0)
+        {
+            _unwrappedAngle = angle;
+        }
+        else
+        {
+            // A swing that crosses the wrap point would otherwise read as most
+            // of a turn the other way, which is exactly the sign we care about.
+            float delta =
+                Mathf.Repeat(angle - _unwrappedAngle + Mathf.PI, 2f * Mathf.PI) - Mathf.PI;
+            _unwrappedAngle += delta;
+        }
+
+        _angleSamples[_angleIndex] = _unwrappedAngle;
+        _angleTimes[_angleIndex] = Time.time;
+        _angleIndex = (_angleIndex + 1) % AngleWindow;
+        _angleCount = Mathf.Min(_angleCount + 1, AngleWindow);
+
+        int oldest = (_angleIndex - _angleCount + AngleWindow) % AngleWindow;
+        float span = Time.time - _angleTimes[oldest];
+
+        if (span > 1e-4f)
+            AngularVelocity = (_unwrappedAngle - _angleSamples[oldest]) / span;
+    }
+
+    /// <summary>
+    /// Resolves this frame's hits, and remembers the pose so the next frame
+    /// can sweep from it.
+    /// </summary>
+    public IReadOnlyList<PlanarWeaponHit> ScanHits() => scan(true);
+
+    /// <summary>
+    /// The same resolution without touching the sweep, for drawing what the
+    /// scan would find. Gizmos run on their own schedule and several times a
+    /// frame, and letting them advance the sweep would mean the picture
+    /// changed what it was drawing.
+    /// </summary>
+    private IReadOnlyList<PlanarWeaponHit> peekHits() => scan(false);
+
+    private IReadOnlyList<PlanarWeaponHit> scan(bool advanceSweep)
     {
         _hits.Clear();
 
-        Transform hitbox = _hitboxCenter != null
-            ? _hitboxCenter
-            : transform;
-        buildProjectedBladePolygon(hitbox);
+        Transform hitbox = Center;
+        buildProjectedBladePolygon(hitbox, canSweepFrom(hitbox));
+
+        if (advanceSweep)
+            recordSweepPose(hitbox);
 
         if (_bladePolygon.Count < 3)
             return _hits;
@@ -98,8 +207,12 @@ public class WeaponHitboxSensor : MonoBehaviour
             (planarMinimum + planarMaximum) * 0.5f;
         Vector2 planarExtents =
             (planarMaximum - planarMinimum) * 0.5f;
+        // Centred on the plane rather than on the blade. PhysX is only asked
+        // which colliders are near the swing in Y and Z; letting the box
+        // follow the weapon's own depth would make the broad phase reach
+        // further on whichever side the animation happened to throw the arm.
         Vector3 queryCenter = new Vector3(
-            hitbox.position.x,
+            GameplayPlane.Depth,
             planarCenter.y,
             planarCenter.x
         );
@@ -133,10 +246,60 @@ public class WeaponHitboxSensor : MonoBehaviour
         return _hits;
     }
 
-    private void buildProjectedBladePolygon(Transform hitbox)
+    /// <summary>
+    /// The shape the blade covered since the last frame, in plane
+    /// coordinates.
+    /// </summary>
+    /// <remarks>
+    /// The hull of where the blade is and where it was, rather than only where
+    /// it is. A sword at the middle of a swing crosses more ground in one
+    /// frame than a character is thick, so an instantaneous test samples the
+    /// blade on either side of the target and reports nothing - the faster the
+    /// attack, the more likely it is to pass straight through. That failure is
+    /// worst exactly when the player is most certain they connected.
+    ///
+    /// Taking the hull over both poses is the cheap standard answer: it is
+    /// still one convex polygon, so the clip below is unchanged, and it is
+    /// conservative in the right direction - it can only ever be larger than
+    /// the true swept region, never smaller.
+    /// </remarks>
+    private void buildProjectedBladePolygon(Transform hitbox, bool sweep)
     {
         _projectedCorners.Clear();
+        addProjectedCorners(hitbox, _projectedCorners);
 
+        if (sweep)
+            _projectedCorners.AddRange(_previousCorners);
+
+        _projectedCorners.Sort(comparePlanarPoints);
+        removeDuplicateProjectedCorners(_projectedCorners);
+        buildConvexHull(_projectedCorners, _bladePolygon);
+    }
+
+    /// <summary>
+    /// Whether the last recorded pose is a pose this one actually swung from.
+    /// </summary>
+    /// <remarks>
+    /// Two ways it is not. The scans may not be back to back - the hit window
+    /// closed and reopened, and in between the blade went through a whole
+    /// return-to-idle that it never cut anything with. Or the blade moved
+    /// further than a swing reaches, which means it was placed rather than
+    /// swung. Either way the hull would cover ground the weapon never
+    /// travelled, and everything standing in it would take a hit.
+    /// </remarks>
+    private bool canSweepFrom(Transform hitbox)
+    {
+        if (!_sweepValid || _lastScanFrame != Time.frameCount - 1)
+            return false;
+
+        Vector3 centre = GameplayPlane.Flatten(hitbox.position);
+
+        return (centre - _previousSweepCenter).sqrMagnitude <=
+            _maxSweepDistance * _maxSweepDistance;
+    }
+
+    private void addProjectedCorners(Transform hitbox, List<Vector2> corners)
+    {
         for (int x = -1; x <= 1; x += 2)
         {
             for (int y = -1; y <= 1; y += 2)
@@ -148,16 +311,23 @@ public class WeaponHitboxSensor : MonoBehaviour
                         y * _halfExtents.y,
                         z * _halfExtents.z
                     );
-                    _projectedCorners.Add(
-                        toPlanar(hitbox.TransformPoint(localCorner))
-                    );
+                    corners.Add(toPlanar(hitbox.TransformPoint(localCorner)));
                 }
             }
         }
+    }
 
-        _projectedCorners.Sort(comparePlanarPoints);
-        removeDuplicateProjectedCorners(_projectedCorners);
-        buildConvexHull(_projectedCorners, _bladePolygon);
+    /// <summary>
+    /// Keeps this scan's blade pose for the next scan to sweep back to.
+    /// </summary>
+    private void recordSweepPose(Transform hitbox)
+    {
+        _previousCorners.Clear();
+        addProjectedCorners(hitbox, _previousCorners);
+
+        _previousSweepCenter = GameplayPlane.Flatten(hitbox.position);
+        _sweepValid = true;
+        _lastScanFrame = Time.frameCount;
     }
 
     private bool tryGetPlanarContact(
@@ -205,10 +375,12 @@ public class WeaponHitboxSensor : MonoBehaviour
 
         planarContact /= input.Count;
 
-        float targetPlaneX = target.attachedRigidbody != null
-            ? target.attachedRigidbody.worldCenterOfMass.x
-            : bounds.center.x;
-        contactPoint = fromPlanar(planarContact, targetPlaneX);
+        // On the plane, not on the target. This is the value knockback,
+        // torque lever arms and slice planes are all taken from, so it has to
+        // be the same point for the same overlap however far the model it hit
+        // happens to be sitting off the plane. Presentation can move an
+        // effect back onto the mesh downstream if it wants to.
+        contactPoint = fromPlanar(planarContact);
         return true;
     }
 
@@ -381,23 +553,12 @@ public class WeaponHitboxSensor : MonoBehaviour
         return a.x * b.y - a.y * b.x;
     }
 
-    private static Vector2 toPlanar(Vector3 point)
-    {
-        return new Vector2(point.z, point.y);
-    }
+    private static Vector2 toPlanar(Vector3 point) => GameplayPlane.ToPlanar(point);
 
-    private static Vector3 fromPlanar(Vector2 point, float planeX)
-    {
-        return new Vector3(planeX, point.y, point.x);
-    }
+    private static Vector3 fromPlanar(Vector2 point) => GameplayPlane.FromPlanar(point);
 
-    private static Vector3 getPlanarDirection(Vector3 direction)
-    {
-        direction.x = 0f;
-        return direction.sqrMagnitude > PlanarEpsilon
-            ? direction.normalized
-            : Vector3.zero;
-    }
+    private static Vector3 getPlanarDirection(Vector3 direction) =>
+        GameplayPlane.FlattenDirection(direction);
 
     private void OnDrawGizmosSelected()
     {
@@ -416,8 +577,12 @@ public class WeaponHitboxSensor : MonoBehaviour
         Gizmos.DrawWireCube(Vector3.zero, _halfExtents * 2f);
         Gizmos.matrix = previousMatrix;
 
-        IReadOnlyList<PlanarWeaponHit> planarHits = ScanHits();
-        float displayPlaneX = hitbox.position.x;
+        IReadOnlyList<PlanarWeaponHit> planarHits = peekHits();
+
+        // Drawn where the test happens, not where the weapon is. The two
+        // parting company is the whole class of bug this plane exists to
+        // prevent, so the gizmo must not quietly hide it.
+        float displayPlaneX = GameplayPlane.Depth;
 
         Gizmos.color = Color.cyan;
         drawPlanarPolygon(_bladePolygon, displayPlaneX);
@@ -450,8 +615,8 @@ public class WeaponHitboxSensor : MonoBehaviour
 
         for (int i = 0; i < polygon.Count; i++)
         {
-            Vector3 start = fromPlanar(polygon[i], planeX);
-            Vector3 end = fromPlanar(
+            Vector3 start = GameplayPlane.FromPlanarAtDepth(polygon[i], planeX);
+            Vector3 end = GameplayPlane.FromPlanarAtDepth(
                 polygon[(i + 1) % polygon.Count],
                 planeX
             );

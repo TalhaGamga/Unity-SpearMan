@@ -30,5 +30,23 @@ public enum VisualAlignment : byte
     /// spins it to match the cut, which also means it reads correctly in both
     /// facing directions without a mirror.
     /// </summary>
-    PlanarSwingArc = 4
+    PlanarSwingArc = 4,
+
+    /// <summary>
+    /// Treat the effect as the trail the blade tip leaves behind it.
+    ///
+    /// The effect is a ring segment authored around its own origin. This
+    /// alignment puts that origin on the swing pivot (the cue's Anchor,
+    /// normally the hand), scales the ring so its outer edge passes through
+    /// the blade tip (the cue's ArcTip), rolls it so the authored leading edge
+    /// sits on the blade, and mirrors it when needed so the tail runs behind
+    /// the swing rather than ahead of it. Still faces the camera like
+    /// <see cref="PlanarSwingArc"/>.
+    ///
+    /// Needs the prefab described once per cue: where its leading edge is
+    /// (ArcLeadAngle), which way its tail runs (ArcWinding) and how big the
+    /// ring is at scale one (ArcRadius). Scale then acts as a multiplier on
+    /// top of the derived size.
+    /// </summary>
+    BladeTrailArc = 5
 }

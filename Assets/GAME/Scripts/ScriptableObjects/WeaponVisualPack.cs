@@ -81,6 +81,11 @@ public class WeaponVisualPack : ScriptableObject
 
             if (_cues[i].SwingStrengthRange == Vector2.zero)
                 _cues[i].SwingStrengthRange = new Vector2(0.75f, 1.25f);
+
+            // Entries authored before the trail arc existed deserialize with a
+            // zero radius, which would scale a BladeTrailArc to infinity.
+            if (_cues[i].ArcRadius <= 0f)
+                _cues[i].ArcRadius = 1f;
         }
 
         buildLookup();

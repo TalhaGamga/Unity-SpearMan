@@ -25,7 +25,21 @@ namespace Combat
         private int _activeHitWindowComboStep;
         private Dictionary<int, string> _comboAttackLookup;
         private Dictionary<AnimationClip, int> _comboStepByClip;
+        private Dictionary<int, AnimationClip> _comboClipByStep;
         private Dictionary<int, string> _comboStateNameLookup;
+
+        /// <summary>
+        /// How much longer than its own clip an attack may run before the
+        /// machine stops believing the animation is going to end it.
+        /// </summary>
+        private const float AttackOverrunFactor = 1.25f;
+        private const float AttackOverrunGrace = 0.35f;
+
+        /// <summary>Ceiling for an attack with no clip to measure against.</summary>
+        private const float AttackOverrunFallback = 3f;
+
+        /// <summary>Seconds left before the current attack is ended by force.</summary>
+        private float _attackWatchdog;
 
         private Sword _view;
         private readonly Subject<Unit> _snapshotStreamer = new();
@@ -45,7 +59,7 @@ namespace Combat
             _stateMachine = new StateMachine<CombatType>();
 
             _snapshotStreamer
-                .Select(_ => new CombatSnapshot(_context.State, _context.Version, _context.IsCancelable, _context.ComboStep, _context.IsAttacking, resolveLocomotion()))
+                .Select(_ => new CombatSnapshot(_context.State, _context.Attack, _context.IsCancelable, _context.ComboStep, _context.IsAttacking, resolveLocomotion()))
                 .DistinctUntilChanged()
                 .Subscribe(snapshotStream.OnNext)
                 .AddTo(_disposables);
@@ -78,7 +92,8 @@ namespace Combat
             {
                 resetHitFrame();
                 setContextState(CombatType.Idle);
-                setAttackSequence(false, 0);
+                setAttackSequence(false, 0, AttackId.None);
+                disarmAttackWatchdog();
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -88,7 +103,8 @@ namespace Combat
             grPA_S1.OnEnter.AddListener(() =>
             {
                 setContextState(CombatType.GroundedPrimaryAttack);
-                setAttackSequence(true, 1);
+                setAttackSequence(true, 1, AttackId.ComboOpener);
+                armAttackWatchdog(1);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -98,7 +114,8 @@ namespace Combat
             grPA_S2.OnEnter.AddListener(() =>
             {
                 setContextState(CombatType.GroundedPrimaryAttack);
-                setAttackSequence(true, 2);
+                setAttackSequence(true, 2, AttackId.ComboFollow);
+                armAttackWatchdog(2);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -108,7 +125,8 @@ namespace Combat
             grPA_S3.OnEnter.AddListener(() =>
             {
                 setContextState(CombatType.GroundedPrimaryAttack);
-                setAttackSequence(true, 3);
+                setAttackSequence(true, 3, AttackId.ComboFinisher);
+                armAttackWatchdog(3);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -118,7 +136,8 @@ namespace Combat
             stab.OnEnter.AddListener(() =>
             {
                 setContextState(CombatType.Stab);
-                setAttackSequence(true, 0);
+                setAttackSequence(true, 0, _context.RequestedStab);
+                armAttackWatchdog(0);
                 setCanCombo(false);
                 setCancelable(false);
 
@@ -159,7 +178,7 @@ namespace Combat
                 closeHitFrameForState(stab.StateName);
                 setCanCombo(false);
                 setCancelable(false);
-                resetVersion();
+                resetRequestedStab();
 
                 submitSnapshot();
             });
@@ -195,14 +214,20 @@ namespace Combat
 
         public void HandleAction(CombatAction action)
         {
-            _context.Version = action.Version;
-
             if (action.ActionType == CombatType.GroundedPrimaryAttack &&
                 _context.IsAttacking &&
                 !_context.CanCombo)
             {
                 return;
             }
+
+            // Below the reject guard on purpose, and scoped to the one action
+            // that carries a variant. It used to run first, so a ground attack
+            // the machine was about to throw away still reached in and
+            // overwrote the selector on its way out - an animator-facing value
+            // mutated by an action that never happened.
+            if (action.ActionType == CombatType.Stab)
+                _context.RequestedStab = action.Attack;
 
             _stateMachine.SetState(action.ActionType);
         }
@@ -255,6 +280,7 @@ namespace Combat
                     setAttackSequence(false);
                     setCanCombo(false);
                     closeHitFrameForState(frame.StateName);
+                    disarmAttackWatchdog();
                     break;
             }
         }
@@ -265,6 +291,10 @@ namespace Combat
 
         public void Update(float deltaTime)
         {
+            // Before the machine steps, so an attack the watchdog has just
+            // given up on leaves for Idle on this frame rather than the next.
+            tickAttackWatchdog(deltaTime);
+
             _stateMachine.Update();
 
             if (_isHitWindowOpen && _activeAttack != null)
@@ -321,6 +351,79 @@ namespace Combat
             }
 
             resetHitFrame();
+        }
+
+        /// <summary>
+        /// Starts the clock that ends an attack the animation forgot to.
+        /// </summary>
+        /// <remarks>
+        /// Every exit from an attack runs through one SlashEnd event on the
+        /// clip, and an animation event is not a guarantee. A clip blended out
+        /// early, an interrupted transition, or an event sitting on the very
+        /// last frame can all swallow it - and when it is swallowed the attack
+        /// never clears. That is not a cosmetic failure: HandleAction refuses
+        /// a new attack while one is running and not comboable, and the only
+        /// transition out is the autonomic one waiting on the same flag, so
+        /// the player is left in a state with no way in and no way out.
+        ///
+        /// The event stays the way attacks normally end. This is only the
+        /// backstop, and it is deliberately slack - longer than the clip it
+        /// watches - because a watchdog that could fire during a legitimate
+        /// swing would be a worse bug than the one it covers.
+        /// </remarks>
+        private void armAttackWatchdog(int comboStep)
+        {
+            if (_comboClipByStep == null)
+                buildComboAttackLookup();
+
+            AnimationClip clip = null;
+            _comboClipByStep?.TryGetValue(comboStep, out clip);
+
+            _attackWatchdog = clip != null
+                ? clip.length * AttackOverrunFactor + AttackOverrunGrace
+                : AttackOverrunFallback;
+        }
+
+        private void disarmAttackWatchdog()
+        {
+            _attackWatchdog = 0f;
+        }
+
+        /// <summary>
+        /// Ends an attack whose SlashEnd never arrived, so the machine can
+        /// leave the state it would otherwise be held in.
+        /// </summary>
+        private void tickAttackWatchdog(float deltaTime)
+        {
+            if (_attackWatchdog <= 0f)
+                return;
+
+            // Something already ended the attack properly; nothing to cover.
+            if (!_context.IsAttacking)
+            {
+                disarmAttackWatchdog();
+                return;
+            }
+
+            _attackWatchdog -= deltaTime;
+
+            if (_attackWatchdog > 0f)
+                return;
+
+            disarmAttackWatchdog();
+
+            // Loud on purpose. This only fires when a clip failed to deliver
+            // its own end event, which is an authoring fault worth fixing at
+            // the clip rather than leaning on the backstop to hide.
+            Debug.LogWarning(
+                $"Attack in '{_stateMachine.CurrentStateName}' outlived its " +
+                "animation without a SlashEnd event. Ending it so the machine " +
+                "can leave the state - check the clip's last event.");
+
+            setAttackSequence(false);
+            setCanCombo(false);
+            resetHitFrame();
+            submitSnapshot();
         }
 
         private void resetHitFrame()
@@ -400,10 +503,14 @@ namespace Combat
             _transitionStreamer.OnNext(_context.State);
         }
 
-        private void setAttackSequence(bool isAttacking, int comboStep = 0)
+        private void setAttackSequence(
+            bool isAttacking,
+            int comboStep = 0,
+            AttackId attack = AttackId.None)
         {
             _context.IsAttacking = isAttacking;
             _context.ComboStep = comboStep;
+            _context.Attack = attack;
         }
 
         private void setCanCombo(bool canCombo)
@@ -415,9 +522,9 @@ namespace Combat
         {
             _context.IsCancelable = isCancelable;
         }
-        private void resetVersion()
+        private void resetRequestedStab()
         {
-            _context.Version = 0;
+            _context.RequestedStab = AttackId.None;
         }
 
         private Vector3 findPointToStab()
@@ -430,6 +537,7 @@ namespace Combat
         {
             _comboAttackLookup = new Dictionary<int, string>();
             _comboStepByClip = new Dictionary<AnimationClip, int>();
+            _comboClipByStep = new Dictionary<int, AnimationClip>();
 
             if (_comboAttackKeys == null)
                 return;
@@ -445,6 +553,10 @@ namespace Combat
                 {
                     _comboStepByClip[entry.HitWindowClip] =
                         entry.ComboStep;
+
+                    // The same pairing the other way round, so the watchdog
+                    // can measure an attack against the clip it is playing.
+                    _comboClipByStep[entry.ComboStep] = entry.HitWindowClip;
                 }
             }
         }
@@ -507,7 +619,14 @@ namespace Combat
             public bool IsAttacking;
             public bool CanCombo;
             public int ComboStep;
-            public int Version = 0;
+            /// <summary>Which attack the animator should be playing now.</summary>
+            public AttackId Attack;
+
+            /// <summary>
+            /// The stab variant the last accepted stab action asked for, held
+            /// until the stab state opens and can claim it.
+            /// </summary>
+            public AttackId RequestedStab;
         }
 
 
