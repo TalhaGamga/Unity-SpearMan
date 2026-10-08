@@ -17,8 +17,51 @@ public class MovementIntentMapper : IIntentMapper
         // Combat declares who owns horizontal motion while it runs.
         // Movement just forwards that declaration to the mover.
         LocomotionSource locomotion = snapshot.Combat.Locomotion;
+        bool isAttacking = snapshot.Combat.IsAttacking;
 
-        if (snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable && moveInput.IsHeld)
+        // Edge-triggered evasive actions outrank passive held movement. The old
+        // order let a held direction swallow a dash pressed on the same frame.
+        if (dashInput.WasPresseedThisFrame &&
+            snapshot.Combat.CanCancelInto(CombatCancelOptions.Dash))
+        {
+            return new ActionIntent
+            {
+                Movement = new MovementAction
+                {
+                    Direction = moveDirection,
+                    ActionType = MovementType.Dash,
+                    JumpHold = jumpHold,
+                    Locomotion = LocomotionSource.Simulated
+                },
+                Combat = isAttacking
+                    ? new CombatAction { ActionType = CombatType.Idle }
+                    : (CombatAction?)null
+            };
+        }
+
+        // Jump already has its own landing buffer in the mover. Here we only
+        // decide whether the current attack permits the request to reach it.
+        if (jumpInput.WasPresseedThisFrame &&
+            snapshot.Combat.CanCancelInto(CombatCancelOptions.Jump))
+        {
+            return new ActionIntent
+            {
+                Movement = new MovementAction
+                {
+                    Direction = moveDirection,
+                    ActionType = MovementType.Jump,
+                    JumpHold = JumpHoldState.Held,
+                    Locomotion = LocomotionSource.Simulated
+                },
+                Combat = isAttacking
+                    ? new CombatAction { ActionType = CombatType.Idle }
+                    : (CombatAction?)null
+            };
+        }
+
+        if (isAttacking &&
+            snapshot.Combat.CanCancelInto(CombatCancelOptions.Move) &&
+            moveInput.IsHeld)
         {
             return new ActionIntent
             {
@@ -31,45 +74,7 @@ public class MovementIntentMapper : IIntentMapper
                     // ground back on the same frame rather than a frame later.
                     Locomotion = LocomotionSource.Simulated
                 },
-                Combat = new CombatAction
-                {
-                    ActionType = CombatType.Idle
-                },
-            };
-        }
-
-        if (!(snapshot.Combat.IsAttacking || snapshot.Combat.IsAttacking && snapshot.Combat.IsCancelable) && dashInput.WasPresseedThisFrame)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction
-                {
-                    Direction = moveDirection,
-                    ActionType = MovementType.Dash,
-                    JumpHold = jumpHold,
-                    Locomotion = locomotion
-                }
-            };
-        }
-
-        // Jump is evaluated before the airborne branches so an air jump is not
-        // swallowed by the Fall passthrough. Whether the jump is actually legal
-        // - grounded, inside coyote time, or spending an air jump - is the
-        // mover's call, not the mapper's. The mapper only states intent.
-        bool jumpLockedByAttack =
-            snapshot.Combat.IsAttacking && !snapshot.Combat.IsCancelable;
-
-        if (jumpInput.WasPresseedThisFrame && !jumpLockedByAttack)
-        {
-            return new ActionIntent
-            {
-                Movement = new MovementAction
-                {
-                    Direction = moveDirection,
-                    ActionType = MovementType.Jump,
-                    JumpHold = JumpHoldState.Held,
-                    Locomotion = locomotion
-                }
+                Combat = new CombatAction { ActionType = CombatType.Idle }
             };
         }
 

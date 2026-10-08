@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Key: Sword_Heavy
   Damage: 25
+  AttackBufferDuration: 0.18
+  StartupCancels: 6
+  AfterActiveCancels: 6
+  RecoveryCancels: 15
   Locomotion: 1
   HasImpact: 1
   Impact:

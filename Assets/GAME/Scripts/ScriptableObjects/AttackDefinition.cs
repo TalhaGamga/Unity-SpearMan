@@ -8,6 +8,25 @@ public class AttackDefinition : ScriptableObject
 
     public float Damage;
 
+    [Header("Flow")]
+    [Min(0.01f)]
+    [Tooltip("How long an early primary-attack press remains valid while this " +
+        "attack waits for its next chain point. The buffer accepts the " +
+        "input; animation events still decide when the next attack may begin.")]
+    public float AttackBufferDuration = 0.18f;
+
+    [Tooltip("Escapes available as soon as the attack begins. Attack chaining " +
+        "remains reserved for the authored combo window.")]
+    public CombatCancelOptions StartupCancels =
+        CombatCancelOptions.Jump | CombatCancelOptions.Dash;
+
+    [Tooltip("Escapes added when the damage window closes.")]
+    public CombatCancelOptions AfterActiveCancels =
+        CombatCancelOptions.Mobility;
+
+    [Tooltip("Escapes available at the clip's late Cancelable marker.")]
+    public CombatCancelOptions RecoveryCancels = CombatCancelOptions.All;
+
     [Tooltip("Who moves the character while this attack runs. RootMotion lets " +
         "the clip's authored lunge carry the body and reduces move input to " +
         "facing only - which is what keeps the model and the collider in the " +

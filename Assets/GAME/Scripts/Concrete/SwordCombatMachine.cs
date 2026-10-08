@@ -28,6 +28,23 @@ namespace Combat
         private Dictionary<int, AnimationClip> _comboClipByStep;
         private Dictionary<int, string> _comboStateNameLookup;
 
+        // Input acceptance and action execution are separate on purpose. A
+        // press may be remembered here while the animation is still committed,
+        // then consumed at the first legal chain point.
+        private bool _hasBufferedAttack;
+        private float _bufferedAttackRemaining;
+        private bool _comboWindowOpen;
+        private bool _activePhaseCompleted;
+        private bool _recoveryWindowOpen;
+
+        private const float DefaultAttackBufferDuration = 0.18f;
+        private const CombatCancelOptions DefaultStartupCancels =
+            CombatCancelOptions.Jump | CombatCancelOptions.Dash;
+        private const CombatCancelOptions DefaultAfterActiveCancels =
+            CombatCancelOptions.Mobility;
+        private const CombatCancelOptions DefaultRecoveryCancels =
+            CombatCancelOptions.All;
+
         /// <summary>
         /// How much longer than its own clip an attack may run before the
         /// machine stops believing the animation is going to end it.
@@ -59,7 +76,13 @@ namespace Combat
             _stateMachine = new StateMachine<CombatType>();
 
             _snapshotStreamer
-                .Select(_ => new CombatSnapshot(_context.State, _context.Attack, _context.IsCancelable, _context.ComboStep, _context.IsAttacking, resolveLocomotion()))
+                .Select(_ => new CombatSnapshot(
+                    _context.State,
+                    _context.Attack,
+                    _context.CancelOptions,
+                    _context.ComboStep,
+                    _context.IsAttacking,
+                    resolveLocomotion()))
                 .DistinctUntilChanged()
                 .Subscribe(snapshotStream.OnNext)
                 .AddTo(_disposables);
@@ -94,8 +117,7 @@ namespace Combat
                 setContextState(CombatType.Idle);
                 setAttackSequence(false, 0, AttackId.None);
                 disarmAttackWatchdog();
-                setCanCombo(false);
-                setCancelable(false);
+                resetAttackFlow();
 
                 submitSnapshot();
             });
@@ -105,8 +127,7 @@ namespace Combat
                 setContextState(CombatType.GroundedPrimaryAttack);
                 setAttackSequence(true, 1, AttackId.ComboOpener);
                 armAttackWatchdog(1);
-                setCanCombo(false);
-                setCancelable(false);
+                beginAttackFlow();
 
                 submitSnapshot();
             });
@@ -116,8 +137,7 @@ namespace Combat
                 setContextState(CombatType.GroundedPrimaryAttack);
                 setAttackSequence(true, 2, AttackId.ComboFollow);
                 armAttackWatchdog(2);
-                setCanCombo(false);
-                setCancelable(false);
+                beginAttackFlow();
 
                 submitSnapshot();
             });
@@ -127,8 +147,7 @@ namespace Combat
                 setContextState(CombatType.GroundedPrimaryAttack);
                 setAttackSequence(true, 3, AttackId.ComboFinisher);
                 armAttackWatchdog(3);
-                setCanCombo(false);
-                setCancelable(false);
+                beginAttackFlow();
 
                 submitSnapshot();
             });
@@ -138,8 +157,7 @@ namespace Combat
                 setContextState(CombatType.Stab);
                 setAttackSequence(true, 0, _context.RequestedStab);
                 armAttackWatchdog(0);
-                setCanCombo(false);
-                setCancelable(false);
+                beginAttackFlow();
 
                 submitSnapshot();
             });
@@ -149,8 +167,7 @@ namespace Combat
             grPA_S1.OnExit.AddListener(() =>
             {
                 closeHitFrameForState(grPA_S1.StateName);
-                setCanCombo(false);
-                setCancelable(false);
+                resetAttackFlow();
 
                 submitSnapshot();
             });
@@ -158,8 +175,7 @@ namespace Combat
             grPA_S2.OnExit.AddListener(() =>
             {
                 closeHitFrameForState(grPA_S2.StateName);
-                setCanCombo(false);
-                setCancelable(false);
+                resetAttackFlow();
 
                 submitSnapshot();
             });
@@ -167,8 +183,7 @@ namespace Combat
             grPA_S3.OnExit.AddListener(() =>
             {
                 closeHitFrameForState(grPA_S3.StateName);
-                setCanCombo(false);
-                setCancelable(false);
+                resetAttackFlow();
 
                 submitSnapshot();
             });
@@ -176,8 +191,7 @@ namespace Combat
             stab.OnExit.AddListener(() =>
             {
                 closeHitFrameForState(stab.StateName);
-                setCanCombo(false);
-                setCancelable(false);
+                resetAttackFlow();
                 resetRequestedStab();
 
                 submitSnapshot();
@@ -215,17 +229,25 @@ namespace Combat
         public void HandleAction(CombatAction action)
         {
             if (action.ActionType == CombatType.GroundedPrimaryAttack &&
-                _context.IsAttacking &&
-                !_context.CanCombo)
+                _context.IsAttacking)
             {
+                if (_context.CanCombo)
+                {
+                    clearBufferedAttack();
+                    _stateMachine.SetState(action.ActionType);
+                    return;
+                }
+
+                bufferAttack();
                 return;
             }
 
-            // Below the reject guard on purpose, and scoped to the one action
-            // that carries a variant. It used to run first, so a ground attack
-            // the machine was about to throw away still reached in and
-            // overwrote the selector on its way out - an animator-facing value
-            // mutated by an action that never happened.
+            if (action.ActionType == CombatType.Idle)
+                clearBufferedAttack();
+
+            // Scoped to the one action that carries a variant. A queued ground
+            // attack must never overwrite this selector on its way into the
+            // buffer.
             if (action.ActionType == CombatType.Stab)
                 _context.RequestedStab = action.Attack;
 
@@ -260,25 +282,24 @@ namespace Combat
 
                 case "HitFrameClose":
                     closeHitFrame(hitWindow);
+                    completeActivePhase();
                     break;
 
                 case "Cancelable":
-                    setCancelable(true);
-                    submitSnapshot();
-                    submitTransitionStream();
+                    openRecoveryWindow();
                     break;
 
                 case "ComboWindowOpen":
-                    setCanCombo(true);
+                    openComboWindow();
                     break;
 
                 case "ComboWindowClose":
-                    setCanCombo(false);
+                    closeComboWindow();
                     break;
 
                 case "SlashEnd":
                     setAttackSequence(false);
-                    setCanCombo(false);
+                    resetAttackFlow();
                     closeHitFrameForState(frame.StateName);
                     disarmAttackWatchdog();
                     break;
@@ -293,6 +314,7 @@ namespace Combat
         {
             // Before the machine steps, so an attack the watchdog has just
             // given up on leaves for Idle on this frame rather than the next.
+            tickAttackBuffer(deltaTime);
             tickAttackWatchdog(deltaTime);
 
             _stateMachine.Update();
@@ -305,6 +327,7 @@ namespace Combat
 
         public void End()
         {
+            resetAttackFlow();
             resetHitFrame();
         }
 
@@ -424,7 +447,7 @@ namespace Combat
                 "can leave the state - check the clip's last event.");
 
             setAttackSequence(false);
-            setCanCombo(false);
+            resetAttackFlow();
             resetHitFrame();
             submitSnapshot();
         }
@@ -499,6 +522,172 @@ namespace Combat
             return true;
         }
 
+        private void beginAttackFlow()
+        {
+            clearBufferedAttack();
+            _comboWindowOpen = false;
+            _activePhaseCompleted = false;
+            _recoveryWindowOpen = false;
+            setCanCombo(false);
+            setCancelOptions(resolveStartupCancels());
+        }
+
+        private void resetAttackFlow()
+        {
+            clearBufferedAttack();
+            _comboWindowOpen = false;
+            _activePhaseCompleted = false;
+            _recoveryWindowOpen = false;
+            setCanCombo(false);
+            setCancelOptions(CombatCancelOptions.None);
+        }
+
+        private void bufferAttack()
+        {
+            _hasBufferedAttack = true;
+            _bufferedAttackRemaining = resolveAttackBufferDuration();
+        }
+
+        private void clearBufferedAttack()
+        {
+            _hasBufferedAttack = false;
+            _bufferedAttackRemaining = 0f;
+        }
+
+        private void tickAttackBuffer(float deltaTime)
+        {
+            if (!_hasBufferedAttack)
+                return;
+
+            _bufferedAttackRemaining -= deltaTime;
+            if (_bufferedAttackRemaining <= 0f)
+                clearBufferedAttack();
+        }
+
+        private bool tryConsumeBufferedAttack()
+        {
+            if (!_hasBufferedAttack || !_context.CanCombo)
+                return false;
+
+            clearBufferedAttack();
+            _stateMachine.SetState(CombatType.GroundedPrimaryAttack);
+            return true;
+        }
+
+        /// <summary>
+        /// Records the authored combo window, but does not let it skip the
+        /// attack's own active phase. Attack_3Combo_2 currently opens its
+        /// combo event before its hit event; separating acceptance from
+        /// execution keeps that authoring quirk from cancelling the hit.
+        /// </summary>
+        private void openComboWindow()
+        {
+            _comboWindowOpen = true;
+            if (!_activePhaseCompleted)
+                return;
+
+            setCanCombo(true);
+            setCancelOptions(
+                _context.CancelOptions | CombatCancelOptions.Attack);
+            submitSnapshot();
+            tryConsumeBufferedAttack();
+        }
+
+        private void closeComboWindow()
+        {
+            _comboWindowOpen = false;
+
+            // The late recovery marker deliberately re-opens attack chaining.
+            // A stale close event must not take that permission away again.
+            if (_recoveryWindowOpen)
+                return;
+
+            setCanCombo(false);
+            setCancelOptions(
+                _context.CancelOptions & ~CombatCancelOptions.Attack);
+            submitSnapshot();
+        }
+
+        private void completeActivePhase()
+        {
+            _activePhaseCompleted = true;
+
+            CombatCancelOptions options =
+                _context.CancelOptions |
+                (resolveAfterActiveCancels() & ~CombatCancelOptions.Attack);
+
+            if (_comboWindowOpen)
+            {
+                setCanCombo(true);
+                options |= CombatCancelOptions.Attack;
+            }
+
+            setCancelOptions(options);
+            submitSnapshot();
+            tryConsumeBufferedAttack();
+        }
+
+        private void openRecoveryWindow()
+        {
+            _recoveryWindowOpen = true;
+            CombatCancelOptions recoveryCancels = resolveRecoveryCancels();
+            bool canCombo =
+                (recoveryCancels & CombatCancelOptions.Attack) != 0;
+            CombatCancelOptions options =
+                _context.CancelOptions | recoveryCancels;
+
+            setCanCombo(canCombo);
+            setCancelOptions(
+                canCombo
+                    ? options
+                    : options & ~CombatCancelOptions.Attack);
+            submitSnapshot();
+
+            // A queued attack outranks passive held movement. If there is no
+            // attack waiting, re-evaluate the latest input so an already-held
+            // direction can take the player straight back to locomotion.
+            if (!tryConsumeBufferedAttack())
+                submitTransitionStream();
+        }
+
+        private float resolveAttackBufferDuration()
+        {
+            return tryResolveAttackDefinition(
+                    _context.ComboStep,
+                    out AttackDefinition attack) &&
+                attack != null &&
+                attack.AttackBufferDuration > 0f
+                    ? attack.AttackBufferDuration
+                    : DefaultAttackBufferDuration;
+        }
+
+        private CombatCancelOptions resolveStartupCancels()
+        {
+            return tryResolveAttackDefinition(
+                    _context.ComboStep,
+                    out AttackDefinition attack) && attack != null
+                        ? attack.StartupCancels
+                        : DefaultStartupCancels;
+        }
+
+        private CombatCancelOptions resolveAfterActiveCancels()
+        {
+            return tryResolveAttackDefinition(
+                    _context.ComboStep,
+                    out AttackDefinition attack) && attack != null
+                        ? attack.AfterActiveCancels
+                        : DefaultAfterActiveCancels;
+        }
+
+        private CombatCancelOptions resolveRecoveryCancels()
+        {
+            return tryResolveAttackDefinition(
+                    _context.ComboStep,
+                    out AttackDefinition attack) && attack != null
+                        ? attack.RecoveryCancels
+                        : DefaultRecoveryCancels;
+        }
+
         private void setContextState(CombatType combatType)
         {
             _context.State = combatType;
@@ -530,9 +719,10 @@ namespace Combat
             _context.CanCombo = canCombo;
         }
 
-        private void setCancelable(bool isCancelable)
+        private void setCancelOptions(CombatCancelOptions options)
         {
-            _context.IsCancelable = isCancelable;
+            _context.CancelOptions = options;
+            _context.IsCancelable = options != CombatCancelOptions.None;
         }
         private void resetRequestedStab()
         {
@@ -627,7 +817,9 @@ namespace Combat
         public class Context
         {
             public CombatType State;
+            // Kept for prefab/debug continuity. CancelOptions is authoritative.
             public bool IsCancelable;
+            public CombatCancelOptions CancelOptions;
             public bool IsAttacking;
             public bool CanCombo;
             public int ComboStep;

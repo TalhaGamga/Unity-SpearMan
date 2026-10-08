@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Key: Sword_Dash_Stab
   Damage: 10
+  AttackBufferDuration: 0.18
+  StartupCancels: 6
+  AfterActiveCancels: 7
+  RecoveryCancels: 15
   Locomotion: 1
   HasImpact: 1
   Impact:
