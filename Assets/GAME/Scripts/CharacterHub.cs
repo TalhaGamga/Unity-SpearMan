@@ -105,6 +105,7 @@ public class CharacterHub : MonoBehaviour
                 _awaitingLaunchLandingRecovery = true;
                 break;
             case ReactionType.LightHit:
+            case ReactionType.Pierced:
             case ReactionType.Knockdown:
             case ReactionType.Dead:
                 _awaitingLaunchLandingRecovery = false;
@@ -176,6 +177,10 @@ public class CharacterHub : MonoBehaviour
 
         _animatorSystem.MovementAnimationFrameStream
             .Subscribe(_movementManager.OnAnimationFrame)
+            .AddTo(_disposables);
+
+        _animatorSystem.MovementAnimationFrameStream
+            .Subscribe(_combatManager.OnMovementAnimationFrame)
             .AddTo(_disposables);
     }
 

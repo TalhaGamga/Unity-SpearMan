@@ -109,6 +109,11 @@ namespace Movement
                 // This legacy mover explicitly opts out of external impacts.
             }
 
+            public void HandlePierce(PierceData pierce)
+            {
+                // This legacy mover explicitly opts out of external reactions.
+            }
+
             public void UpdateMover(float deltaTime)
             {
             }

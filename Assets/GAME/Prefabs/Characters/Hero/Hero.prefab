@@ -112,6 +112,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: e297cf692daa4ff4fad558b78c61383b, type: 2}
     - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
+      propertyPath: _swordCombatMachine._stabAttackKey
+      value: Sword_Dash_Stab
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445111043166274578, guid: f97fd24eba0895241a44333cc1d4760e, type: 3}
       propertyPath: _swordCombatMachine._comboAttackKeys.Array.size
       value: 3
       objectReference: {fileID: 0}

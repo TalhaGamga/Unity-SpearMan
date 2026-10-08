@@ -130,6 +130,8 @@ public class SwordCombat : ICombat
         }
     }
 
+    public void OnMovementAnimationFrame(MovementAnimationFrame frame) { }
+
     public void OnWeaponCollision(Collider other)
     {
         if (_canDealDamage)

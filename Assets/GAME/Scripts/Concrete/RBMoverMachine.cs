@@ -23,11 +23,18 @@ namespace Movement.Mover
 
         private const float MinSqrDelta = 1e-8f;
         private const float GroundedUpwardVelocityThreshold = 0.1f;
+        private const float StabCollisionSkin = 0.03f;
 
         private bool _isForcedMotionActive;
         private ImpactData _impact;
+        private PierceData _pierce;
+        private Vector3 _pierceRootOffset;
+        private float _pierceElapsed;
+        private bool _pierceFollowing;
         private float _deltaTime;
         private float _physicsDeltaTime;
+
+        private readonly Collider[] _stabAimCandidates = new Collider[24];
 
         /// <summary>
         /// Every feel number lives in the design asset. Nothing here authors a
@@ -72,6 +79,7 @@ namespace Movement.Mover
             IState idleState = new ConcreteState();
             IState launchedState = new ConcreteState();
             IState forcedFallState = new ConcreteState();
+            IState piercedState = new ConcreteState();
             IState fallState = new ConcreteState();
             IState neutralState = new ConcreteState();
             IState jumpState = new ConcreteState();
@@ -101,6 +109,13 @@ namespace Movement.Mover
             forcedFallState.OnEnter.AddListener(() =>
             {
                 setContextState(MovementType.ForcedFall);
+                submitSnapshot();
+            });
+
+            piercedState.OnEnter.AddListener(() =>
+            {
+                setContextState(MovementType.Pierced);
+                configurePierceMotion(_pierce);
                 submitSnapshot();
             });
 
@@ -149,6 +164,11 @@ namespace Movement.Mover
             forcedFallState.OnExit.AddListener(() =>
             {
                 _context.VerticalVelocity = 0;
+                resetForcedMotion();
+            });
+
+            piercedState.OnExit.AddListener(() =>
+            {
                 resetForcedMotion();
             });
 
@@ -203,6 +223,12 @@ namespace Movement.Mover
                 blendSpeed();
             });
 
+            piercedState.OnUpdate.AddListener(() =>
+            {
+                setCharacterOrientator();
+                submitSnapshot();
+            });
+
             fallState.OnUpdate.AddListener(() =>
             {
                 setCharacterOrientator();
@@ -216,13 +242,11 @@ namespace Movement.Mover
                     setCharacterOrientator();
                 }
 
-                Vector3 stabDir = findStabDirection();
-
                 if (_context.IsStabbing && !_context.IsStabStarted)
                 {
                     _context.IsStabStarted = true;
 
-                    Vector3 targetDirection = stabDir;
+                    Vector3 targetDirection = findStabDirection();
                     Vector3 targetPoint = findStabPoint(targetDirection);
                     stab(targetPoint);
                     setRotationInStabbing(targetPoint);
@@ -264,6 +288,8 @@ namespace Movement.Mover
                 simulateAirborneMotion(useAirControl: false);
             });
 
+            piercedState.OnPhysicsUpdate.AddListener(applyPierceMotion);
+
             fallState.OnPhysicsUpdate.AddListener(() =>
             {
                 simulateAirborneMotion(useAirControl: true);
@@ -280,7 +306,9 @@ namespace Movement.Mover
             var toMove = new StateTransition<MovementType>(null, moveState, MovementType.Move, onTransition: quiet);
             var toLaunched = new StateTransition<MovementType>(null, launchedState, MovementType.Launched, onTransition: quiet);
             var relaunch = new StateTransition<MovementType>(launchedState, launchedState, MovementType.Launched, onTransition: quiet);
-            var toFall = new StateTransition<MovementType>(null, fallState, MovementType.Fall, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Launched) && !_context.State.Equals(MovementType.ForcedFall) && !_context.State.Equals(MovementType.Dash) && !_context.State.Equals(MovementType.Stab), quiet);
+            var toPierced = new StateTransition<MovementType>(null, piercedState, MovementType.Pierced, onTransition: quiet);
+            var repierce = new StateTransition<MovementType>(piercedState, piercedState, MovementType.Pierced, onTransition: quiet);
+            var toFall = new StateTransition<MovementType>(null, fallState, MovementType.Fall, () => !isGrounded() && !_context.State.Equals(MovementType.Jump) && !_context.State.Equals(MovementType.Launched) && !_context.State.Equals(MovementType.ForcedFall) && !_context.State.Equals(MovementType.Pierced) && !_context.State.Equals(MovementType.Dash) && !_context.State.Equals(MovementType.Stab), quiet);
 
             // Ground jump, coyote jump and jump-out-of-fall all arrive here.
             // canJump is the single gate: the mapper only states intent.
@@ -338,6 +366,8 @@ namespace Movement.Mover
             _stateMachine.AddIntentBasedTransition(toMove);
             _stateMachine.AddIntentBasedTransition(relaunch);
             _stateMachine.AddIntentBasedTransition(toLaunched);
+            _stateMachine.AddIntentBasedTransition(repierce);
+            _stateMachine.AddIntentBasedTransition(toPierced);
             _stateMachine.AddIntentBasedTransition(airJump);
             _stateMachine.AddIntentBasedTransition(dashToJump);
             _stateMachine.AddIntentBasedTransition(toJump);
@@ -416,6 +446,18 @@ namespace Movement.Mover
 
             _impact = impact;
             _stateMachine.SetState(MovementType.Launched);
+        }
+
+        public void HandlePierce(PierceData pierce)
+        {
+            if (pierce.Source == null ||
+                pierce.Direction.sqrMagnitude <= MinSqrDelta)
+            {
+                return;
+            }
+
+            _pierce = pierce;
+            _stateMachine.SetState(MovementType.Pierced);
         }
 
         public void HandleRootMotion(RootMotionFrame rootMotion)
@@ -742,33 +784,149 @@ namespace Movement.Mover
 
         private Vector3 findStabDirection()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Camera camera = Camera.main;
+            if (camera == null)
+                return Vector3.zero;
+
+            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, _context.CharacterMouseSensor))
             {
-                Vector3 baseDir = Vector3.down;
                 Vector3 dir = PhysicsAxesUtility.Direction(hit.point - _characterOrientator.position, PhysicsAxes.YZ);
 
                 if (dir == Vector3.zero)
                     return Vector3.zero;
 
-                float angle = Vector3.SignedAngle(baseDir, dir, Vector3.right);
-
-                if (angle > 0)
-                    angle = Mathf.Clamp(angle, _context.StabMinAngle, _context.StabMaxAngle);
-                else
-                    angle = Mathf.Clamp(angle, -_context.StabMaxAngle, -_context.StabMinAngle);
-
-                Quaternion rot = Quaternion.AngleAxis(angle, Vector3.right);
-                Vector3 clampedDir = rot * baseDir;
+                Vector3 clampedDir = clampStabDirection(dir);
+                Vector3 assistedDir = findAimAssistedStabDirection(clampedDir);
 
                 Debug.DrawLine(_characterOrientator.position, hit.point, Color.yellow);     // raw mouse ray hit
-                Debug.DrawRay(_characterOrientator.position, baseDir * 2f, Color.blue);     // base direction
+                Debug.DrawRay(_characterOrientator.position, Vector3.down * 2f, Color.blue); // base direction
                 Debug.DrawRay(_characterOrientator.position, dir * 2f, Color.red);          // original dir
                 Debug.DrawRay(_characterOrientator.position, clampedDir * 2f, Color.green); // clamped dir
+                Debug.DrawRay(_characterOrientator.position, assistedDir * 2.5f, Color.cyan); // assisted dir
 
-                return clampedDir.normalized;
+                return assistedDir;
             }
             return Vector3.zero;
+        }
+
+        private Vector3 clampStabDirection(Vector3 direction)
+        {
+            Vector3 planar = PhysicsAxesUtility.Direction(
+                direction,
+                PhysicsAxes.YZ
+            );
+            if (planar == Vector3.zero)
+                return Vector3.zero;
+
+            float angle = Vector3.SignedAngle(
+                Vector3.down,
+                planar,
+                Vector3.right
+            );
+
+            if (angle >= 0f)
+                angle = Mathf.Clamp(angle, _context.StabMinAngle, _context.StabMaxAngle);
+            else
+                angle = Mathf.Clamp(angle, -_context.StabMaxAngle, -_context.StabMinAngle);
+
+            return (Quaternion.AngleAxis(angle, Vector3.right) *
+                Vector3.down).normalized;
+        }
+
+        /// <summary>
+        /// Soft lock: mouse direction stays authoritative, but a damageable
+        /// character inside a narrow cone bends the stab toward its centre.
+        /// Targets outside the cone or behind platform geometry are ignored.
+        /// </summary>
+        private Vector3 findAimAssistedStabDirection(Vector3 mouseDirection)
+        {
+            if (mouseDirection == Vector3.zero ||
+                _context.StabAimAssistAngle <= 0f ||
+                _context.StabAimAssistStrength <= 0f)
+            {
+                return mouseDirection;
+            }
+
+            Vector3 origin = _context.MoverTransform.position;
+            int count = Physics.OverlapSphereNonAlloc(
+                origin,
+                _context.StabRange,
+                _stabAimCandidates,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore
+            );
+
+            Vector3 bestDirection = mouseDirection;
+            float bestScore = float.PositiveInfinity;
+
+            for (int i = 0; i < count; i++)
+            {
+                Collider candidate = _stabAimCandidates[i];
+                if (candidate == null)
+                    continue;
+
+                GameObject target = candidate.attachedRigidbody != null
+                    ? candidate.attachedRigidbody.gameObject
+                    : candidate.gameObject;
+
+                if (target == null ||
+                    target == _context.MoverTransform.gameObject ||
+                    target.transform.IsChildOf(_context.MoverTransform) ||
+                    (target.GetComponent<IHitReactable>() == null &&
+                     target.GetComponent<IDamageable>() == null))
+                {
+                    continue;
+                }
+
+                Vector3 targetPoint = candidate.bounds.center;
+                Vector3 targetDirection = PhysicsAxesUtility.Direction(
+                    targetPoint - origin,
+                    PhysicsAxes.YZ
+                );
+                if (targetDirection == Vector3.zero)
+                    continue;
+
+                float angle = Vector3.Angle(mouseDirection, targetDirection);
+                if (angle > _context.StabAimAssistAngle)
+                    continue;
+
+                float distance = Vector3.Distance(
+                    GameplayPlane.Flatten(origin),
+                    GameplayPlane.Flatten(targetPoint)
+                );
+
+                if (Physics.Raycast(
+                    origin,
+                    targetDirection,
+                    out RaycastHit obstruction,
+                    distance,
+                    _context.PlatformLayer,
+                    QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
+                // Angle is the primary intent signal. Distance only breaks
+                // ties so a nearer target wins over one directly behind it.
+                float score = angle + distance * 0.05f;
+                if (score >= bestScore)
+                    continue;
+
+                bestScore = score;
+                bestDirection = targetDirection;
+            }
+
+            if (float.IsPositiveInfinity(bestScore))
+                return mouseDirection;
+
+            Vector3 steered = Vector3.Slerp(
+                mouseDirection,
+                bestDirection,
+                Mathf.Clamp01(_context.StabAimAssistStrength)
+            ).normalized;
+
+            return clampStabDirection(steered);
         }
 
         private Vector3 findStabPoint(Vector3 direction)
@@ -780,11 +938,35 @@ namespace Movement.Mover
 
             Vector3 origin = _context.MoverTransform.position;
             Ray ray = new Ray(origin, planarDirection);
+            float travelDistance = _context.StabRange;
 
             if (Physics.Raycast(ray, out RaycastHit hit, _context.StabRange, _context.PlatformLayer))
-                return PhysicsAxesUtility.ConstrainPoint(hit.point, origin, PhysicsAxes.YZ);
+                travelDistance = Mathf.Min(travelDistance, hit.distance);
 
-            return ray.origin + ray.direction * _context.StabRange;
+            // DOMove advances the dynamic body in FixedUpdate. At stab speed a
+            // rendered frame can contain several physics steps, so relying on
+            // the eventual collision callback still allows the body to appear
+            // beyond a thin target for one render frame. Sweep the Rigidbody's
+            // actual collider volume up front and make the tween end on the
+            // near side of the first solid object.
+            if (_context.Rb.SweepTest(
+                    planarDirection,
+                    out RaycastHit bodyHit,
+                    travelDistance,
+                    QueryTriggerInteraction.Ignore))
+            {
+                travelDistance = Mathf.Min(
+                    travelDistance,
+                    Mathf.Max(0f, bodyHit.distance - StabCollisionSkin)
+                );
+            }
+
+            Vector3 target = ray.origin + ray.direction * travelDistance;
+            return PhysicsAxesUtility.ConstrainPoint(
+                target,
+                origin,
+                PhysicsAxes.YZ
+            );
         }
 
         private void setRotationInStabbing(Vector3 stabPoint)
@@ -898,9 +1080,162 @@ namespace Movement.Mover
             setVerticalVelocity(direction.y * impact.Force);
         }
 
+        private void configurePierceMotion(PierceData pierce)
+        {
+            _isForcedMotionActive = true;
+            _pierceFollowing = true;
+            _pierceElapsed = 0f;
+            float attackSign = Mathf.Sign(pierce.AttackerForward.z);
+            if (Mathf.Approximately(attackSign, 0f))
+                attackSign = _context.LastFaceX;
+
+            // Match the impact orientation contract from the previous commit:
+            // forced motion writes MoveInput and the regular orientator turns
+            // the rig from that value. Pierce does not own a second facing
+            // policy based on live positions.
+            _context.MoveInput = new Vector2(attackSign, 0f);
+            _context.MovementBlend = 0f;
+            _context.RootMotionDeltaPosition = Vector3.zero;
+
+            Vector3 currentPosition = _context.Rb.position;
+            _pierceRootOffset = currentPosition - pierce.Point;
+
+            _context.Rb.linearVelocity = Vector3.zero;
+        }
+
+        /// <summary>
+        /// A controlled physical reaction: first preserve the target's offset
+        /// from the live spear tip, then hand that motion into a flatter
+        /// ballistic launch. The root Rigidbody remains authoritative, so
+        /// collision and ground contact keep working while the reaction
+        /// animation poses the rig above it.
+        /// </summary>
+        private void applyPierceMotion()
+        {
+            float deltaTime = Mathf.Max(_physicsDeltaTime, 0.0001f);
+            PierceSettings settings = _pierce.Settings;
+            _pierceElapsed += deltaTime;
+            discardRootMotion();
+
+            Vector3 tip = Vector3.zero;
+            bool canFollow = _pierceFollowing &&
+                _pierceElapsed <= Mathf.Max(0f, settings.MaxFollowDuration) &&
+                _pierce.Source != null &&
+                _pierce.Source.IsPierceActive &&
+                _pierce.Source.TryGetPiercePoint(out tip);
+
+            if (canFollow)
+            {
+                Vector3 desired = PhysicsAxesUtility.ConstrainPoint(
+                    tip + _pierceRootOffset,
+                    _context.Rb.position,
+                    PhysicsAxes.YZ
+                );
+
+                // A descending stab should scrape a grounded target along the
+                // floor, not tunnel its root through it. Upward contact remains
+                // free to lift an airborne target.
+                if (isGrounded() && desired.y < _context.Rb.position.y)
+                    desired.y = _context.Rb.position.y;
+
+                Vector3 velocity = (desired - _context.Rb.position) / deltaTime;
+                float maxFollowSpeed = Mathf.Max(0f, settings.MaxFollowSpeed);
+                if (maxFollowSpeed > 0f)
+                    velocity = Vector3.ClampMagnitude(velocity, maxFollowSpeed);
+
+                if (isGrounded() && velocity.y <= 0f)
+                    velocity.y = -design.GroundStickSpeed;
+
+                _context.Rb.linearVelocity = new Vector3(
+                    0f,
+                    velocity.y,
+                    velocity.z
+                );
+
+                return;
+            }
+
+            releasePiercedTarget(settings);
+        }
+
+        /// <summary>
+        /// Converts the authored stab angle into an upward release with the
+        /// same horizontal sign. Only a fraction of its vertical component is
+        /// retained, so even a steep downward stab throws the target mostly
+        /// backward rather than popping it up like the heavy attack.
+        /// </summary>
+        private void releasePiercedTarget(PierceSettings settings)
+        {
+            Vector3 stabDirection = PhysicsAxesUtility.Direction(
+                _pierce.Direction,
+                PhysicsAxes.YZ
+            );
+
+            // Use the same stable attack-forward rule as the impact pipeline
+            // did in the previous commit. Blade velocity can reverse during
+            // the animation, but the attacker's authored forward cannot.
+            float horizontalSign = Mathf.Sign(_pierce.AttackerForward.z);
+            if (Mathf.Approximately(horizontalSign, 0f))
+                horizontalSign = Mathf.Sign(stabDirection.z);
+            if (Mathf.Approximately(horizontalSign, 0f))
+                horizontalSign = _context.LastFaceX;
+
+            float authoredScale = settings.ReleaseVerticalScale > 0f
+                ? settings.ReleaseVerticalScale
+                : 0.55f;
+            float authoredMinimum = settings.MinimumReleaseVerticalRatio > 0f
+                ? settings.MinimumReleaseVerticalRatio
+                : 0.28f;
+            float authoredMaximum = settings.MaximumReleaseVerticalRatio > 0f
+                ? settings.MaximumReleaseVerticalRatio
+                : 0.45f;
+
+            float minimumVertical = Mathf.Clamp01(
+                Mathf.Min(
+                    authoredMinimum,
+                    authoredMaximum
+                )
+            );
+            float maximumVertical = Mathf.Clamp(
+                Mathf.Max(
+                    authoredMinimum,
+                    authoredMaximum
+                ),
+                minimumVertical,
+                0.95f
+            );
+            float verticalRatio = Mathf.Clamp(
+                Mathf.Abs(stabDirection.y) *
+                    Mathf.Clamp01(authoredScale),
+                minimumVertical,
+                maximumVertical
+            );
+            float horizontalRatio = Mathf.Sqrt(
+                1f - verticalRatio * verticalRatio
+            );
+            Vector3 releaseDirection =
+                Vector3.forward * (horizontalSign * horizontalRatio) +
+                Vector3.up * verticalRatio;
+
+            _pierceFollowing = false;
+            _impact = new ImpactData(
+                releaseDirection,
+                settings.ReleaseForce > 0f
+                    ? settings.ReleaseForce
+                    : 14f,
+                _context.Rb.position,
+                PhysicsAxes.YZ,
+                PhysicsAxes.X
+            );
+
+            _stateMachine.SetState(MovementType.Launched);
+        }
+
         private void resetForcedMotion()
         {
             _isForcedMotionActive = false;
+            _pierceFollowing = false;
+            _pierceElapsed = 0f;
             // A reaction can interrupt an attack mid-swing, and the combat
             // snapshot that would hand the ground back may never arrive. Recover
             // to the mover owning locomotion rather than leaving the character
@@ -1084,6 +1419,8 @@ namespace Movement.Mover
             public float StabRange = 10f;
             public float StabMinAngle = 30;
             public float StabMaxAngle = 80;
+            [Range(0f, 45f)] public float StabAimAssistAngle = 14f;
+            [Range(0f, 1f)] public float StabAimAssistStrength = 0.85f;
 
             [Header("Live State")]
             public MovementType State;
@@ -1117,5 +1454,6 @@ namespace Movement.Mover
 
             public float HorizontalVelocity => MoveInput.x * HorizontalSpeed;
         }
+
     }
 }

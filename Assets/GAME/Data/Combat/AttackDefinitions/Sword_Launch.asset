@@ -17,7 +17,7 @@ MonoBehaviour:
   AttackBufferDuration: 0.18
   StartupCancels: 6
   AfterActiveCancels: 7
-  RecoveryCancels: 15
+  RecoveryCancels: 255
   Locomotion: 1
   HasImpact: 1
   Impact:
@@ -31,6 +31,14 @@ MonoBehaviour:
       ClampToForwardArc: 1
       MinimumForwardAngle: 60
       MaximumForwardAngle: 85
+  HasPierce: 0
+  Pierce:
+    MaxFollowDuration: 0
+    MaxFollowSpeed: 0
+    ReleaseForce: 0
+    ReleaseVerticalScale: 0
+    MinimumReleaseVerticalRatio: 0
+    MaximumReleaseVerticalRatio: 0
   HasReaction: 1
   Reaction:
     Type: 2

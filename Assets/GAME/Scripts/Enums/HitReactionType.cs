@@ -6,5 +6,7 @@ public enum HitReactionType
     AirJuggle,
     Knockback,
     Knockdown,
-    Crumple
+    Crumple,
+    // Appended to preserve serialized values in existing attack assets.
+    Pierced
 }

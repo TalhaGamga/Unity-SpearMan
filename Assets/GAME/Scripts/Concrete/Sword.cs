@@ -4,8 +4,9 @@ using R3;
 using Movement;
 using UnityEngine;
 
-public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
+public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource, IPierceMotionSource
 {
+    private const string DashingAttackStateName = "DashingAttack";
     private const string LaunchAttackKey = "Sword_Light_2";
     private const int LaunchArcSegments = 16;
 
@@ -55,6 +56,7 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     private Transform _owner;
     private Transform _forwardSource;
     private Vector3 _lastPlanarForward = Vector3.forward;
+    private bool _pierceWindowActive;
 
     // Null-guarded: a weapon whose visual strategy was never authored should
     // simply show nothing, not fail to equip.
@@ -98,6 +100,9 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     /// </summary>
     public void OnHitWindowChanged(bool open, string stateName)
     {
+        _pierceWindowActive = open &&
+            string.Equals(stateName, DashingAttackStateName,
+                System.StringComparison.Ordinal);
         _visualizer?.HandleHitWindow(open, stateName);
     }
 
@@ -107,6 +112,13 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
     }
 
     #region IWeaponVisualSource
+
+    public bool IsPierceActive => _pierceWindowActive;
+
+    public bool TryGetPiercePoint(out Vector3 point)
+    {
+        return TryGetAnchorPosition(VisualAnchor.BladeTip, out point);
+    }
 
     public Vector3 BladeDirection => _hitbox != null
         ? _hitbox.BladeDirection
@@ -245,7 +257,11 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
         if (attack == null || _hitbox == null || _dispatcher == null)
             return;
 
-        var hits = _hitbox.ScanHits();
+        // Dash-stab moves the character in FixedUpdate but combat samples in
+        // Update. Let its hitbox sweep the full traversal distance so a low
+        // render frame cannot place the blade on opposite sides of a target
+        // without reporting the crossing.
+        var hits = _hitbox.ScanHits(attack.HasPierce);
 
         foreach (PlanarWeaponHit planarHit in hits)
         {
@@ -294,7 +310,8 @@ public class Sword : MonoBehaviour, IWeapon, IWeaponVisualSource
 
             var source = new AttackReactiveEventSource(
                 attack,
-                hitContext
+                hitContext,
+                this
             );
 
             // Presentation before rules. A destructive or slicing attack may

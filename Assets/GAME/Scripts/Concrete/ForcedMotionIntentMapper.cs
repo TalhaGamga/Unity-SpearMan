@@ -7,7 +7,8 @@ public sealed class ForcedMotionIntentMapper : IIntentMapper
         CharacterSnapshot snapshot)
     {
         if (snapshot.Movement.State != MovementType.Launched &&
-            snapshot.Movement.State != MovementType.ForcedFall)
+            snapshot.Movement.State != MovementType.ForcedFall &&
+            snapshot.Movement.State != MovementType.Pierced)
         {
             return null;
         }

@@ -17,9 +17,9 @@ MonoBehaviour:
   AttackBufferDuration: 0.18
   StartupCancels: 6
   AfterActiveCancels: 7
-  RecoveryCancels: 15
+  RecoveryCancels: 255
   Locomotion: 1
-  HasImpact: 1
+  HasImpact: 0
   Impact:
     Motion:
       TranslationAxes: 6
@@ -28,10 +28,21 @@ MonoBehaviour:
       AngularMultiplier: 0.25
       VerticalMode: 1
       MinimumVerticalRatio: 0.65
+      ClampToForwardArc: 0
+      MinimumForwardAngle: 0
+      MaximumForwardAngle: 0
+  HasPierce: 1
+  Pierce:
+    MaxFollowDuration: 0.12
+    MaxFollowSpeed: 20
+    ReleaseForce: 14
+    ReleaseVerticalScale: 0.55
+    MinimumReleaseVerticalRatio: 0.28
+    MaximumReleaseVerticalRatio: 0.45
   HasReaction: 1
   Reaction:
-    Type: 2
-    Duration: 0.2
+    Type: 7
+    Duration: 0.5
     LocksMovementInput: 1
     LocksCombatInput: 1
     AllowsAirDrift: 0

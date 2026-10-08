@@ -64,6 +64,7 @@ public interface ICombat
     void Update(float deltaTime);
     void HandleAction(CombatAction action);
     void OnAnimationFrame(CombatAnimationFrame frame);
+    void OnMovementAnimationFrame(MovementAnimationFrame frame);
     void OnWeaponCollision(Collider other);
     void End();
 }
@@ -128,6 +129,7 @@ public interface IMover
     void End();
     public void HandleAction(MovementAction action);
     public void HandleImpact(ImpactData impact);
+    public void HandlePierce(PierceData pierce);
     public void HandleRootMotion(RootMotionFrame rootMotion);
     public void OnAnimationFrame(MovementAnimationFrame animationFrame);
 
@@ -426,6 +428,23 @@ public interface IDamageable
 public interface IImpactable
 {
     void ApplyImpact(ImpactData data);
+}
+
+/// <summary>
+/// A character whose root motion can be temporarily driven by a penetrating
+/// weapon. Kept separate from IImpactable: a launch is a one-shot impulse,
+/// while a pierce follows a live contact point before releasing into a launch.
+/// </summary>
+public interface IPierceable
+{
+    void ApplyPierce(PierceData data);
+}
+
+/// <summary>The live weapon point a pierced target follows.</summary>
+public interface IPierceMotionSource
+{
+    bool IsPierceActive { get; }
+    bool TryGetPiercePoint(out Vector3 point);
 }
 
 public interface IDestructible

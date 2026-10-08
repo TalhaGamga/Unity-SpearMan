@@ -37,6 +37,12 @@ public class AttackDefinition : ScriptableObject
     public bool HasImpact;
     public ImpactSettings Impact;
 
+    [Tooltip("Makes a character briefly follow the live weapon tip, then " +
+        "release into an angle-shaped launch. This is intentionally " +
+        "separate from Impact, which is a one-shot launch impulse.")]
+    public bool HasPierce;
+    public PierceSettings Pierce;
+
     public bool HasReaction;
     public HitReactionSettings Reaction;
 

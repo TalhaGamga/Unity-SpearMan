@@ -55,6 +55,12 @@ public class WeaponHitboxSensor : MonoBehaviour
         "dropped for that frame rather than covering the whole jump.")]
     [SerializeField, Min(0f)] private float _maxSweepDistance = 4f;
 
+    [Tooltip("Maximum distance covered between two samples by traversal " +
+        "attacks such as dash-stab. Their body is moved in FixedUpdate while " +
+        "damage is evaluated in Update, so several physics steps may need to " +
+        "be represented by one continuous weapon sweep.")]
+    [SerializeField, Min(0f)] private float _maxTraversalSweepDistance = 16f;
+
     private readonly List<PlanarWeaponHit> _hits = new();
     private readonly List<Vector2> _projectedCorners = new(16);
     private readonly List<Vector2> _previousCorners = new(8);
@@ -128,6 +134,12 @@ public class WeaponHitboxSensor : MonoBehaviour
         _previousPosition = currentPosition;
 
         sampleTurnRate();
+
+        // Keep one render-frame of pose history even while no damage window
+        // is open. A short window can open and close inside a single rendered
+        // frame; its opening scan still needs the pose from immediately before
+        // the lunge in order to cover what the blade crossed.
+        recordSweepPose(Center);
     }
 
     /// <summary>
@@ -174,7 +186,14 @@ public class WeaponHitboxSensor : MonoBehaviour
     /// Resolves this frame's hits, and remembers the pose so the next frame
     /// can sweep from it.
     /// </summary>
-    public IReadOnlyList<PlanarWeaponHit> ScanHits() => scan(true);
+    public IReadOnlyList<PlanarWeaponHit> ScanHits(
+        bool traversalSweep = false) =>
+        scan(
+            true,
+            traversalSweep
+                ? _maxTraversalSweepDistance
+                : _maxSweepDistance
+        );
 
     /// <summary>
     /// The same resolution without touching the sweep, for drawing what the
@@ -182,14 +201,20 @@ public class WeaponHitboxSensor : MonoBehaviour
     /// frame, and letting them advance the sweep would mean the picture
     /// changed what it was drawing.
     /// </summary>
-    private IReadOnlyList<PlanarWeaponHit> peekHits() => scan(false);
+    private IReadOnlyList<PlanarWeaponHit> peekHits() =>
+        scan(false, _maxSweepDistance);
 
-    private IReadOnlyList<PlanarWeaponHit> scan(bool advanceSweep)
+    private IReadOnlyList<PlanarWeaponHit> scan(
+        bool advanceSweep,
+        float maximumSweepDistance)
     {
         _hits.Clear();
 
         Transform hitbox = Center;
-        buildProjectedBladePolygon(hitbox, canSweepFrom(hitbox));
+        buildProjectedBladePolygon(
+            hitbox,
+            canSweepFrom(hitbox, maximumSweepDistance)
+        );
 
         if (advanceSweep)
             recordSweepPose(hitbox);
@@ -287,15 +312,23 @@ public class WeaponHitboxSensor : MonoBehaviour
     /// swung. Either way the hull would cover ground the weapon never
     /// travelled, and everything standing in it would take a hit.
     /// </remarks>
-    private bool canSweepFrom(Transform hitbox)
+    private bool canSweepFrom(
+        Transform hitbox,
+        float maximumSweepDistance)
     {
-        if (!_sweepValid || _lastScanFrame != Time.frameCount - 1)
+        int framesSinceSample = Time.frameCount - _lastScanFrame;
+        if (!_sweepValid ||
+            framesSinceSample < 0 ||
+            framesSinceSample > 1)
+        {
             return false;
+        }
 
         Vector3 centre = GameplayPlane.Flatten(hitbox.position);
+        float allowedDistance = Mathf.Max(0f, maximumSweepDistance);
 
         return (centre - _previousSweepCenter).sqrMagnitude <=
-            _maxSweepDistance * _maxSweepDistance;
+            allowedDistance * allowedDistance;
     }
 
     private void addProjectedCorners(Transform hitbox, List<Vector2> corners)

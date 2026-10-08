@@ -5,13 +5,16 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
 {
     private readonly AttackDefinition _attack;
     private readonly HitContext _hit;
+    private readonly IPierceMotionSource _pierceSource;
 
     public AttackReactiveEventSource(
         AttackDefinition attack,
-        HitContext hit)
+        HitContext hit,
+        IPierceMotionSource pierceSource = null)
     {
         _attack = attack;
         _hit = hit;
+        _pierceSource = pierceSource;
     }
 
     public Observable<IReactiveEvent> Stream()
@@ -26,6 +29,20 @@ public sealed class AttackReactiveEventSource : IReactiveEventSource
             impact = BuildImpact();
             stream = stream.Concat(
                 Observable.Return<IReactiveEvent>(new ImpactEvent(impact))
+            );
+        }
+
+        if (_attack.HasPierce && _pierceSource != null)
+        {
+            var pierce = new PierceData(
+                _pierceSource,
+                _hit.Point,
+                _hit.Direction,
+                _hit.AttackerForward,
+                _attack.Pierce
+            );
+            stream = stream.Concat(
+                Observable.Return<IReactiveEvent>(new PierceEvent(pierce))
             );
         }
 

@@ -42,6 +42,7 @@ public class ReactionStateMachine : IReactor
 
         IState noneState = new ConcreteState();
         IState lightHitState = new ConcreteState();
+        IState piercedState = new ConcreteState();
         IState launchState = new ConcreteState();
         IState airJuggleState = new ConcreteState();
         IState knockdownState = new ConcreteState();
@@ -62,6 +63,17 @@ public class ReactionStateMachine : IReactor
             applyPendingActionToContext();
 
             setState(ReactionType.LightHit);
+            _context.Elapsed = 0f;
+            _context.IsInHitStun = true;
+
+            SubmitSnapshot();
+        });
+
+        piercedState.OnEnter.AddListener(() =>
+        {
+            applyPendingActionToContext();
+
+            setState(ReactionType.Pierced);
             _context.Elapsed = 0f;
             _context.IsInHitStun = true;
 
@@ -151,6 +163,11 @@ public class ReactionStateMachine : IReactor
             SubmitSnapshot();
         });
 
+        piercedState.OnUpdate.AddListener(() =>
+        {
+            SubmitSnapshot();
+        });
+
         launchState.OnUpdate.AddListener(() =>
         {
             SubmitSnapshot();
@@ -181,6 +198,11 @@ public class ReactionStateMachine : IReactor
         #region OnExit
 
         lightHitState.OnExit.AddListener(() =>
+        {
+            SubmitSnapshot();
+        });
+
+        piercedState.OnExit.AddListener(() =>
         {
             SubmitSnapshot();
         });
@@ -224,6 +246,13 @@ public class ReactionStateMachine : IReactor
             () => _context.State != ReactionType.Dead
         );
 
+        var toPierced = new StateTransition<ReactionType>(
+            null,
+            piercedState,
+            ReactionType.Pierced,
+            () => _context.State != ReactionType.Dead
+        );
+
         var toLaunch = new StateTransition<ReactionType>(
             null,
             launchState,
@@ -254,6 +283,7 @@ public class ReactionStateMachine : IReactor
 
         _stateMachine.AddIntentBasedTransition(toNone);
         _stateMachine.AddIntentBasedTransition(toLightHit);
+        _stateMachine.AddIntentBasedTransition(toPierced);
         _stateMachine.AddIntentBasedTransition(toLaunch);
         _stateMachine.AddIntentBasedTransition(toAirJuggle);
         _stateMachine.AddIntentBasedTransition(toKnockdown);
@@ -265,6 +295,13 @@ public class ReactionStateMachine : IReactor
 
         var lightHitToRecovery = new StateTransition<ReactionType>(
             lightHitState,
+            recoveryState,
+            ReactionType.Recovery,
+            () => _context.Elapsed >= _context.Duration
+        );
+
+        var piercedToRecovery = new StateTransition<ReactionType>(
+            piercedState,
             recoveryState,
             ReactionType.Recovery,
             () => _context.Elapsed >= _context.Duration
@@ -299,6 +336,7 @@ public class ReactionStateMachine : IReactor
         );
 
         _stateMachine.AddAutonomicTransition(lightHitToRecovery);
+        _stateMachine.AddAutonomicTransition(piercedToRecovery);
         _stateMachine.AddAutonomicTransition(launchToRecovery);
         _stateMachine.AddAutonomicTransition(airJuggleToRecovery);
         _stateMachine.AddAutonomicTransition(knockdownToRecovery);
@@ -360,6 +398,9 @@ public class ReactionStateMachine : IReactor
         {
             case HitReactionType.LightStagger:
                 state = ReactionType.LightHit;
+                return true;
+            case HitReactionType.Pierced:
+                state = ReactionType.Pierced;
                 return true;
             case HitReactionType.Launch:
                 state = ReactionType.Launch;

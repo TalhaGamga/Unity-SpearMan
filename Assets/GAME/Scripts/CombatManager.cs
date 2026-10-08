@@ -80,4 +80,14 @@ public class CombatManager : MonoBehaviour, ICombatManager
         _currentCombat?.OnAnimationFrame(frame);
         _currentWeapon?.OnAnimationFrame(frame);
     }
+
+    /// <summary>
+    /// Some traversal attacks are timed by movement clips. Forwarding those
+    /// markers lets combat own the damage window without making the mover know
+    /// anything about weapons or hit detection.
+    /// </summary>
+    public void OnMovementAnimationFrame(MovementAnimationFrame frame)
+    {
+        _currentCombat?.OnMovementAnimationFrame(frame);
+    }
 }

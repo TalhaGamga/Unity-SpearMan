@@ -125,6 +125,7 @@ public static class AnimatorParams
     // re-asserts itself on the next snapshot while a missed edge is missed
     // forever.
     public const string LightHit = "LightHit";
+    public const string Pierced = nameof(ReactionType.Pierced);
     public const string Launch = "Launch";
     public const string Knockdown = "Knockdown";
     public const string GetUp = "GetUp";
@@ -164,6 +165,7 @@ public static class AnimatorParams
         new Entry(AirDashStab, Kind.Bool),
 
         new Entry(LightHit, Kind.Trigger),
+        new Entry(Pierced, Kind.Trigger),
         new Entry(Launch, Kind.Trigger),
         new Entry(Knockdown, Kind.Trigger),
         new Entry(GetUp, Kind.Trigger),

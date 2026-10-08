@@ -390,6 +390,8 @@ MonoBehaviour:
       StabRange: 10
       StabMinAngle: 30
       StabMaxAngle: 80
+      StabAimAssistAngle: 14
+      StabAimAssistStrength: 0.85
       CharacterMouseSensor:
         serializedVersion: 2
         m_Bits: 2048

@@ -16,6 +16,7 @@ namespace Combat
         [SerializeField] private StateMachine<CombatType> _stateMachine;
         [SerializeField] private AttackDatabase _attackDatabase;
         [SerializeField] private ComboAttackKey[] _comboAttackKeys;
+        [SerializeField] private string _stabAttackKey = "Sword_Dash_Stab";
 
         private AttackDefinition _activeAttack;
         private bool _canDealDamage;
@@ -286,10 +287,24 @@ namespace Combat
                     break;
 
                 case "Cancelable":
+                    if (_context.State == CombatType.Stab)
+                    {
+                        sampleOpenStabHitFrame();
+                        closeHitFrameForState("DashingAttack");
+                        completeActivePhase();
+                    }
                     openRecoveryWindow();
                     break;
 
                 case "ComboWindowOpen":
+                    // The grounded dash stab clip owns only combat events,
+                    // while the aerial version owns movement events. Both
+                    // still open the same weapon-defined damage window.
+                    if (_context.State == CombatType.Stab &&
+                        !_isHitWindowOpen)
+                    {
+                        openStabHitFrame();
+                    }
                     openComboWindow();
                     break;
 
@@ -302,6 +317,27 @@ namespace Combat
                     resetAttackFlow();
                     closeHitFrameForState(frame.StateName);
                     disarmAttackWatchdog();
+                    break;
+            }
+        }
+
+        public void OnMovementAnimationFrame(MovementAnimationFrame frame)
+        {
+            if (_context.State != CombatType.Stab ||
+                !string.Equals(frame.Action, "Stab", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            switch (frame.EventKey)
+            {
+                case "StabStarted":
+                    openStabHitFrame();
+                    break;
+                case "StabEnded":
+                    sampleOpenStabHitFrame();
+                    closeHitFrameForState("DashingAttack");
+                    completeActivePhase();
                     break;
             }
         }
@@ -348,6 +384,51 @@ namespace Combat
 
             if (_view != null)
                 _view.OnHitWindowChanged(true, _activeHitWindowStateName);
+        }
+
+        private void openStabHitFrame()
+        {
+            if (_isHitWindowOpen &&
+                string.Equals(
+                    _activeHitWindowStateName,
+                    "DashingAttack",
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!tryResolveCurrentAttackDefinition(out AttackDefinition attack))
+                return;
+
+            resetHitFrame();
+            _activeAttack = attack;
+            _activeHitWindowStateName = "DashingAttack";
+            _activeHitWindowComboStep = 0;
+            _isHitWindowOpen = true;
+
+            if (_view != null)
+                _view.OnHitWindowChanged(true, _activeHitWindowStateName);
+
+            // A 30 Hz frame can cross both the open and close markers of the
+            // grounded stab's ~33 ms active window before Update runs. Sample
+            // at the boundary itself so the window cannot exist only between
+            // two combat ticks.
+            processHitFrame();
+        }
+
+        private void sampleOpenStabHitFrame()
+        {
+            if (!_isHitWindowOpen ||
+                _activeAttack == null ||
+                !string.Equals(
+                    _activeHitWindowStateName,
+                    "DashingAttack",
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            processHitFrame();
         }
 
         private void closeHitFrame(HitWindowIdentity hitWindow)
@@ -652,8 +733,7 @@ namespace Combat
 
         private float resolveAttackBufferDuration()
         {
-            return tryResolveAttackDefinition(
-                    _context.ComboStep,
+            return tryResolveCurrentAttackDefinition(
                     out AttackDefinition attack) &&
                 attack != null &&
                 attack.AttackBufferDuration > 0f
@@ -663,8 +743,7 @@ namespace Combat
 
         private CombatCancelOptions resolveStartupCancels()
         {
-            return tryResolveAttackDefinition(
-                    _context.ComboStep,
+            return tryResolveCurrentAttackDefinition(
                     out AttackDefinition attack) && attack != null
                         ? attack.StartupCancels
                         : DefaultStartupCancels;
@@ -672,8 +751,7 @@ namespace Combat
 
         private CombatCancelOptions resolveAfterActiveCancels()
         {
-            return tryResolveAttackDefinition(
-                    _context.ComboStep,
+            return tryResolveCurrentAttackDefinition(
                     out AttackDefinition attack) && attack != null
                         ? attack.AfterActiveCancels
                         : DefaultAfterActiveCancels;
@@ -681,8 +759,7 @@ namespace Combat
 
         private CombatCancelOptions resolveRecoveryCancels()
         {
-            return tryResolveAttackDefinition(
-                    _context.ComboStep,
+            return tryResolveCurrentAttackDefinition(
                     out AttackDefinition attack) && attack != null
                         ? attack.RecoveryCancels
                         : DefaultRecoveryCancels;
@@ -774,8 +851,7 @@ namespace Combat
             if (!_context.IsAttacking)
                 return LocomotionSource.Simulated;
 
-            return tryResolveAttackDefinition(
-                _context.ComboStep,
+            return tryResolveCurrentAttackDefinition(
                 out AttackDefinition attack) && attack != null
                     ? attack.Locomotion
                     : LocomotionSource.RootMotion;
@@ -806,6 +882,18 @@ namespace Combat
             }
 
             return true;
+        }
+
+        private bool tryResolveCurrentAttackDefinition(
+            out AttackDefinition attack)
+        {
+            if (_context.State != CombatType.Stab)
+                return tryResolveAttackDefinition(_context.ComboStep, out attack);
+
+            attack = null;
+            return _attackDatabase != null &&
+                !string.IsNullOrWhiteSpace(_stabAttackKey) &&
+                _attackDatabase.TryGet(_stabAttackKey, out attack);
         }
 
         private void processHitFrame()

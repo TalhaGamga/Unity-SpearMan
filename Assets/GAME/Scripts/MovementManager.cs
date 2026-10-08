@@ -164,6 +164,11 @@ namespace Movement
             _currentMover?.HandleImpact(impact);
         }
 
+        public void HandlePierce(PierceData pierce)
+        {
+            _currentMover?.HandlePierce(pierce);
+        }
+
         public bool GetIsGrounded()
         {
             return HasGroundContact;

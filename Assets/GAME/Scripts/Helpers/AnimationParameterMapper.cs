@@ -107,6 +107,7 @@ public static class AnimationParameterMapper
         string trigger = transition.To switch
         {
             ReactionType.LightHit => AnimatorParams.LightHit,
+            ReactionType.Pierced => AnimatorParams.Pierced,
             ReactionType.Launch => AnimatorParams.Launch,
             ReactionType.Knockdown => AnimatorParams.Knockdown,
             ReactionType.Recovery

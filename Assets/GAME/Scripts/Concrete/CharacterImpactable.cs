@@ -2,7 +2,7 @@ using Movement;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class CharacterImpactable : MonoBehaviour, IImpactable
+public sealed class CharacterImpactable : MonoBehaviour, IImpactable, IPierceable
 {
     [SerializeField] private MovementManager _movementManager;
 
@@ -28,5 +28,10 @@ public sealed class CharacterImpactable : MonoBehaviour, IImpactable
     public void ApplyImpact(ImpactData impact)
     {
         _movementManager?.HandleImpact(impact);
+    }
+
+    public void ApplyPierce(PierceData pierce)
+    {
+        _movementManager?.HandlePierce(pierce);
     }
 }

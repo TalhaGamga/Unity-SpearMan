@@ -52,5 +52,11 @@ public enum MovementType
 
     Neutral = 14,
     Launched = 15,
-    ForcedFall = 16
+    ForcedFall = 16,
+
+    /// <summary>
+    /// Controlled follow-and-release motion while held by a penetrating
+    /// weapon. New values live at 100+ to preserve the serialized wire format.
+    /// </summary>
+    Pierced = 100
 }
